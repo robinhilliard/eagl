@@ -1,6 +1,6 @@
 defmodule EZGL.Examples.SimpleShader do
   @moduledoc """
-  A simplified example focusing on shader creation using Erlang's wx library with OpenGL in Elixir.
+  Draw a blue point.
   """
 
   use GL.Window

@@ -70,6 +70,7 @@ defmodule GL.Shader do
   def check_link_status(program) do
     case :gl.getProgramiv(program, gl_link_status()) do
       status when status != 0 ->
+        IO.puts("Program linked successfully")
         {:ok, program}
       _ ->
         log_length = :gl.getProgramiv(program, gl_info_log_length())
