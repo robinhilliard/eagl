@@ -1,6 +1,6 @@
-defmodule GL.ObjLoaderTest do
+defmodule EAGL.ObjLoaderTest do
   use ExUnit.Case
-  doctest GL.ObjLoader
+  doctest EAGL.ObjLoader
 
   @app Mix.Project.config()[:app]
 
@@ -12,7 +12,7 @@ defmodule GL.ObjLoaderTest do
         "cube.obj"
       ])
 
-      assert {:ok, model_data} = GL.ObjLoader.load_obj(model_path)
+      assert {:ok, model_data} = EAGL.ObjLoader.load_obj(model_path)
 
       # Test the structure of returned data
       assert is_map(model_data)
@@ -57,11 +57,11 @@ defmodule GL.ObjLoaderTest do
     end
 
     test "returns error for non-existent file" do
-      assert {:error, _reason} = GL.ObjLoader.load_obj("nonexistent.obj")
+      assert {:error, _reason} = EAGL.ObjLoader.load_obj("nonexistent.obj")
     end
 
     test "returns error for invalid file path" do
-      assert {:error, _reason} = GL.ObjLoader.load_obj("")
+      assert {:error, _reason} = EAGL.ObjLoader.load_obj("")
     end
   end
 end
