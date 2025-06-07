@@ -4,7 +4,7 @@ defmodule EZGL.Examples.SimpleShader do
   """
 
   use GL.Window
-  import GL.Const
+  use GL.Const
   import GL.Shader
 
   @spec run_example() :: :ok | {:error, term()}
@@ -12,8 +12,8 @@ defmodule EZGL.Examples.SimpleShader do
 
   @impl true
   def setup do
-    with {:ok, vertex_shader} <- create_shader(gl_vertex_shader(), vertex_shader_source()),
-         {:ok, fragment_shader} <- create_shader(gl_fragment_shader(), fragment_shader_source()),
+    with {:ok, vertex_shader} <- create_shader(@gl_vertex_shader, vertex_shader_source()),
+         {:ok, fragment_shader} <- create_shader(@gl_fragment_shader, fragment_shader_source()),
          {:ok, program} <- create_attach_link([vertex_shader, fragment_shader]) do
       {:ok, program}
     else
@@ -24,10 +24,10 @@ defmodule EZGL.Examples.SimpleShader do
   @impl true
   def render(_, _, program) do
     :gl.useProgram(program)
-    :gl.enable(gl_point_smooth())
-    :gl.enable(gl_point_size())
+    :gl.enable(@gl_point_smooth)
+    :gl.enable(@gl_point_size)
     :gl.pointSize(5.0)
-    :gl.begin(gl_points())
+    :gl.begin(@gl_points)
     :gl.vertex3f(0.0, 0.0, 0.0)
     :gl.end()
     :ok

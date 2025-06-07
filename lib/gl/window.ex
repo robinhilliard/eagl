@@ -4,8 +4,8 @@ defmodule GL.Window do
   Handles window creation, OpenGL context setup, and event loop management.
   """
 
-  import GL.Const, only: [gl_color_buffer_bit: 0, gl_depth_buffer_bit: 0]
-  import WX.Const, only: [wx_gl_rgba: 0, wx_gl_doublebuffer: 0, wx_vertical: 0, wx_expand: 0]
+  use GL.Const
+  use WX.Const
   import Bitwise
 
   @default_window_size {1024, 768}
@@ -36,7 +36,7 @@ defmodule GL.Window do
 
       # Create OpenGL context attributes
       attrib = [
-        {:attribList, [wx_gl_rgba(), wx_gl_doublebuffer(), 0]}
+        {:attribList, [@wx_gl_rgba, @wx_gl_doublebuffer, 0]}
       ]
 
       # Create OpenGL canvas
@@ -48,8 +48,8 @@ defmodule GL.Window do
       :wxGLCanvas.connect(gl_canvas, :paint)
 
       # Create a sizer and add the canvas to it
-      sizer = :wxBoxSizer.new(wx_vertical())
-      :wxSizer.add(sizer, gl_canvas, proportion: 1, flag: wx_expand())
+      sizer = :wxBoxSizer.new(@wx_vertical)
+      :wxSizer.add(sizer, gl_canvas, proportion: 1, flag: @wx_expand)
       :wxFrame.setSizer(frame, sizer)
 
       # Set minimum size for the canvas
@@ -73,8 +73,7 @@ defmodule GL.Window do
       # Initialize OpenGL
       :gl.viewport(0, 0, width, height)
       :gl.clearColor(0.0, 0.0, 0.0, 1.0)
-      :gl.clear(gl_color_buffer_bit())
-      :wxGLCanvas.swapBuffers(gl_canvas)
+      :gl.clear(@gl_color_buffer_bit)
 
       # Set up shaders using callback module
       case callback_module.setup() do
@@ -125,7 +124,7 @@ defmodule GL.Window do
 
           :gl.viewport(0, 0, canvas_width, canvas_height)
           :gl.clearColor(0.0, 0.0, 0.0, 1.0)
-          :gl.clear(gl_color_buffer_bit() ||| gl_depth_buffer_bit())
+          :gl.clear(@gl_color_buffer_bit ||| @gl_depth_buffer_bit)
           :wxGLCanvas.swapBuffers(gl_canvas)  # Force a buffer swap after clear
           callback_module.render(canvas_width * 1.0, canvas_height * 1.0, state)
           :wxGLCanvas.swapBuffers(gl_canvas)
@@ -145,7 +144,7 @@ defmodule GL.Window do
         {width, height} = :wxWindow.getSize(gl_canvas)
         :gl.viewport(0, 0, width, height)
         :gl.clearColor(0.0, 0.0, 0.0, 1.0)
-        :gl.clear(gl_color_buffer_bit())
+        :gl.clear(@gl_color_buffer_bit)
         :wxGLCanvas.swapBuffers(gl_canvas)  # Force a buffer swap after clear
         callback_module.render(width * 1.0, height * 1.0, state)
         :wxGLCanvas.swapBuffers(gl_canvas)

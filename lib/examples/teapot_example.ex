@@ -4,7 +4,7 @@ defmodule EZGL.Examples.Teapot do
   """
 
   use GL.Window
-  import GL.Const
+  use GL.Const
   import GL.Shader
   import GL.ModelLoader
 
@@ -13,8 +13,8 @@ defmodule EZGL.Examples.Teapot do
 
   @impl true
   def setup do
-    with {:ok, vertex_shader} <- create_shader(gl_vertex_shader(), vertex_shader_source()),
-         {:ok, fragment_shader} <- create_shader(gl_fragment_shader(), fragment_shader_source()),
+    with {:ok, vertex_shader} <- create_shader(@gl_vertex_shader, vertex_shader_source()),
+         {:ok, fragment_shader} <- create_shader(@gl_fragment_shader, fragment_shader_source()),
          {:ok, program} <- create_attach_link([vertex_shader, fragment_shader]),
          {:ok, model} <- load_model_to_vao("teapot.obj") do
       {:ok, {program, model}}
@@ -28,10 +28,10 @@ defmodule EZGL.Examples.Teapot do
   @impl true
   def render(viewport_width, viewport_height, {program, model}) do
     :gl.useProgram(program)
-    :gl.enable(gl_depth_test())
+    :gl.enable(@gl_depth_test)
 
     # Ensure we're rendering filled polygons (not wireframe)
-    :gl.polygonMode(gl_front_and_back(), gl_fill())
+    :gl.polygonMode(@gl_front_and_back, @gl_fill)
 
         # Set up transformation matrices as list with tuples (correct for Erlang GL bindings)
     # Model matrix (identity) - OpenGL column-major format
@@ -86,7 +86,7 @@ defmodule EZGL.Examples.Teapot do
     :gl.getUniformLocation(program, ~c"view") |> :gl.uniformMatrix4fv(0, view_matrix)
     :gl.getUniformLocation(program, ~c"projection") |> :gl.uniformMatrix4fv(0, projection_matrix)
     :gl.bindVertexArray(model.vao)
-    :gl.drawElements(gl_triangles(), model.vertex_count, gl_unsigned_int(), 0)
+    :gl.drawElements(@gl_triangles, model.vertex_count, @gl_unsigned_int, 0)
     :ok
   end
 

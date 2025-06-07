@@ -4,11 +4,11 @@ defmodule GL.Shader do
   Handles shader creation, compilation, and program linking.
   """
 
-  import GL.Const
+  use GL.Const
 
   # Cache shader type values for pattern matching
-  @vertex_shader_type gl_vertex_shader()
-  @fragment_shader_type gl_fragment_shader()
+  @vertex_shader_type @gl_vertex_shader
+  @fragment_shader_type @gl_fragment_shader
 
   @doc """
   Creates and compiles a shader of the specified type with the given source code.
@@ -57,9 +57,9 @@ defmodule GL.Shader do
   Checks if a shader compiled successfully.
   """
   def check_compile_status(shader) do
-    compile_status = :gl.getShaderiv(shader, gl_compile_status())
+    compile_status = :gl.getShaderiv(shader, @gl_compile_status)
     if compile_status == 0 do
-      log_length = :gl.getShaderiv(shader, gl_info_log_length())
+      log_length = :gl.getShaderiv(shader, @gl_info_log_length)
       log = :gl.getShaderInfoLog(shader, log_length)
       {:error, "Shader compilation failed: #{log}"}
     else
@@ -68,12 +68,12 @@ defmodule GL.Shader do
   end
 
   def check_link_status(program) do
-    case :gl.getProgramiv(program, gl_link_status()) do
+    case :gl.getProgramiv(program, @gl_link_status) do
       status when status != 0 ->
         IO.puts("Program linked successfully")
         {:ok, program}
       _ ->
-        log_length = :gl.getProgramiv(program, gl_info_log_length())
+        log_length = :gl.getProgramiv(program, @gl_info_log_length)
         log = :gl.getProgramInfoLog(program, log_length)
         message = "Program linking failed: #{log}"
         IO.puts(message)
@@ -86,15 +86,15 @@ defmodule GL.Shader do
   """
   def cleanup_program(program) when is_integer(program) do
     # Check if program exists and is valid
-    case :gl.getProgramiv(program, gl_delete_status()) do
+    case :gl.getProgramiv(program, @gl_delete_status) do
       -1 -> {:error, "Invalid program"}
       _ ->
         # Get attached shaders
-        num_shaders = :gl.getProgramiv(program, gl_attached_shaders())
+        num_shaders = :gl.getProgramiv(program, @gl_attached_shaders)
         shaders = :gl.getAttachedShaders(program, num_shaders)
 
         # Unbind program if it's currently bound
-        current_program = :gl.getIntegerv(gl_current_program()) |> List.first()
+        current_program = :gl.getIntegerv(@gl_current_program) |> List.first()
         if current_program == program do
           :gl.useProgram(0)
         end
@@ -114,7 +114,7 @@ defmodule GL.Shader do
   """
   def cleanup_shader(shader) when is_integer(shader) do
     # Check if shader exists and is valid
-    case :gl.getShaderiv(shader, gl_delete_status()) do
+    case :gl.getShaderiv(shader, @gl_delete_status) do
       -1 -> {:error, "Invalid shader"}
       _ ->
         :gl.deleteShader(shader)
@@ -132,5 +132,5 @@ defmodule GL.Shader do
     check_link_status(program)
   end
 
-  
+
 end

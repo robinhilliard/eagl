@@ -3,15 +3,7 @@ defmodule GL.ModelLoader do
   Helper module for loading 3D model resources and creating OpenGL vertex array objects.
   """
 
-  import GL.Const, only: [
-    gl_array_buffer: 0,
-    gl_element_array_buffer: 0,
-    gl_element_array_buffer_binding: 0,
-    gl_static_draw: 0,
-    gl_float: 0,
-    gl_false: 0,
-    gl_vertex_attrib_array_buffer_binding: 0
-  ]
+  use GL.Const
 
   @app Mix.Project.config()[:app]
 
@@ -71,39 +63,39 @@ defmodule GL.ModelLoader do
 
           # Create and populate vertex buffer
           [vbo] = :gl.genBuffers(1)
-          :gl.bindBuffer(gl_array_buffer(), vbo)
+          :gl.bindBuffer(@gl_array_buffer, vbo)
           vertex_data = for x <- model_data.vertices, into: <<>>, do: <<x::float-32-native>>
-          :gl.bufferData(gl_array_buffer(), byte_size(vertex_data), vertex_data, gl_static_draw())
+          :gl.bufferData(@gl_array_buffer, byte_size(vertex_data), vertex_data, @gl_static_draw)
 
           # Set up vertex position attributes (location 0)
-          :gl.vertexAttribPointer(0, 3, gl_float(), gl_false(), 0, 0)
+          :gl.vertexAttribPointer(0, 3, @gl_float, @gl_false, 0, 0)
           :gl.enableVertexAttribArray(0)
 
           # Create and populate texture coordinate buffer
           [tbo] = :gl.genBuffers(1)
-          :gl.bindBuffer(gl_array_buffer(), tbo)
+          :gl.bindBuffer(@gl_array_buffer, tbo)
           tex_data = for x <- model_data.tex_coords, into: <<>>, do: <<x::float-32-native>>
-          :gl.bufferData(gl_array_buffer(), byte_size(tex_data), tex_data, gl_static_draw())
+          :gl.bufferData(@gl_array_buffer, byte_size(tex_data), tex_data, @gl_static_draw)
 
           # Set up texture coordinate attributes (location 1)
-          :gl.vertexAttribPointer(1, 2, gl_float(), gl_false(), 0, 0)
+          :gl.vertexAttribPointer(1, 2, @gl_float, @gl_false, 0, 0)
           :gl.enableVertexAttribArray(1)
 
           # Create and populate normal buffer
           [nbo] = :gl.genBuffers(1)
-          :gl.bindBuffer(gl_array_buffer(), nbo)
+          :gl.bindBuffer(@gl_array_buffer, nbo)
           normal_data = for x <- model_data.normals, into: <<>>, do: <<x::float-32-native>>
-          :gl.bufferData(gl_array_buffer(), byte_size(normal_data), normal_data, gl_static_draw())
+          :gl.bufferData(@gl_array_buffer, byte_size(normal_data), normal_data, @gl_static_draw)
 
           # Set up normal attributes (location 2)
-          :gl.vertexAttribPointer(2, 3, gl_float(), gl_false(), 0, 0)
+          :gl.vertexAttribPointer(2, 3, @gl_float, @gl_false, 0, 0)
           :gl.enableVertexAttribArray(2)
 
           # Create and populate index buffer
           [ebo] = :gl.genBuffers(1)
-          :gl.bindBuffer(gl_element_array_buffer(), ebo)
+          :gl.bindBuffer(@gl_element_array_buffer, ebo)
           index_data = for x <- model_data.indices, into: <<>>, do: <<x::unsigned-32-native>>
-          :gl.bufferData(gl_element_array_buffer(), byte_size(index_data), index_data, gl_static_draw())
+          :gl.bufferData(@gl_element_array_buffer, byte_size(index_data), index_data, @gl_static_draw)
 
           # Unbind VAO
           :gl.bindVertexArray(0)
@@ -141,28 +133,28 @@ defmodule GL.ModelLoader do
 
           # Get buffer names - handle cases where buffers might not exist
           vbo = try do
-            {buffer, _, _, _} = :gl.getVertexAttribiv(0, gl_vertex_attrib_array_buffer_binding())
+            {buffer, _, _, _} = :gl.getVertexAttribiv(0, @gl_vertex_attrib_array_buffer_binding)
             buffer
           rescue
             _ -> 0
           end
 
           tbo = try do
-            {buffer, _, _, _} = :gl.getVertexAttribiv(1, gl_vertex_attrib_array_buffer_binding())
+            {buffer, _, _, _} = :gl.getVertexAttribiv(1, @gl_vertex_attrib_array_buffer_binding)
             buffer
           rescue
             _ -> 0
           end
 
           nbo = try do
-            {buffer, _, _, _} = :gl.getVertexAttribiv(2, gl_vertex_attrib_array_buffer_binding())
+            {buffer, _, _, _} = :gl.getVertexAttribiv(2, @gl_vertex_attrib_array_buffer_binding)
             buffer
           rescue
             _ -> 0
           end
 
           ebo = try do
-            [buffer] = :gl.getIntegerv(gl_element_array_buffer_binding())
+            [buffer] = :gl.getIntegerv(@gl_element_array_buffer_binding)
             buffer
           rescue
             _ -> 0
