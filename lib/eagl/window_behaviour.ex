@@ -1,4 +1,4 @@
-defmodule GL.WindowBehaviour do
+defmodule EAGL.WindowBehaviour do
   @moduledoc """
   Behaviour for OpenGL window management.
   Handles window creation, OpenGL context setup, and event loop management.

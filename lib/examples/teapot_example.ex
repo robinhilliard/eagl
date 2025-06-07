@@ -1,15 +1,15 @@
-defmodule EZGL.Examples.Teapot do
+defmodule EAGL.Examples.Teapot do
   @moduledoc """
   Use ModelLoader to load a teapot model and draw it.
   """
 
-  use GL.Window
-  use GL.Const
-  import GL.Shader
-  import GL.Model
+  use EAGL.Window
+  use EAGL.Const
+  import EAGL.Shader
+  import EAGL.Model
 
   @spec run_example() :: :ok | {:error, term()}
-  def run_example, do: GL.Window.run(__MODULE__, "EZ-GL Teapot Example")
+  def run_example, do: EAGL.Window.run(__MODULE__, "EAGL Teapot Example")
 
   @impl true
   def setup do
@@ -93,7 +93,7 @@ defmodule EZGL.Examples.Teapot do
   @impl true
   def cleanup({program, model}) do
     cleanup_program(program)
-    GL.Model.delete_vao(model.vao)
+    EAGL.Model.delete_vao(model.vao)
     :ok
   end
 

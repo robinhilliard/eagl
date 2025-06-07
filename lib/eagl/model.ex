@@ -1,9 +1,9 @@
-defmodule GL.Model do
+defmodule EAGL.Model do
   @moduledoc """
   Helper module for loading 3D model resources and creating OpenGL vertex array objects.
   """
 
-  use GL.Const
+  use EAGL.Const
 
   @app Mix.Project.config()[:app]
 
@@ -17,7 +17,7 @@ defmodule GL.Model do
     model_path = Path.join([priv_dir, "models", filename])
 
     case File.exists?(model_path) do
-      true -> GL.ObjLoader.load_obj(model_path)
+      true -> EAGL.ObjLoader.load_obj(model_path)
       false -> {:error, "Model file not found: #{filename}"}
     end
   end

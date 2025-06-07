@@ -1,14 +1,14 @@
-defmodule EZGL.Examples.SimpleShader do
+defmodule EAGL.Examples.SimpleShader do
   @moduledoc """
   Draw a blue point.
   """
 
-  use GL.Window
-  use GL.Const
-  import GL.Shader
+  use EAGL.Window
+  use EAGL.Const
+  import EAGL.Shader
 
   @spec run_example() :: :ok | {:error, term()}
-  def run_example, do: GL.Window.run(__MODULE__, "EZ-GL Simple Shader Example")
+  def run_example, do: EAGL.Window.run(__MODULE__, "EAGL Simple Shader Example")
 
   @impl true
   def setup do

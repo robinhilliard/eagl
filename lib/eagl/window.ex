@@ -1,10 +1,10 @@
-defmodule GL.Window do
+defmodule EAGL.Window do
   @moduledoc """
   Utility module for OpenGL window management.
   Handles window creation, OpenGL context setup, and event loop management.
   """
 
-  use GL.Const
+  use EAGL.Const
   use WX.Const
   import Bitwise
 
@@ -12,7 +12,7 @@ defmodule GL.Window do
 
   defmacro __using__(_opts) do
     quote do
-      @behaviour GL.WindowBehaviour
+      @behaviour EAGL.WindowBehaviour
     end
   end
 

@@ -1,4 +1,4 @@
-defmodule GL.ObjLoader do
+defmodule EAGL.ObjLoader do
   @moduledoc """
   Simple Wavefront OBJ file loader.
   Currently supports vertices, texture coordinates, normals, and faces.

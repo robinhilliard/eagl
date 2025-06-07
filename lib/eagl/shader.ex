@@ -1,10 +1,10 @@
-defmodule GL.Shader do
+defmodule EAGL.Shader do
   @moduledoc """
   Module for OpenGL shader management.
   Handles shader creation, compilation, and program linking.
   """
 
-  use GL.Const
+  use EAGL.Const
 
   @app Mix.Project.config()[:app]
 
