@@ -1,5 +1,7 @@
 # EAGL
 
+![An Eagle carrying a teapot](/priv/images/eagl_logo.png "EAGL Logo")
+
 Make it **EA**sier to work with Open**GL** in Elixir, using the Erlang WX bindings to OpenGL.
 
 ## Overview
@@ -168,7 +170,7 @@ EAGL.Model.delete_vao(model.vao)
 
 ```
 lib/
-├── eagl/                    # Core EAGL modules
+├── eagl/                   # Core EAGL modules
 │   ├── const.ex            # OpenGL constants
 │   ├── model.ex            # 3D model management
 │   ├── obj_loader.ex       # Wavefront OBJ parser
@@ -179,10 +181,10 @@ lib/
 └── wx/                     # wxWidgets constants
 test/
 ├── eagl/                   # Unit tests for EAGL modules
-└── eagl_test.exs          # Integration tests
+└── eagl_test.exs           # Integration tests
 priv/
 ├── models/                 # 3D model files (.obj)
-└── shaders/               # GLSL shader files
+└── shaders/                # GLSL shader files
 ```
 
 ## Features
