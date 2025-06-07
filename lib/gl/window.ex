@@ -12,6 +12,7 @@ defmodule GL.Window do
       @behaviour GL.WindowBehaviour
       import GL.Const
       import WX.Const
+      use Bitwise, only_operators: true
     end
   end
 
@@ -99,7 +100,7 @@ defmodule GL.Window do
       # Handle both frame and canvas size events
       {:wx, _, obj, _, {:wxSize, :size, {width, height}, _}} ->
         if obj == frame or obj == gl_canvas do
-          IO.puts("Resizing window #{width} x #{height}")
+          #IO.puts("Resizing window #{width} x #{height}")
           :wxGLCanvas.setCurrent(gl_canvas, gl_context)
 
           # Get the actual canvas size after layout
