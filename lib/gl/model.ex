@@ -1,4 +1,4 @@
-defmodule GL.ModelLoader do
+defmodule GL.Model do
   @moduledoc """
   Helper module for loading 3D model resources and creating OpenGL vertex array objects.
   """

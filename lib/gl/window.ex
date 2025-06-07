@@ -61,7 +61,7 @@ defmodule GL.Window do
 
       # Show frame and ensure it's ready
       :wxFrame.show(frame)
-      :timer.sleep(100)  # Give the window system time to create the window
+      :timer.sleep(10)  # Give the window system time to create the window
 
       # Create OpenGL context
       gl_context = :wxGLContext.new(gl_canvas)

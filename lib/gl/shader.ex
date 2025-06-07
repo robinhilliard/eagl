@@ -6,6 +6,8 @@ defmodule GL.Shader do
 
   use GL.Const
 
+  @app Mix.Project.config()[:app]
+
   # Cache shader type values for pattern matching
   @vertex_shader_type @gl_vertex_shader
   @fragment_shader_type @gl_fragment_shader
@@ -15,38 +17,42 @@ defmodule GL.Shader do
   Returns the shader ID.
   """
   @spec create_shader(non_neg_integer(), String.t()) :: {:ok, non_neg_integer()} | {:error, String.t()}
-  def create_shader(shader_type, source) do
+  def create_shader(shader_type, filename) do
     try do
       # Create shader
       shader = :gl.createShader(shader_type)
 
-      # Set shader source
-      :gl.shaderSource(shader, [source])
+      priv_dir = :code.priv_dir(@app)
+      model_path = Path.join([priv_dir, "shaders", filename])
 
-      # Compile shader
-      :gl.compileShader(shader)
+      case File.exists?(model_path) do
+        true ->
+          :gl.shaderSource(shader, [File.read!(model_path)])
+          :gl.compileShader(shader)
+          case check_compile_status(shader) do
+            {:ok, shader} ->
+              shader_type_name = case shader_type do
+                @vertex_shader_type -> "Vertex"
+                @fragment_shader_type -> "Fragment"
+                _ -> "Unknown"
+              end
+              IO.puts("#{shader_type_name} shader compiled successfully")
+              {:ok, shader}
 
-      # Check compilation status - gl:getShaderiv returns just an integer
-      case check_compile_status(shader) do
-        {:ok, shader} ->
-          shader_type_name = case shader_type do
-            @vertex_shader_type -> "Vertex"
-            @fragment_shader_type -> "Fragment"
-            _ -> "Unknown"
+            {:error, message} ->
+              case shader_type do
+                @vertex_shader_type -> "Vertex"
+                @fragment_shader_type -> "Fragment"
+                _ -> "Unknown"
+              end
+              IO.puts(message)
+              cleanup_shader(shader)
+              {:error, message}
           end
-          IO.puts("#{shader_type_name} shader compiled successfully")
-          {:ok, shader}
-
-        {:error, message} ->
-          case shader_type do
-            @vertex_shader_type -> "Vertex"
-            @fragment_shader_type -> "Fragment"
-            _ -> "Unknown"
-          end
-          IO.puts(message)
-          cleanup_shader(shader)
-          {:error, message}
+        false ->
+          {:error, "Shader file not found: #{filename}"}
       end
+
     rescue
       e ->
         {:error, "Shader creation failed: #{inspect(e)}"}

@@ -6,15 +6,15 @@ defmodule EZGL.Examples.Teapot do
   use GL.Window
   use GL.Const
   import GL.Shader
-  import GL.ModelLoader
+  import GL.Model
 
   @spec run_example() :: :ok | {:error, term()}
-  def run_example, do: GL.Window.run(__MODULE__, "EZGL Teapot Example")
+  def run_example, do: GL.Window.run(__MODULE__, "EZ-GL Teapot Example")
 
   @impl true
   def setup do
-    with {:ok, vertex_shader} <- create_shader(@gl_vertex_shader, vertex_shader_source()),
-         {:ok, fragment_shader} <- create_shader(@gl_fragment_shader, fragment_shader_source()),
+    with {:ok, vertex_shader} <- create_shader(@gl_vertex_shader, "vertex_shader_3d_red.glsl"),
+         {:ok, fragment_shader} <- create_shader(@gl_fragment_shader, "fragment_shader_3d_default.glsl"),
          {:ok, program} <- create_attach_link([vertex_shader, fragment_shader]),
          {:ok, model} <- load_model_to_vao("teapot.obj") do
       {:ok, {program, model}}
@@ -93,47 +93,8 @@ defmodule EZGL.Examples.Teapot do
   @impl true
   def cleanup({program, model}) do
     cleanup_program(program)
-    GL.ModelLoader.delete_vao(model.vao)
+    GL.Model.delete_vao(model.vao)
     :ok
   end
 
-  defp vertex_shader_source do
-    """
-    #version 150
-
-    in vec3 position;
-    in vec3 normal;
-    in vec2 tex_coord;
-
-    out vec3 frag_color;
-    out vec2 frag_tex_coord;
-
-    uniform mat4 model;
-    uniform mat4 view;
-    uniform mat4 projection;
-
-    void main() {
-      gl_Position = projection * view * model * vec4(position, 1.0);
-      frag_color = vec3(1.0, 0.0, 0.0);
-      frag_tex_coord = tex_coord;
-    }
-
-    """
-  end
-
-  defp fragment_shader_source do
-    """
-    #version 150
-
-    in vec2 frag_tex_coord;
-    in vec3 frag_color;
-
-    out vec4 out_color;
-
-    void main() {
-      out_color = vec4(frag_color, 1.0);
-    }
-
-    """
-  end
 end

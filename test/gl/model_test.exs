@@ -1,10 +1,10 @@
-defmodule GL.ModelLoaderTest do
+defmodule GL.ModelTest do
   use ExUnit.Case, async: false
-  doctest GL.ModelLoader
+  doctest GL.Model
 
   describe "list_models/0" do
     test "returns list including cube.obj" do
-      models = GL.ModelLoader.list_models()
+      models = GL.Model.list_models()
       assert "cube.obj" in models
       assert "teapot.obj" in models
     end
@@ -12,15 +12,15 @@ defmodule GL.ModelLoaderTest do
 
   describe "load_model/1" do
     test "successfully loads cube model" do
-      assert {:ok, _model_data} = GL.ModelLoader.load_model("cube.obj")
+      assert {:ok, _model_data} = GL.Model.load_model("cube.obj")
     end
 
     test "successfully loads teapot model" do
-      assert {:ok, _model_data} = GL.ModelLoader.load_model("teapot.obj")
+      assert {:ok, _model_data} = GL.Model.load_model("teapot.obj")
     end
 
     test "returns error for non-existent model" do
-      assert {:error, _reason} = GL.ModelLoader.load_model("nonexistent.obj")
+      assert {:error, _reason} = GL.Model.load_model("nonexistent.obj")
     end
   end
 
@@ -63,7 +63,7 @@ defmodule GL.ModelLoaderTest do
 
     test "successfully loads cube model to VAO", %{gl_available: gl_available} do
       if gl_available do
-        assert {:ok, model} = GL.ModelLoader.load_model_to_vao("cube.obj")
+        assert {:ok, model} = GL.Model.load_model_to_vao("cube.obj")
         assert is_map(model)
         assert Map.has_key?(model, :vao)
         assert Map.has_key?(model, :vertex_count)
@@ -72,7 +72,7 @@ defmodule GL.ModelLoaderTest do
         assert model.vertex_count > 0
 
         # Clean up
-        GL.ModelLoader.delete_vao(model.vao)
+        GL.Model.delete_vao(model.vao)
       else
         # Skip test if OpenGL not available
         assert true
@@ -81,7 +81,7 @@ defmodule GL.ModelLoaderTest do
 
     test "successfully loads teapot model to VAO", %{gl_available: gl_available} do
       if gl_available do
-        assert {:ok, model} = GL.ModelLoader.load_model_to_vao("teapot.obj")
+        assert {:ok, model} = GL.Model.load_model_to_vao("teapot.obj")
         assert is_map(model)
         assert Map.has_key?(model, :vao)
         assert Map.has_key?(model, :vertex_count)
@@ -90,7 +90,7 @@ defmodule GL.ModelLoaderTest do
         assert model.vertex_count > 0
 
         # Clean up
-        GL.ModelLoader.delete_vao(model.vao)
+        GL.Model.delete_vao(model.vao)
       else
         # Skip test if OpenGL not available
         assert true
@@ -99,7 +99,7 @@ defmodule GL.ModelLoaderTest do
 
     test "returns error for non-existent model", %{gl_available: gl_available} do
       if gl_available do
-        assert {:error, reason} = GL.ModelLoader.load_model_to_vao("nonexistent.obj")
+        assert {:error, reason} = GL.Model.load_model_to_vao("nonexistent.obj")
         assert is_binary(reason)
         assert String.contains?(reason, "not found")
       else
@@ -124,7 +124,7 @@ defmodule GL.ModelLoaderTest do
           test_file = Path.join(model_dir, "test_invalid.obj")
           File.cp!(temp_file, test_file)
 
-          assert {:error, _reason} = GL.ModelLoader.load_model_to_vao("test_invalid.obj")
+          assert {:error, _reason} = GL.Model.load_model_to_vao("test_invalid.obj")
         after
           File.rm(temp_file)
           priv_dir = :code.priv_dir(:ezgl)
@@ -177,8 +177,8 @@ defmodule GL.ModelLoaderTest do
 
     test "successfully deletes VAO", %{gl_available: gl_available} do
       if gl_available do
-        {:ok, model} = GL.ModelLoader.load_model_to_vao("cube.obj")
-        assert :ok = GL.ModelLoader.delete_vao(model.vao)
+        {:ok, model} = GL.Model.load_model_to_vao("cube.obj")
+        assert :ok = GL.Model.delete_vao(model.vao)
       else
         # Skip test if OpenGL not available
         assert true
@@ -188,7 +188,7 @@ defmodule GL.ModelLoaderTest do
     test "handles invalid VAO gracefully", %{gl_available: gl_available} do
       if gl_available do
         # Test with invalid VAO ID
-        result = GL.ModelLoader.delete_vao(99999)
+        result = GL.Model.delete_vao(99999)
         assert result == :ok or match?({:error, _}, result)
       else
         # Skip test if OpenGL not available
