@@ -14,7 +14,7 @@ defmodule GL.WindowBehaviour do
   Called when the window needs to be rendered.
   The OpenGL context is already current and the viewport is set.
   """
-  @callback render(any()) :: :ok
+  @callback render(width :: float(), height :: float(), state :: any()) :: :ok
 
   @doc """
   Called when the window is being closed.

@@ -4,15 +4,15 @@ defmodule GL.Window do
   Handles window creation, OpenGL context setup, and event loop management.
   """
 
-  import GL.Const, only: [gl_color_buffer_bit: 0]
+  import GL.Const, only: [gl_color_buffer_bit: 0, gl_depth_buffer_bit: 0]
   import WX.Const, only: [wx_gl_rgba: 0, wx_gl_doublebuffer: 0, wx_vertical: 0, wx_expand: 0]
+  import Bitwise
+
+  @default_window_size {1024, 768}
 
   defmacro __using__(_opts) do
     quote do
       @behaviour GL.WindowBehaviour
-      import GL.Const
-      import WX.Const
-      use Bitwise, only_operators: true
     end
   end
 
@@ -20,6 +20,12 @@ defmodule GL.Window do
   Creates and runs an OpenGL window using the given callback module.
   The callback module must implement the GLWindowBehaviour.
   """
+
+  @spec run(module(), String.t()) :: :ok | {:error, term()}
+  def run(callback_module, title) do
+    run(callback_module, title, @default_window_size)
+  end
+
   @spec run(module(), String.t(), {integer(), integer()}) :: :ok | {:error, term()}
   def run(callback_module, title, size) do
     try do
@@ -98,7 +104,7 @@ defmodule GL.Window do
   defp main_loop(frame, gl_canvas, gl_context, callback_module, state) do
     receive do
       # Handle both frame and canvas size events
-      {:wx, _, obj, _, {:wxSize, :size, {width, height}, _}} ->
+      {:wx, _, obj, _, {:wxSize, :size, {_width, _height}, _}} ->
         if obj == frame or obj == gl_canvas do
           #IO.puts("Resizing window #{width} x #{height}")
           :wxGLCanvas.setCurrent(gl_canvas, gl_context)
@@ -119,9 +125,9 @@ defmodule GL.Window do
 
           :gl.viewport(0, 0, canvas_width, canvas_height)
           :gl.clearColor(0.0, 0.0, 0.0, 1.0)
-          :gl.clear(gl_color_buffer_bit())
+          :gl.clear(gl_color_buffer_bit() ||| gl_depth_buffer_bit())
           :wxGLCanvas.swapBuffers(gl_canvas)  # Force a buffer swap after clear
-          callback_module.render(state)
+          callback_module.render(canvas_width * 1.0, canvas_height * 1.0, state)
           :wxGLCanvas.swapBuffers(gl_canvas)
         end
         main_loop(frame, gl_canvas, gl_context, callback_module, state)
@@ -141,7 +147,7 @@ defmodule GL.Window do
         :gl.clearColor(0.0, 0.0, 0.0, 1.0)
         :gl.clear(gl_color_buffer_bit())
         :wxGLCanvas.swapBuffers(gl_canvas)  # Force a buffer swap after clear
-        callback_module.render(state)
+        callback_module.render(width * 1.0, height * 1.0, state)
         :wxGLCanvas.swapBuffers(gl_canvas)
         main_loop(frame, gl_canvas, gl_context, callback_module, state)
 

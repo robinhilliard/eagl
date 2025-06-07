@@ -131,4 +131,6 @@ defmodule GL.Shader do
     :gl.linkProgram(program)
     check_link_status(program)
   end
+
+  
 end

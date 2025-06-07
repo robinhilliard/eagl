@@ -4,10 +4,11 @@ defmodule EZGL.Examples.SimpleShader do
   """
 
   use GL.Window
+  import GL.Const
   import GL.Shader
 
-  @spec run() :: :ok | {:error, term()}
-  def run, do: GL.Window.run(__MODULE__, "EZGL Simple Shader Example", {800, 600})
+  @spec run_example() :: :ok | {:error, term()}
+  def run_example, do: GL.Window.run(__MODULE__, "EZGL Simple Shader Example")
 
   @impl true
   def setup do
@@ -21,7 +22,7 @@ defmodule EZGL.Examples.SimpleShader do
   end
 
   @impl true
-  def render(program) do
+  def render(_, _, program) do
     :gl.useProgram(program)
     :gl.enable(gl_point_smooth())
     :gl.enable(gl_point_size())
