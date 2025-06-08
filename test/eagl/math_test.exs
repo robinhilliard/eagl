@@ -321,11 +321,12 @@ defmodule EAGL.MathTest do
     test "mat4_translate" do
       translation = vec3(10.0, 20.0, 30.0)
       result = mat4_translate(translation)
+      # Column-major format: translation is in the 4th column (last 4 elements)
       expected = mat4(
-        1.0, 0.0, 0.0, 10.0,
-        0.0, 1.0, 0.0, 20.0,
-        0.0, 0.0, 1.0, 30.0,
-        0.0, 0.0, 0.0, 1.0
+        1.0, 0.0, 0.0, 0.0,
+        0.0, 1.0, 0.0, 0.0,
+        0.0, 0.0, 1.0, 0.0,
+        10.0, 20.0, 30.0, 1.0
       )
       assert result == expected
     end
@@ -347,13 +348,15 @@ defmodule EAGL.MathTest do
       result = mat4_rotate_x(angle)
 
       # Check key elements (cos(90°) = 0, sin(90°) = 1)
-      # Matrix is stored as single tuple: [a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p]
-      [{a, _b, _c, _d, _e, f, g, _h, _i, j, k, _l, _m, _n, _o, _p}] = result
+      # Matrix is stored in column-major order: [col0, col1, col2, col3]
+      [{a, b, c, _d, _e, f, g, _h, _i, j, k, _l, _m, _n, _o, _p}] = result
 
       assert_float_equal(a, 1.0)  # [0,0] - should be 1
       assert_float_equal(f, 0.0, 1.0e-15)  # [1,1] = cos(90°) ≈ 0
-      assert_float_equal(g, -1.0) # [1,2] = -sin(90°) = -1
-      assert_float_equal(j, 1.0)  # [2,1] = sin(90°) = 1
+      assert_float_equal(g, 1.0)  # [2,1] = sin(90°) = 1 (column-major)
+      assert_float_equal(b, 0.0, 1.0e-15)  # [1,0] = 0
+      assert_float_equal(c, 0.0, 1.0e-15)  # [2,0] = 0
+      assert_float_equal(j, -1.0) # [1,2] = -sin(90°) = -1 (column-major)
       assert_float_equal(k, 0.0, 1.0e-15)  # [2,2] = cos(90°) ≈ 0
     end
 
@@ -565,14 +568,14 @@ defmodule EAGL.MathTest do
       result = mat4_perspective(fov, aspect, near, far)
 
       # Check that it's a valid perspective matrix (non-zero elements in expected positions)
-      # Matrix is stored as single tuple: [a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p]
+      # Matrix is stored in column-major order: [col0, col1, col2, col3]
       [{a, _b, _c, _d, _e, f, _g, _h, _i, _j, k, l, _m, _n, o, _p}] = result
 
       assert a > 0.0  # X scaling factor
       assert f > 0.0  # Y scaling factor
       assert k < 0.0  # Z scaling factor (should be negative)
-      assert l < 0.0  # Z translation (should be negative)
-      assert_float_equal(o, -1.0)  # Perspective divide factor
+      assert o < 0.0  # Z translation (should be negative) - now in column 3
+      assert_float_equal(l, -1.0)  # Perspective divide factor - now in position l
     end
 
         test "mat4_ortho" do
@@ -603,13 +606,13 @@ defmodule EAGL.MathTest do
       result = mat4_look_at(eye, center, up)
 
       # Should be a valid view matrix (last row should be [0,0,0,1])
-      # Matrix is stored as single tuple: [a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p]
-      [{_a, _b, _c, _d, _e, _f, _g, _h, _i, _j, _k, _l, m, n, o, p}] = result
+      # Matrix is stored in column-major order: [col0, col1, col2, col3]
+      [{_a, _b, _c, d, _e, _f, _g, h, _i, _j, _k, l, _m, _n, _o, p}] = result
 
-      # Last row should be [0, 0, 0, 1]
-      assert_float_equal(m, 0.0)
-      assert_float_equal(n, 0.0)
-      assert_float_equal(o, 0.0)
+      # Bottom row in column-major: elements d, h, l, p
+      assert_float_equal(d, 0.0)
+      assert_float_equal(h, 0.0)
+      assert_float_equal(l, 0.0)
       assert_float_equal(p, 1.0)
     end
   end

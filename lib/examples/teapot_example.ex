@@ -5,6 +5,7 @@ defmodule EAGL.Examples.Teapot do
 
   use EAGL.Window
   use EAGL.Const
+  use EAGL.Math
   import EAGL.Shader
   import EAGL.Model
 
@@ -33,14 +34,9 @@ defmodule EAGL.Examples.Teapot do
     # Ensure we're rendering filled polygons (not wireframe)
     :gl.polygonMode(@gl_front_and_back, @gl_fill)
 
-        # Set up transformation matrices as list with tuples (correct for Erlang GL bindings)
-    # Model matrix (identity) - OpenGL column-major format
-    model_matrix = [{
-      1.0, 0.0, 0.0, 0.0,  # Column 1
-      0.0, 1.0, 0.0, 0.0,  # Column 2
-      0.0, 0.0, 1.0, 0.0,  # Column 3
-      0.0, 0.0, 0.0, 1.0   # Column 4
-    }]
+        # Set up transformation matrices using EAGL.Math (now in column-major format for OpenGL)
+    # Model matrix (identity)
+    model_matrix = mat4_identity()
 
     # Simple orthographic projection matrix with aspect ratio correction
     # Calculate aspect ratio from viewport dimensions
@@ -49,14 +45,10 @@ defmodule EAGL.Examples.Teapot do
     # Adjust width to maintain square proportions
     base_size = 4.0
 
-    # View matrix (translate world to move camera back) - OpenGL column-major format
+    # View matrix (translate world to move camera back)
     camera_distance = base_size * 2.0  # Move camera back proportional to viewing volume
-    view_matrix = [{
-      1.0, 0.0, 0.0, 0.0,                # Column 1
-      0.0, 1.0, 0.0, 0.0,                # Column 2
-      0.0, 0.0, 1.0, 0.0,                # Column 3
-      0.0, 0.0, -camera_distance, 1.0    # Column 4 (translation)
-    }]
+    view_matrix = mat4_translate(vec3(0.0, 0.0, -camera_distance))
+
     left = -base_size * aspect
     right = base_size * aspect
     bottom = -base_size
@@ -68,18 +60,8 @@ defmodule EAGL.Examples.Teapot do
     #IO.puts("Viewing volume: width=#{right-left}, height=#{top-bottom}, depth=#{far-near}")
     #IO.puts("Camera at Z=#{camera_distance}, teapot at origin")
 
-    # Orthographic projection matrix calculation for clarity
-    width = right - left
-    height = top - bottom
-    depth = far - near
-
-    # Orthographic projection matrix
-    projection_matrix = [{
-      2.0 / width,  0.0,           0.0,          0.0,
-      0.0,          2.0 / height,  0.0,          0.0,
-      0.0,          0.0,          -2.0 / depth,  0.0,
-      -(right + left) / width, -(top + bottom) / height, -(far + near) / depth, 1.0
-    }]
+    # Orthographic projection matrix using EAGL.Math
+    projection_matrix = mat4_ortho(left, right, bottom, top, near, far)
 
     # Set uniform matrices
     :gl.getUniformLocation(program, ~c"model") |> :gl.uniformMatrix4fv(0, model_matrix)

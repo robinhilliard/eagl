@@ -1,6 +1,8 @@
 defmodule EAGL.Math do
   @moduledoc """
-  Port of the OpenGL GLM header files to Elixir macros.
+  Port of the OpenGL GLM header files to Elixir.
+  Note that Erlang wx OpenGL represents matricies and vectors as
+  flat tuples nested in lists.
   """
   defmacro __using__(_opts) do
     quote do
@@ -146,29 +148,41 @@ defmodule EAGL.Math do
 
       @doc """
       Create a 4x4 identity matrix.
+      Matrix is stored in column-major order for OpenGL compatibility.
       """
-      defmacro mat4_identity() do
-        quote do: [{1.0, 0.0, 0.0, 0.0,
-                    0.0, 1.0, 0.0, 0.0,
-                    0.0, 0.0, 1.0, 0.0,
-                    0.0, 0.0, 0.0, 1.0}]
+      @spec mat4_identity() :: mat4()
+      def mat4_identity do
+        [{
+          1.0, 0.0, 0.0, 0.0,  # Column 0
+          0.0, 1.0, 0.0, 0.0,  # Column 1
+          0.0, 0.0, 1.0, 0.0,  # Column 2
+          0.0, 0.0, 0.0, 1.0   # Column 3
+        }]
       end
 
       @doc """
       Create a 3x3 identity matrix.
+      Matrix is stored in column-major order for OpenGL compatibility.
       """
-      defmacro mat3_identity() do
-        quote do: [{1.0, 0.0, 0.0,
-                    0.0, 1.0, 0.0,
-                    0.0, 0.0, 1.0}]
+      @spec mat3_identity() :: mat3()
+      def mat3_identity do
+        [{
+          1.0, 0.0, 0.0,  # Column 0
+          0.0, 1.0, 0.0,  # Column 1
+          0.0, 0.0, 1.0   # Column 2
+        }]
       end
 
       @doc """
       Create a 2x2 identity matrix.
+      Matrix is stored in column-major order for OpenGL compatibility.
       """
-      defmacro mat2_identity() do
-        quote do: [{1.0, 0.0,
-                    0.0, 1.0}]
+      @spec mat2_identity() :: mat2()
+      def mat2_identity do
+        [{
+          1.0, 0.0,  # Column 0
+          0.0, 1.0   # Column 1
+        }]
       end
 
       # ============================================================================
@@ -448,6 +462,7 @@ defmodule EAGL.Math do
 
       @doc """
       Convert quaternion to rotation matrix (3x3).
+      Matrix is stored in column-major order for OpenGL compatibility.
       """
       @spec quat_to_mat3(quat()) :: mat3()
       def quat_to_mat3([{x, y, z, w}]) do
@@ -457,24 +472,25 @@ defmodule EAGL.Math do
         wx = w * x2; wy = w * y2; wz = w * z2
 
         [{
-          1.0 - (yy + zz), xy - wz, xz + wy,
-          xy + wz, 1.0 - (xx + zz), yz - wx,
-          xz - wy, yz + wx, 1.0 - (xx + yy)
+          1.0 - (yy + zz), xy + wz, xz - wy,  # Column 0
+          xy - wz, 1.0 - (xx + zz), yz + wx,  # Column 1
+          xz + wy, yz - wx, 1.0 - (xx + yy)   # Column 2
         }]
       end
 
       @doc """
       Convert quaternion to rotation matrix (4x4).
+      Matrix is stored in column-major order for OpenGL compatibility.
       """
       @spec quat_to_mat4(quat()) :: mat4()
       def quat_to_mat4(q) do
         [{m00, m01, m02, m10, m11, m12, m20, m21, m22}] = quat_to_mat3(q)
 
         [{
-          m00, m01, m02, 0.0,
-          m10, m11, m12, 0.0,
-          m20, m21, m22, 0.0,
-          0.0, 0.0, 0.0, 1.0
+          m00, m01, m02, 0.0,  # Column 0
+          m10, m11, m12, 0.0,  # Column 1
+          m20, m21, m22, 0.0,  # Column 2
+          0.0, 0.0, 0.0, 1.0   # Column 3
         }]
       end
 
@@ -583,6 +599,7 @@ defmodule EAGL.Math do
 
       @doc """
       Multiply two 4x4 matrices.
+      All matrices are in column-major order for OpenGL compatibility.
       """
       @spec mat4_mul(mat4(), mat4()) :: mat4()
       def mat4_mul(
@@ -614,6 +631,7 @@ defmodule EAGL.Math do
 
       @doc """
       Multiply two 3x3 matrices.
+      All matrices are in column-major order for OpenGL compatibility.
       """
       @spec mat3_mul(mat3(), mat3()) :: mat3()
       def mat3_mul(
@@ -637,6 +655,7 @@ defmodule EAGL.Math do
 
       @doc """
       Transpose a 4x4 matrix.
+      Input and output matrices are in column-major order for OpenGL compatibility.
       """
       @spec mat4_transpose(mat4()) :: mat4()
       def mat4_transpose([{m00, m01, m02, m03, m10, m11, m12, m13, m20, m21, m22, m23, m30, m31, m32, m33}]) do
@@ -645,6 +664,7 @@ defmodule EAGL.Math do
 
       @doc """
       Transpose a 3x3 matrix.
+      Input and output matrices are in column-major order for OpenGL compatibility.
       """
       @spec mat3_transpose(mat3()) :: mat3()
       def mat3_transpose([{m00, m01, m02, m10, m11, m12, m20, m21, m22}]) do
@@ -653,34 +673,37 @@ defmodule EAGL.Math do
 
       @doc """
       Create a translation matrix.
+      Matrix is stored in column-major order for OpenGL compatibility.
       """
       @spec mat4_translate(vec3()) :: mat4()
       def mat4_translate(v) do
         [{x, y, z}] = v
         [{
-          1.0, 0.0, 0.0, x,
-          0.0, 1.0, 0.0, y,
-          0.0, 0.0, 1.0, z,
-          0.0, 0.0, 0.0, 1.0
+          1.0, 0.0, 0.0, 0.0,  # Column 0
+          0.0, 1.0, 0.0, 0.0,  # Column 1
+          0.0, 0.0, 1.0, 0.0,  # Column 2
+          x,   y,   z,   1.0   # Column 3 (translation)
         }]
       end
 
       @doc """
       Create a scale matrix.
+      Matrix is stored in column-major order for OpenGL compatibility.
       """
       @spec mat4_scale(vec3()) :: mat4()
       def mat4_scale(v) do
         [{x, y, z}] = v
         [{
-          x,   0.0, 0.0, 0.0,
-          0.0, y,   0.0, 0.0,
-          0.0, 0.0, z,   0.0,
-          0.0, 0.0, 0.0, 1.0
+          x,   0.0, 0.0, 0.0,  # Column 0 (X scale)
+          0.0, y,   0.0, 0.0,  # Column 1 (Y scale)
+          0.0, 0.0, z,   0.0,  # Column 2 (Z scale)
+          0.0, 0.0, 0.0, 1.0   # Column 3
         }]
       end
 
       @doc """
       Create a rotation matrix around the X axis.
+      Matrix is stored in column-major order for OpenGL compatibility.
       """
       @spec mat4_rotate_x(float()) :: mat4()
       def mat4_rotate_x(angle) do
@@ -688,15 +711,16 @@ defmodule EAGL.Math do
         s = :math.sin(angle)
 
         [{
-          1.0, 0.0, 0.0, 0.0,
-          0.0, c,  -s,   0.0,
-          0.0, s,   c,   0.0,
-          0.0, 0.0, 0.0, 1.0
+          1.0, 0.0, 0.0, 0.0,  # Column 0
+          0.0, c,   s,   0.0,  # Column 1 (swapped s and -s for column-major)
+          0.0, -s,  c,   0.0,  # Column 2
+          0.0, 0.0, 0.0, 1.0   # Column 3
         }]
       end
 
       @doc """
       Create a rotation matrix around the Y axis.
+      Matrix is stored in column-major order for OpenGL compatibility.
       """
       @spec mat4_rotate_y(float()) :: mat4()
       def mat4_rotate_y(angle) do
@@ -704,15 +728,16 @@ defmodule EAGL.Math do
         s = :math.sin(angle)
 
         [{
-          c,   0.0, s,   0.0,
-          0.0, 1.0, 0.0, 0.0,
-         -s,   0.0, c,   0.0,
-          0.0, 0.0, 0.0, 1.0
+          c,   0.0, -s,  0.0,  # Column 0 (swapped s and -s for column-major)
+          0.0, 1.0, 0.0, 0.0,  # Column 1
+          s,   0.0, c,   0.0,  # Column 2
+          0.0, 0.0, 0.0, 1.0   # Column 3
         }]
       end
 
       @doc """
       Create a rotation matrix around the Z axis.
+      Matrix is stored in column-major order for OpenGL compatibility.
       """
       @spec mat4_rotate_z(float()) :: mat4()
       def mat4_rotate_z(angle) do
@@ -720,10 +745,10 @@ defmodule EAGL.Math do
         s = :math.sin(angle)
 
         [{
-          c,  -s,   0.0, 0.0,
-          s,   c,   0.0, 0.0,
-          0.0, 0.0, 1.0, 0.0,
-          0.0, 0.0, 0.0, 1.0
+          c,   s,   0.0, 0.0,  # Column 0 (swapped s and -s for column-major)
+          -s,  c,   0.0, 0.0,  # Column 1
+          0.0, 0.0, 1.0, 0.0,  # Column 2
+          0.0, 0.0, 0.0, 1.0   # Column 3
         }]
       end
 
@@ -738,7 +763,8 @@ defmodule EAGL.Math do
       @doc """
       Create the inverse of a 4x4 matrix using the adjugate method.
       Returns the original matrix if it's not invertible (determinant is zero).
-      Note this is not from the original OpenGl GLM library.
+      Input and output matrices are in column-major order for OpenGL compatibility.
+      Note this is the only function not from the original OpenGl GLM library.
       """
       @spec mat4_inverse(mat4()) :: mat4()
       def mat4_inverse([{m00, m01, m02, m03, m10, m11, m12, m13, m20, m21, m22, m23, m30, m31, m32, m33}]) do
@@ -799,34 +825,37 @@ defmodule EAGL.Math do
 
       @doc """
       Create a perspective projection matrix.
+      Matrix is stored in column-major order for OpenGL compatibility.
       """
       @spec mat4_perspective(float(), float(), float(), float()) :: mat4()
       def mat4_perspective(fov_y, aspect_ratio, z_near, z_far) do
         tan_half_fov = :math.tan(fov_y * 0.5)
 
         [{
-          1.0 / (aspect_ratio * tan_half_fov), 0.0, 0.0, 0.0,
-          0.0, 1.0 / tan_half_fov, 0.0, 0.0,
-          0.0, 0.0, -(z_far + z_near) / (z_far - z_near), -(2.0 * z_far * z_near) / (z_far - z_near),
-          0.0, 0.0, -1.0, 0.0
+          1.0 / (aspect_ratio * tan_half_fov), 0.0, 0.0, 0.0,  # Column 0
+          0.0, 1.0 / tan_half_fov, 0.0, 0.0,                   # Column 1
+          0.0, 0.0, -(z_far + z_near) / (z_far - z_near), -1.0,  # Column 2
+          0.0, 0.0, -(2.0 * z_far * z_near) / (z_far - z_near), 0.0  # Column 3
         }]
       end
 
       @doc """
       Create an orthographic projection matrix.
+      Matrix is stored in column-major order for OpenGL compatibility.
       """
       @spec mat4_ortho(float(), float(), float(), float(), float(), float()) :: mat4()
       def mat4_ortho(left, right, bottom, top, z_near, z_far) do
         [{
-          2.0 / (right - left), 0.0, 0.0, -(right + left) / (right - left),
-          0.0, 2.0 / (top - bottom), 0.0, -(top + bottom) / (top - bottom),
-          0.0, 0.0, -2.0 / (z_far - z_near), -(z_far + z_near) / (z_far - z_near),
-          0.0, 0.0, 0.0, 1.0
+          2.0 / (right - left), 0.0, 0.0, 0.0,  # Column 0
+          0.0, 2.0 / (top - bottom), 0.0, 0.0,  # Column 1
+          0.0, 0.0, -2.0 / (z_far - z_near), 0.0,  # Column 2
+          -(right + left) / (right - left), -(top + bottom) / (top - bottom), -(z_far + z_near) / (z_far - z_near), 1.0  # Column 3
         }]
       end
 
       @doc """
       Create a look-at view matrix.
+      Matrix is stored in column-major order for OpenGL compatibility.
       """
       @spec mat4_look_at(vec3(), vec3(), vec3()) :: mat4()
       def mat4_look_at(eye, center, up) do
@@ -837,13 +866,12 @@ defmodule EAGL.Math do
         [{fx, fy, fz}] = f
         [{sx, sy, sz}] = s
         [{ux, uy, uz}] = u
-        [{ex, ey, ez}] = eye
 
         [{
-          sx, ux, -fx, -dot(s, eye),
-          sy, uy, -fy, -dot(u, eye),
-          sz, uz, -fz,  dot(f, eye),
-          0.0, 0.0, 0.0, 1.0
+          sx, sy, sz, 0.0,          # Column 0 (right vector)
+          ux, uy, uz, 0.0,          # Column 1 (up vector)
+          -fx, -fy, -fz, 0.0,      # Column 2 (forward vector, negated)
+          -dot(s, eye), -dot(u, eye), dot(f, eye), 1.0  # Column 3 (translation)
         }]
       end
 
