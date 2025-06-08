@@ -16,6 +16,7 @@ EAGL provides a clean, idiomatic Elixir interface for:
 - Window creation and event handling
 - Vertex Array Objects (VAO) management
 - OpenGL constants and utilities
+- A port of the GLM math header library
 
 ## Examples
 
@@ -25,25 +26,29 @@ EAGL provides a clean, idiomatic Elixir interface for:
 ## Requirements
 
 - **Elixir**: 1.14 or later
-- **Erlang/OTP**: 25 or later  
+- **Erlang/OTP**: 25 or later (with wx support - included in standard distributions)
 - **OpenGL**: 3.3 or later (for modern shader support)
-- **wxWidgets**: Development libraries for your platform
 
-### Platform-specific Setup
+### Platform-specific Notes
 
-#### Ubuntu/Debian
+#### All Platforms
+EAGL uses Erlang's built-in `wx` module for windowing, which is included with standard Erlang/OTP installations. No additional GUI libraries need to be installed.
+
+#### Linux
+Ensure you have OpenGL drivers installed:
 ```bash
-sudo apt-get install libwxgtk3.0-gtk3-dev libgl1-mesa-dev libglu1-mesa-dev
+# Ubuntu/Debian
+sudo apt-get install libgl1-mesa-dev libglu1-mesa-dev
+
+# Fedora/RHEL
+sudo dnf install mesa-libGL-devel mesa-libGLU-devel
 ```
 
 #### macOS
-```bash
-brew install wxwidgets
-```
+OpenGL is included with macOS. No additional setup required.
 
-#### Windows
-- Install Visual Studio with C++ support
-- wxWidgets should be available through vcpkg or manual installation
+#### Windows  
+OpenGL is typically available through graphics drivers. If you encounter issues, ensure your graphics drivers are up to date.
 
 ## Installation
 

@@ -35,7 +35,7 @@ defmodule EAGL.Examples.Teapot do
     # View matrix (translate world to move camera back)
     view_matrix = mat4_look_at(
       vec3(0.0, 1.0, -5.0), # camera position (x, y, z)
-      vec3(0.0, 1.0, 0.0),  # camera target (x, y, z)
+      vec3(0.0, 1.5, 0.0),  # camera target (x, y, z)
       vec3(0.0, 1.0, 0.0)   # camera up vector (x, y, z)
     )
 
