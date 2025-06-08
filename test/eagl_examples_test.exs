@@ -1,5 +1,11 @@
 defmodule EAGL.Examples.Test do
   use ExUnit.Case, async: false
+  use EAGL.Math
+
+  test "math example" do
+    EAGL.Examples.Math.run_all_demos()
+    assert true
+  end
 
   test "simple shader example" do
     EAGL.Examples.SimpleShader.run_example()
