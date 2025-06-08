@@ -735,6 +735,64 @@ defmodule EAGL.Math do
         quat_from_axis_angle(axis, angle) |> quat_to_mat4()
       end
 
+      @doc """
+      Create the inverse of a 4x4 matrix using the adjugate method.
+      Returns the original matrix if it's not invertible (determinant is zero).
+      Note this is not from the original OpenGl GLM library.
+      """
+      @spec mat4_inverse(mat4()) :: mat4()
+      def mat4_inverse([{m00, m01, m02, m03, m10, m11, m12, m13, m20, m21, m22, m23, m30, m31, m32, m33}]) do
+        # Calculate the 2x2 determinants for the first two rows
+        s0 = m00 * m11 - m10 * m01
+        s1 = m00 * m12 - m10 * m02
+        s2 = m00 * m13 - m10 * m03
+        s3 = m01 * m12 - m11 * m02
+        s4 = m01 * m13 - m11 * m03
+        s5 = m02 * m13 - m12 * m03
+
+        # Calculate the 2x2 determinants for the last two rows
+        c5 = m22 * m33 - m32 * m23
+        c4 = m21 * m33 - m31 * m23
+        c3 = m21 * m32 - m31 * m22
+        c2 = m20 * m33 - m30 * m23
+        c1 = m20 * m32 - m30 * m22
+        c0 = m20 * m31 - m30 * m21
+
+        # Calculate the determinant
+        det = s0 * c5 - s1 * c4 + s2 * c3 + s3 * c2 - s4 * c1 + s5 * c0
+
+        # Check for non-invertible matrix
+        if abs(det) < 1.0e-14 do
+          # Return the original matrix if not invertible
+          [{m00, m01, m02, m03, m10, m11, m12, m13, m20, m21, m22, m23, m30, m31, m32, m33}]
+        else
+          invdet = 1.0 / det
+
+          # Calculate the inverse matrix elements
+          inv00 = (m11 * c5 - m12 * c4 + m13 * c3) * invdet
+          inv01 = (-m01 * c5 + m02 * c4 - m03 * c3) * invdet
+          inv02 = (m31 * s5 - m32 * s4 + m33 * s3) * invdet
+          inv03 = (-m21 * s5 + m22 * s4 - m23 * s3) * invdet
+
+          inv10 = (-m10 * c5 + m12 * c2 - m13 * c1) * invdet
+          inv11 = (m00 * c5 - m02 * c2 + m03 * c1) * invdet
+          inv12 = (-m30 * s5 + m32 * s2 - m33 * s1) * invdet
+          inv13 = (m20 * s5 - m22 * s2 + m23 * s1) * invdet
+
+          inv20 = (m10 * c4 - m11 * c2 + m13 * c0) * invdet
+          inv21 = (-m00 * c4 + m01 * c2 - m03 * c0) * invdet
+          inv22 = (m30 * s4 - m31 * s2 + m33 * s0) * invdet
+          inv23 = (-m20 * s4 + m21 * s2 - m23 * s0) * invdet
+
+          inv30 = (-m10 * c3 + m11 * c1 - m12 * c0) * invdet
+          inv31 = (m00 * c3 - m01 * c1 + m02 * c0) * invdet
+          inv32 = (-m30 * s3 + m31 * s1 - m32 * s0) * invdet
+          inv33 = (m20 * s3 - m21 * s1 + m22 * s0) * invdet
+
+          [{inv00, inv01, inv02, inv03, inv10, inv11, inv12, inv13, inv20, inv21, inv22, inv23, inv30, inv31, inv32, inv33}]
+        end
+      end
+
       # ============================================================================
       # PROJECTION AND VIEW TRANSFORMATIONS
       # ============================================================================

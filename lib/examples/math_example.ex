@@ -192,6 +192,27 @@ defmodule EAGL.Examples.Math do
     # Transpose
     IO.puts("transpose(rotation_x) = #{inspect(mat4_transpose(rotation_x))}")
 
+    # Matrix inversion
+    IO.puts("\nMatrix Inversion:")
+    translation_inverse = mat4_inverse(translation)
+    scale_inverse = mat4_inverse(scale)
+    rotation_inverse = mat4_inverse(rotation_x)
+
+    # Verify M * M^-1 = I
+    translation_check = mat4_mul(translation, translation_inverse)
+    scale_check = mat4_mul(scale, scale_inverse)
+    rotation_check = mat4_mul(rotation_x, rotation_inverse)
+
+    IO.puts("translation * translation^-1 = identity? #{is_identity_matrix?(translation_check)}")
+    IO.puts("scale * scale^-1 = identity? #{is_identity_matrix?(scale_check)}")
+    IO.puts("rotation * rotation^-1 = identity? #{is_identity_matrix?(rotation_check)}")
+
+    # Combined transformation inversion
+    combined_transform = translation |> mat4_mul(rotation_x) |> mat4_mul(scale)
+    combined_inverse = mat4_inverse(combined_transform)
+    combined_check = mat4_mul(combined_transform, combined_inverse)
+    IO.puts("complex_transform * complex_transform^-1 = identity? #{is_identity_matrix?(combined_check)}")
+
     # Projection matrices
     IO.puts("\nProjection Matrices:")
     perspective = mat4_perspective(radians(45.0), 16.0/9.0, 0.1, 100.0)
@@ -200,12 +221,16 @@ defmodule EAGL.Examples.Math do
     IO.puts("Perspective (45° FOV, 16:9): #{inspect(perspective)}")
     IO.puts("Orthographic (-10 to 10): #{inspect(orthographic)}")
 
-    # View matrix
+    # View matrix and its inverse
     eye = vec3(0.0, 0.0, 5.0)
     center = vec3_zero()
     up = vec3_unit_y()
     view = mat4_look_at(eye, center, up)
+    view_inverse = mat4_inverse(view)
+    view_check = mat4_mul(view, view_inverse)
+
     IO.puts("Look-at matrix: #{inspect(view)}")
+    IO.puts("look_at * look_at^-1 = identity? #{is_identity_matrix?(view_check)}")
 
     IO.puts("\n=== End Matrix Operations Demo ===\n")
   end
@@ -406,6 +431,14 @@ defmodule EAGL.Examples.Math do
     transformation_pipeline_demo()
     lighting_demo()
     opengl_usage_examples()
+  end
+
+  # Helper function to check if a matrix is approximately identity
+  defp is_identity_matrix?([{a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p}], tolerance \\ 1.0e-6) do
+    abs(a - 1.0) < tolerance and abs(b) < tolerance and abs(c) < tolerance and abs(d) < tolerance and
+    abs(e) < tolerance and abs(f - 1.0) < tolerance and abs(g) < tolerance and abs(h) < tolerance and
+    abs(i) < tolerance and abs(j) < tolerance and abs(k - 1.0) < tolerance and abs(l) < tolerance and
+    abs(m) < tolerance and abs(n) < tolerance and abs(o) < tolerance and abs(p - 1.0) < tolerance
   end
 
   # Legacy function names for backward compatibility

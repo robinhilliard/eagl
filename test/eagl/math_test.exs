@@ -356,6 +356,130 @@ defmodule EAGL.MathTest do
       assert_float_equal(j, 1.0)  # [2,1] = sin(90°) = 1
       assert_float_equal(k, 0.0, 1.0e-15)  # [2,2] = cos(90°) ≈ 0
     end
+
+    test "mat4_inverse of identity" do
+      identity = mat4_identity()
+      result = mat4_inverse(identity)
+      assert result == identity
+    end
+
+    test "mat4_inverse of translation matrix" do
+      translation = vec3(10.0, 20.0, 30.0)
+      matrix = mat4_translate(translation)
+      inverse = mat4_inverse(matrix)
+
+      # M * M^-1 should equal identity
+      product = mat4_mul(matrix, inverse)
+      identity = mat4_identity()
+
+      # Check if the product is approximately identity
+      assert_matrices_equal(product, identity)
+    end
+
+    test "mat4_inverse of scale matrix" do
+      scale_vec = vec3(2.0, 3.0, 4.0)
+      matrix = mat4_scale(scale_vec)
+      inverse = mat4_inverse(matrix)
+
+      # M * M^-1 should equal identity
+      product = mat4_mul(matrix, inverse)
+      identity = mat4_identity()
+
+      assert_matrices_equal(product, identity)
+    end
+
+    test "mat4_inverse of rotation matrix" do
+      angle = radians(45.0)
+      matrix = mat4_rotate_x(angle)
+      inverse = mat4_inverse(matrix)
+
+      # M * M^-1 should equal identity
+      product = mat4_mul(matrix, inverse)
+      identity = mat4_identity()
+
+      assert_matrices_equal(product, identity)
+    end
+
+    test "mat4_inverse of combined transformations" do
+      # Create a complex transformation matrix
+      translation = mat4_translate(vec3(5.0, 10.0, 15.0))
+      rotation = mat4_rotate_y(radians(30.0))
+      scale = mat4_scale(vec3(2.0, 1.5, 0.8))
+
+      # Combine transformations: T * R * S
+      matrix = translation |> mat4_mul(rotation) |> mat4_mul(scale)
+      inverse = mat4_inverse(matrix)
+
+      # M * M^-1 should equal identity
+      product = mat4_mul(matrix, inverse)
+      identity = mat4_identity()
+
+      assert_matrices_equal(product, identity)
+    end
+
+    test "mat4_inverse of singular matrix returns original" do
+      # Create a matrix with zero determinant (all elements zero except last)
+      singular = mat4(
+        0.0, 0.0, 0.0, 0.0,
+        0.0, 0.0, 0.0, 0.0,
+        0.0, 0.0, 0.0, 0.0,
+        0.0, 0.0, 0.0, 1.0
+      )
+
+      result = mat4_inverse(singular)
+      # Should return the original matrix since it's not invertible
+      assert result == singular
+    end
+
+    test "mat4_inverse preserves orthogonal matrices" do
+      # Rotation matrices are orthogonal, so inverse = transpose
+      angle = radians(60.0)
+      rotation = mat4_rotate_z(angle)
+      inverse = mat4_inverse(rotation)
+      transpose = mat4_transpose(rotation)
+
+      # For rotation matrices, inverse should equal transpose
+      assert_matrices_equal(inverse, transpose)
+    end
+
+    test "mat4_inverse of look_at matrix" do
+      eye = vec3(10.0, 5.0, 15.0)
+      center = vec3(0.0, 0.0, 0.0)
+      up = vec3(0.0, 1.0, 0.0)
+
+      view_matrix = mat4_look_at(eye, center, up)
+      inverse = mat4_inverse(view_matrix)
+
+      # M * M^-1 should equal identity
+      product = mat4_mul(view_matrix, inverse)
+      identity = mat4_identity()
+
+      assert_matrices_equal(product, identity)
+    end
+  end
+
+  # Helper function to compare matrices with floating point tolerance
+  defp assert_matrices_equal(
+    [{a1, b1, c1, d1, e1, f1, g1, h1, i1, j1, k1, l1, m1, n1, o1, p1}],
+    [{a2, b2, c2, d2, e2, f2, g2, h2, i2, j2, k2, l2, m2, n2, o2, p2}],
+    tolerance \\ 1.0e-6
+  ) do
+    assert_float_equal(a1, a2, tolerance)
+    assert_float_equal(b1, b2, tolerance)
+    assert_float_equal(c1, c2, tolerance)
+    assert_float_equal(d1, d2, tolerance)
+    assert_float_equal(e1, e2, tolerance)
+    assert_float_equal(f1, f2, tolerance)
+    assert_float_equal(g1, g2, tolerance)
+    assert_float_equal(h1, h2, tolerance)
+    assert_float_equal(i1, i2, tolerance)
+    assert_float_equal(j1, j2, tolerance)
+    assert_float_equal(k1, k2, tolerance)
+    assert_float_equal(l1, l2, tolerance)
+    assert_float_equal(m1, m2, tolerance)
+    assert_float_equal(n1, n2, tolerance)
+    assert_float_equal(o1, o2, tolerance)
+    assert_float_equal(p1, p2, tolerance)
   end
 
   describe "Utility Functions" do
