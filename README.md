@@ -7,7 +7,7 @@ Make it **EA**sier to work with Open**GL** in Elixir, using the Erlang WX bindin
 ## Overview
 
 Most examples of working with OpenGL are written in C++ or C# (Unity). The purpose of the EAGL library is to make it easier to translate OpenGL tutorials
-and examples from sites like [Learn OpenGL](https://learnopengl.com) into Elixir and eventually write arbitrarily complex OpenGL applications without a 
+and examples from sites like [Learn OpenGL](https://learnopengl.com) into Elixir with some help to get over the initial learning curve and eventually write arbitrarily complex OpenGL applications without a 
 pile of boilerplate.
 
 EAGL provides a clean, idiomatic Elixir interface for:
@@ -17,6 +17,11 @@ EAGL provides a clean, idiomatic Elixir interface for:
 - Vertex Array Objects (VAO) management
 - OpenGL constants and utilities
 - A port of the GLM math header library
+
+Non-goals:
+- Heavy abstraction/wrapping of the Erlang wx library: we want it to be easy to see the correspondence betweeen OpenGL examples in other languages and ours
+- A Shader DSL like Nx
+- A UI layout/component library
 
 ## Examples
 
@@ -144,6 +149,7 @@ end
 - **`EAGL.Shader`** - Shader compilation and program linking  
 - **`EAGL.Model`** - 3D model loading and VAO creation
 - **`EAGL.ObjLoader`** - Wavefront OBJ file parsing
+- **`EAGL.Math`** - GLM-style math library with vectors, matrices, and quaternions
 - **`EAGL.Const`** - OpenGL constants and enums
 - **`EAGL.WindowBehaviour`** - Behavior for window callbacks
 
@@ -171,12 +177,38 @@ EAGL.Window.run(MyModule, "Window Title", {800, 600})
 EAGL.Model.delete_vao(model.vao)
 ```
 
+### Math Operations
+
+```elixir
+use EAGL.Math
+
+# Create vectors and matrices
+position = vec3(1.0, 2.0, 3.0)
+rotation = quat_from_euler(radians(45.0), 0.0, 0.0)
+model_matrix = mat4_translate(mat4_identity(), position)
+
+# Transform operations
+view_matrix = mat4_look_at(
+  vec3(0.0, 0.0, 5.0),  # eye position
+  vec3(0.0, 0.0, 0.0),  # look at center
+  vec3(0.0, 1.0, 0.0)   # up vector
+)
+
+projection_matrix = mat4_perspective(
+  radians(45.0),  # field of view
+  16.0/9.0,       # aspect ratio
+  0.1,            # near plane
+  100.0           # far plane
+)
+```
+
 ## Project Structure
 
 ```
 lib/
 ├── eagl/                   # Core EAGL modules
 │   ├── const.ex            # OpenGL constants
+│   ├── math.ex             # GLM-style math library
 │   ├── model.ex            # 3D model management
 │   ├── obj_loader.ex       # Wavefront OBJ parser
 │   ├── shader.ex           # Shader compilation
@@ -196,6 +228,7 @@ priv/
 
 - ✅ **Shader Management**: Automatic compilation, linking, and error reporting
 - ✅ **3D Model Loading**: Wavefront OBJ format with normals and texture coordinates
+- ✅ **Math Library**: GLM-compatible vectors, matrices, quaternions with full OpenGL integration
 - ✅ **Window Management**: Cross-platform window creation with wxWidgets
 - ✅ **Event Handling**: Resize, close, and paint events
 - ✅ **Resource Cleanup**: Automatic cleanup of OpenGL resources
@@ -218,7 +251,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 - [Learn OpenGL](https://learnopengl.com) for excellent OpenGL tutorials
 - The Erlang/OTP team for wxWidgets bindings
-- The Elixir community for inspiration and support
-- Claude Sonnet for giving me the patience to work through the lack of examples and get stuff actually running
+- The Elixir community for inspiration and support, particularly the Elixir Sydney/Australia User Group
+- Claude Sonnet for giving me the patience to work through the lack of examples and get to running code on my 3rd or 4th attempt over the years to do something with gl via Erlang and WX
 - The name EAGL(e) is a tip of the hat to [Wings3D](https://wings3d.com), a highpoint in BEAM-based 3D programming to date.
 
