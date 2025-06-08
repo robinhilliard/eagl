@@ -1,16 +1,17 @@
 defmodule EAGL.Examples.Teapot do
   @moduledoc """
-  Use ModelLoader to load a teapot model and draw it.
+  Draw a 3D teapot.
   """
 
   use EAGL.Window
   use EAGL.Const
   use EAGL.Math
+
   import EAGL.Shader
   import EAGL.Model
 
   @spec run_example() :: :ok | {:error, term()}
-  def run_example, do: EAGL.Window.run(__MODULE__, "EAGL Teapot Example")
+  def run_example, do: EAGL.Window.run(__MODULE__, "EAGL Utah Teapot Example")
 
   @impl true
   def setup do
@@ -19,10 +20,6 @@ defmodule EAGL.Examples.Teapot do
          {:ok, program} <- create_attach_link([vertex_shader, fragment_shader]),
          {:ok, model} <- load_model_to_vao("teapot.obj") do
       {:ok, {program, model}}
-    else
-      error ->
-        IO.inspect(error, label: "Setup error")
-        error
     end
   end
 
@@ -30,38 +27,21 @@ defmodule EAGL.Examples.Teapot do
   def render(viewport_width, viewport_height, {program, model}) do
     :gl.useProgram(program)
     :gl.enable(@gl_depth_test)
-
-    # Ensure we're rendering filled polygons (not wireframe)
     :gl.polygonMode(@gl_front_and_back, @gl_fill)
 
-        # Set up transformation matrices using EAGL.Math (now in column-major format for OpenGL)
-    # Model matrix (identity)
+    # Model matrix (identity to leave the model as is)
     model_matrix = mat4_identity()
 
-    # Simple orthographic projection matrix with aspect ratio correction
-    # Calculate aspect ratio from viewport dimensions
-    aspect = viewport_width / viewport_height
-
-    # Adjust width to maintain square proportions
-    base_size = 4.0
-
     # View matrix (translate world to move camera back)
-    camera_distance = base_size * 2.0  # Move camera back proportional to viewing volume
-    view_matrix = mat4_translate(vec3(0.0, 0.0, -camera_distance))
+    view_matrix = mat4_look_at(
+      vec3(0.0, 1.0, -5.0), # camera position (x, y, z)
+      vec3(0.0, 1.0, 0.0),  # camera target (x, y, z)
+      vec3(0.0, 1.0, 0.0)   # camera up vector (x, y, z)
+    )
 
-    left = -base_size * aspect
-    right = base_size * aspect
-    bottom = -base_size
-    top = base_size
-    near = -base_size * 3.0  # Extend clipping planes
-    far = base_size * 3.0
-
-    # Debug output
-    #IO.puts("Viewing volume: width=#{right-left}, height=#{top-bottom}, depth=#{far-near}")
-    #IO.puts("Camera at Z=#{camera_distance}, teapot at origin")
-
-    # Orthographic projection matrix using EAGL.Math
-    projection_matrix = mat4_ortho(left, right, bottom, top, near, far)
+    # Perspective projection matrix
+    projection_matrix = mat4_perspective(
+      45.0, viewport_width / viewport_height, 0.1, 100.0)
 
     # Set uniform matrices
     :gl.getUniformLocation(program, ~c"model") |> :gl.uniformMatrix4fv(0, model_matrix)
@@ -75,7 +55,7 @@ defmodule EAGL.Examples.Teapot do
   @impl true
   def cleanup({program, model}) do
     cleanup_program(program)
-    EAGL.Model.delete_vao(model.vao)
+    delete_vao(model.vao)
     :ok
   end
 
