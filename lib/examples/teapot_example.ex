@@ -32,7 +32,7 @@ defmodule EAGL.Examples.Teapot do
          {:ok, vertex_normals} <- create_shader(@gl_vertex_shader, "vertex_shader_phong.glsl"),
          {:ok, fragment_normals} <- create_shader(@gl_fragment_shader, "fragment_shader_normals_debug.glsl"),
          {:ok, program_normals} <- create_attach_link([vertex_normals, fragment_normals]),
-         {:ok, model} <- load_model_to_vao("teapot.obj", clockwise_winding: false) do
+         {:ok, model} <- load_model_to_vao("teapot.obj", clockwise_winding: true) do
 
       # Check depth buffer availability
       depth_bits = :gl.getIntegerv(@gl_depth_bits)
@@ -76,8 +76,8 @@ defmodule EAGL.Examples.Teapot do
     :gl.cullFace(@gl_back)
 
     # Set front face winding order to match the model's actual winding
-    # The teapot uses clockwise winding, so front faces are clockwise
-    :gl.frontFace(@gl_ccw)  # Clockwise winding to match teapot.obj
+    # The teapot uses non-standard clockwise winding for front faces
+    :gl.frontFace(@gl_ccw)
 
     # Set polygon mode
     :gl.polygonMode(@gl_front, @gl_fill)
@@ -101,8 +101,10 @@ defmodule EAGL.Examples.Teapot do
     :gl.getUniformLocation(program, ~c"view") |> :gl.uniformMatrix4fv(0, view_matrix)
     :gl.getUniformLocation(program, ~c"projection") |> :gl.uniformMatrix4fv(0, projection_matrix)
 
-    # Set lighting uniforms for Phong and debug shaders
+        # Set lighting uniforms for Phong and debug shaders
     if current_shader == 1 or current_shader == 2 do
+      # Light positioned with camera - should illuminate visible surfaces
+      # Camera at (0, 4, -8) looking at teapot, light should be nearby to illuminate what we see
       light_position = vec3(0.0, 4.0, -8.0)
       light_color = vec3(1.0, 1.0, 1.0)  # White light
 
