@@ -21,4 +21,13 @@ defmodule EAGL.WindowBehaviour do
   Should clean up resources in state.
   """
   @callback cleanup(any()) :: :ok
+
+  @doc """
+  Called when an event occurs (keyboard, mouse, etc.).
+  This callback is optional. If not implemented, events are ignored.
+  Should return {:ok, new_state} to continue with updated state.
+  """
+  @callback handle_event(event :: any(), state :: any()) :: {:ok, any()}
+
+  @optional_callbacks handle_event: 2
 end

@@ -402,6 +402,7 @@ defmodule EAGL.Const do
       # DEPTH TESTING
       # ============================================================================
 
+      @gl_depth_bits 3414  # GL_DEPTH_BITS
       @gl_never 512  # GL_NEVER
       @gl_less 513  # GL_LESS
       @gl_equal 514  # GL_EQUAL
@@ -454,6 +455,18 @@ defmodule EAGL.Const do
       # Point size
       @gl_program_point_size 34370  # GL_PROGRAM_POINT_SIZE
       @gl_point_size 2833  # GL_POINT_SIZE
+
+      # ============================================================================
+      # FRAMEBUFFER OBJECTS
+      # ============================================================================
+
+      @gl_framebuffer 36160  # GL_FRAMEBUFFER
+      @gl_read_framebuffer 36008  # GL_READ_FRAMEBUFFER
+      @gl_draw_framebuffer 36009  # GL_DRAW_FRAMEBUFFER
+      @gl_color_attachment0 36064  # GL_COLOR_ATTACHMENT0
+      @gl_depth_attachment 36096  # GL_DEPTH_ATTACHMENT
+      @gl_framebuffer_complete 36053  # GL_FRAMEBUFFER_COMPLETE
+      @gl_depth_component24 33190  # GL_DEPTH_COMPONENT24
 
       # ============================================================================
       # MATRIX MODES

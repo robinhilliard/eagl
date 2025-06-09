@@ -861,17 +861,17 @@ defmodule EAGL.Math do
       def mat4_look_at(eye, center, up) do
         f = normalize(vec_sub(center, eye))
         s = normalize(cross(f, up))
-        u = cross(s, f)
+        u = normalize(cross(s, f))
 
         [{fx, fy, fz}] = f
         [{sx, sy, sz}] = s
         [{ux, uy, uz}] = u
 
         [{
-          sx, sy, sz, 0.0,          # Column 0 (right vector)
-          ux, uy, uz, 0.0,          # Column 1 (up vector)
-          -fx, -fy, -fz, 0.0,      # Column 2 (forward vector, negated)
-          -dot(s, eye), -dot(u, eye), dot(f, eye), 1.0  # Column 3 (translation)
+           sx,           sy,           sz,          0.0,          # Column 0 (right vector)
+           ux,           uy,           uz,          0.0,          # Column 1 (up vector)
+           -fx,          -fy,          -fz,          0.0,          # Column 2 (forward vector, negated)
+          -dot(s, eye), -dot(u, eye),  dot(f, eye), 1.0           # Column 3 (translation)
         }]
       end
 

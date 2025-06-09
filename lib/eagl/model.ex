@@ -10,14 +10,17 @@ defmodule EAGL.Model do
   @doc """
   Loads a model from the priv/models directory.
   Returns the processed model data ready for OpenGL.
+
+  Options:
+    - :clockwise_winding - boolean, set to true if the model uses clockwise vertex winding (default: false)
   """
-  @spec load_model(String.t()) :: {:ok, map()} | {:error, String.t()}
-  def load_model(filename) do
+  @spec load_model(String.t(), keyword()) :: {:ok, map()} | {:error, String.t()}
+  def load_model(filename, opts \\ []) do
     priv_dir = :code.priv_dir(@app)
     model_path = Path.join([priv_dir, "models", filename])
 
     case File.exists?(model_path) do
-      true -> EAGL.ObjLoader.load_obj(model_path)
+      true -> EAGL.ObjLoader.load_obj(model_path, opts)
       false -> {:error, "Model file not found: #{filename}"}
     end
   end
@@ -44,10 +47,13 @@ defmodule EAGL.Model do
   - Location 0: Vertex positions (vec3)
   - Location 1: Texture coordinates (vec2)
   - Location 2: Normals (vec3)
+
+  Options:
+    - :clockwise_winding - boolean, set to true if the model uses clockwise vertex winding (default: false)
   """
-  @spec load_model_to_vao(String.t()) :: {:ok, %{vao: integer(), vertex_count: integer()}} | {:error, String.t()}
-  def load_model_to_vao(filename) do
-    case load_model(filename) do
+  @spec load_model_to_vao(String.t(), keyword()) :: {:ok, %{vao: integer(), vertex_count: integer()}} | {:error, String.t()}
+  def load_model_to_vao(filename, opts \\ []) do
+    case load_model(filename, opts) do
       {:ok, model_data} ->
         # Validate model data before creating VAO
         cond do

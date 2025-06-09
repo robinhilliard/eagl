@@ -11,9 +11,12 @@ defmodule EAGL.ObjLoader do
     - :tex_coords - List of floats in u,v order
     - :normals - List of floats in x,y,z order
     - :indices - List of integers for indexed drawing
+
+  Options:
+    - :clockwise_winding - boolean, set to true if the model uses clockwise vertex winding (default: false)
   """
-  @spec load_obj(String.t()) :: {:ok, map()} | {:error, String.t()}
-  def load_obj(file_path) do
+  @spec load_obj(String.t(), keyword()) :: {:ok, map()} | {:error, String.t()}
+  def load_obj(file_path, opts \\ []) do
     try do
       # Initial accumulator for parsing
       initial_state = %{
@@ -37,7 +40,8 @@ defmodule EAGL.ObjLoader do
         |> Enum.reduce(initial_state, &parse_line/2)
 
       # Process faces to create indexed data
-      final_data = process_faces(parsed_data)
+      clockwise_winding = Keyword.get(opts, :clockwise_winding, false)
+      final_data = process_faces(parsed_data, clockwise_winding)
 
       {:ok, final_data}
     rescue
@@ -97,11 +101,18 @@ defmodule EAGL.ObjLoader do
   end
 
   # Process faces to create indexed vertex data
-  defp process_faces(data) do
+  defp process_faces(data, clockwise_winding) do
+    # Generate normals if none exist
+    data_with_normals = if length(data.normals) == 0 do
+      generate_face_normals(data, clockwise_winding)
+    else
+      data
+    end
+
     # Create a map to store unique vertex combinations
-    {indexed_data, _} = Enum.reduce(data.faces, {%{vertices: [], tex_coords: [], normals: [], indices: []}, %{}}, fn face, {acc, vertex_map} ->
+    {indexed_data, _} = Enum.reduce(data_with_normals.faces, {%{vertices: [], tex_coords: [], normals: [], indices: []}, %{}}, fn face, {acc, vertex_map} ->
       # Convert face (usually a triangle or quad) to triangles
-      process_face(face, data, acc, vertex_map)
+      process_face(face, data_with_normals, acc, vertex_map)
     end)
 
     indexed_data
@@ -182,4 +193,104 @@ defmodule EAGL.ObjLoader do
       end
     end)
   end
+
+    # Generate face normals when none exist in the OBJ file
+  defp generate_face_normals(data, clockwise_winding) do
+    # Calculate normals for each face
+    face_normals = Enum.map(data.faces, fn face ->
+      # Get the first triangle of the face (if it has more than 3 vertices, we use the first triangle)
+      triangle = Enum.take(face, 3)
+      calculate_face_normal(triangle, data.vertices, clockwise_winding)
+    end)
+
+    # Create a normal for each vertex in each face
+    # This creates flat shading where all vertices of a face share the same normal
+    {normals, updated_faces} =
+      data.faces
+      |> Enum.with_index()
+      |> Enum.reduce({[], []}, fn {face, face_idx}, {acc_normals, acc_faces} ->
+        face_normal = Enum.at(face_normals, face_idx)
+
+        # Create normal entries for each vertex in this face
+        face_vertex_count = length(face)
+        face_normal_indices = Enum.map(1..face_vertex_count, fn i ->
+          length(acc_normals) + i  # 1-based indexing for OBJ
+        end)
+
+        # Add the face normal for each vertex
+        new_normals = acc_normals ++ List.duplicate(face_normal, face_vertex_count)
+
+        # Update face to reference the new normals
+        updated_face = face
+        |> Enum.with_index()
+        |> Enum.map(fn {[v_idx, t_idx, _n_idx], vertex_idx} ->
+          normal_idx = Enum.at(face_normal_indices, vertex_idx)
+          [v_idx, t_idx, normal_idx]
+        end)
+
+        {new_normals, acc_faces ++ [updated_face]}
+      end)
+
+    # Flatten the normals list
+    flat_normals = Enum.flat_map(normals, fn [x, y, z] -> [x, y, z] end)
+
+    %{data | normals: flat_normals, faces: updated_faces}
+  end
+
+  # Calculate normal for a face given three vertex indices
+  defp calculate_face_normal(triangle, vertices, clockwise_winding) do
+    # Get the first three vertices of the face
+    [[v1_idx, _, _], [v2_idx, _, _], [v3_idx, _, _]] = Enum.take(triangle, 3)
+
+    # Get vertex positions (convert from 1-based to 0-based indexing)
+    v1_pos = get_vertex_position(v1_idx, vertices)
+    v2_pos = get_vertex_position(v2_idx, vertices)
+    v3_pos = get_vertex_position(v3_idx, vertices)
+
+    # Calculate two edges of the triangle
+    edge1 = subtract_vectors(v2_pos, v1_pos)
+    edge2 = subtract_vectors(v3_pos, v1_pos)
+
+    # Calculate cross product to get normal
+    normal = if clockwise_winding do
+      cross_product(edge1, edge2)
+    else
+      cross_product(edge2, edge1)
+    end
+
+    normalize_vector(normal)
+  end
+
+  # Helper functions for vector math
+  defp get_vertex_position(vertex_idx, vertices) do
+    offset = (vertex_idx - 1) * 3
+    [
+      Enum.at(vertices, offset) || 0.0,
+      Enum.at(vertices, offset + 1) || 0.0,
+      Enum.at(vertices, offset + 2) || 0.0
+    ]
+  end
+
+  defp subtract_vectors([x1, y1, z1], [x2, y2, z2]) do
+    [x1 - x2, y1 - y2, z1 - z2]
+  end
+
+  defp cross_product([x1, y1, z1], [x2, y2, z2]) do
+    [
+      y1 * z2 - z1 * y2,
+      z1 * x2 - x1 * z2,
+      x1 * y2 - y1 * x2
+    ]
+  end
+
+  defp normalize_vector([x, y, z]) do
+    length = :math.sqrt(x * x + y * y + z * z)
+    if length > 0.0001 do  # Avoid division by zero
+      [x / length, y / length, z / length]
+    else
+      [0.0, 1.0, 0.0]  # Default up normal if zero length
+    end
+  end
+
+
 end

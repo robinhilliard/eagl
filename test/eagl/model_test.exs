@@ -12,11 +12,56 @@ defmodule EAGL.ModelTest do
 
   describe "load_model/1" do
     test "successfully loads cube model" do
-      assert {:ok, _model_data} = EAGL.Model.load_model("cube.obj")
+      assert {:ok, model_data} = EAGL.Model.load_model("cube.obj")
+      assert is_list(model_data.vertices)
+      assert is_list(model_data.normals)
+      assert is_list(model_data.indices)
+      assert length(model_data.vertices) > 0
+      assert length(model_data.normals) > 0
     end
 
     test "successfully loads teapot model" do
-      assert {:ok, _model_data} = EAGL.Model.load_model("teapot.obj")
+      assert {:ok, model_data} = EAGL.Model.load_model("teapot.obj")
+      assert is_list(model_data.vertices)
+      assert is_list(model_data.normals)
+      assert is_list(model_data.indices)
+      assert length(model_data.vertices) > 0
+      assert length(model_data.normals) > 0
+    end
+
+    test "generates face normals for models without normals (teapot)" do
+      assert {:ok, model_data} = EAGL.Model.load_model("teapot.obj")
+
+      # Teapot should have generated normals
+      assert length(model_data.normals) > 0
+
+      # Normals should be in groups of 3 (x, y, z)
+      assert rem(length(model_data.normals), 3) == 0
+
+      # Check that normals are normalized (should be close to length 1)
+      normal_count = div(length(model_data.normals), 3)
+      normals_list = Enum.chunk_every(model_data.normals, 3)
+
+      # Test a few normals to ensure they're normalized
+      sample_normals = Enum.take(normals_list, 5)
+      for [x, y, z] <- sample_normals do
+        length = :math.sqrt(x * x + y * y + z * z)
+        assert_in_delta(length, 1.0, 0.01, "Normal should be normalized")
+      end
+    end
+
+    test "preserves existing normals for models that have them (cube)" do
+      assert {:ok, model_data} = EAGL.Model.load_model("cube.obj")
+
+      # Cube should have its original normals preserved
+      assert length(model_data.normals) > 0
+
+      # Should have proper cube normals (6 faces, each with their own normal)
+      normals_list = Enum.chunk_every(model_data.normals, 3)
+
+      # Test that we have expected cube normals
+      unique_normals = Enum.uniq(normals_list)
+      assert length(unique_normals) >= 6, "Cube should have at least 6 unique normals"
     end
 
     test "returns error for non-existent model" do
@@ -31,7 +76,7 @@ defmodule EAGL.ModelTest do
         :application.start(:wx)
         wx = :wx.new()
         frame = :wxFrame.new(wx, -1, "Test", size: {100, 100})
-        gl_canvas = :wxGLCanvas.new(frame, [{:attribList, [16, 5, 0]}])
+        gl_canvas = :wxGLCanvas.new(frame, [])
         :wxFrame.show(frame)
         :timer.sleep(50)
         gl_context = :wxGLContext.new(gl_canvas)
@@ -145,7 +190,7 @@ defmodule EAGL.ModelTest do
         :application.start(:wx)
         wx = :wx.new()
         frame = :wxFrame.new(wx, -1, "Test", size: {100, 100})
-        gl_canvas = :wxGLCanvas.new(frame, [{:attribList, [16, 5, 0]}])
+        gl_canvas = :wxGLCanvas.new(frame, [])
         :wxFrame.show(frame)
         :timer.sleep(50)
         gl_context = :wxGLContext.new(gl_canvas)

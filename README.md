@@ -94,6 +94,23 @@ mix run -e "EAGL.Examples.Teapot.run_example()"
 ```
 Renders a 3D teapot model with proper 3D transformations and lighting setup.
 
+### Convenience Scripts
+
+For easier example running, use the scripts in `priv/scripts/`:
+
+```bash
+# Run the teapot example
+./priv/scripts/teapot
+
+# Run the simple shader example
+./priv/scripts/simple_shader
+
+# Run all examples interactively
+./priv/scripts/all_examples
+```
+
+See [`priv/scripts/README.md`](priv/scripts/README.md) for more details about the available scripts.
+
 ### Using EAGL in Your Project
 
 Add EAGL as a dependency in your `mix.exs`:
@@ -221,6 +238,7 @@ test/
 └── eagl_test.exs           # Integration tests
 priv/
 ├── models/                 # 3D model files (.obj)
+├── scripts/                # Convenience scripts for running examples
 └── shaders/                # GLSL shader files
 ```
 
