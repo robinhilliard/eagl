@@ -9,6 +9,7 @@ defmodule EAGL.Window do
   import Bitwise
 
   @default_window_size {1024, 768}
+  @tick_interval trunc(1000 / 60) # 60 FPS
 
   # OpenGL context attributes for wxGLCanvas.
   # Based on Wings3D's wings_gl.erl attributes/0 function.
@@ -162,6 +163,9 @@ defmodule EAGL.Window do
           :wxWindow.refresh(gl_canvas)
           :wxWindow.update(gl_canvas)
 
+          # Set up tick timer
+          :timer.send_interval(@tick_interval, self(), :tick)
+
           # Main loop
           try do
             main_loop(frame, gl_canvas, gl_context, callback_module, state)
@@ -292,6 +296,29 @@ defmodule EAGL.Window do
         callback_module.render(safe_width * 1.0, safe_height * 1.0, state)
         :wxGLCanvas.swapBuffers(gl_canvas)
         main_loop(frame, gl_canvas, gl_context, callback_module, state)
+
+      :tick ->
+        new_state = if function_exported?(callback_module, :handle_event, 2) do
+          try do
+            case callback_module.handle_event(:tick, state) do
+              {:ok, updated_state} ->
+                self() |> send({:wx, :ignore, :ignore, :ignore, {:wxPaint, :paint}})
+                updated_state
+              _ -> state
+            end
+          catch
+            :close_window ->
+              # Clean up and exit
+              :gl.useProgram(0)
+              callback_module.cleanup(state)
+              :wxGLContext.destroy(gl_context)
+              :wxFrame.destroy(frame)
+              throw(:exit_main_loop)
+          end
+        else
+          state
+        end
+        main_loop(frame, gl_canvas, gl_context, callback_module, new_state)
 
       _ ->
         main_loop(frame, gl_canvas, gl_context, callback_module, state)

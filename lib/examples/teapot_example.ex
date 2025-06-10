@@ -34,24 +34,16 @@ defmodule EAGL.Examples.Teapot do
          {:ok, program_normals} <- create_attach_link([vertex_normals, fragment_normals]),
          {:ok, model} <- load_model_to_vao("teapot.obj", clockwise_winding: true) do
 
-      # Check depth buffer availability
-      depth_bits = :gl.getIntegerv(@gl_depth_bits)
-      if length(depth_bits) > 0 and hd(depth_bits) > 0 do
-        IO.puts("Using default framebuffer with #{hd(depth_bits)}-bit depth buffer")
-      else
-        IO.puts("Warning: No depth buffer available - depth testing may not work properly")
-      end
-
       # State: {simple_program, phong_program, normals_program, model, current_shader_index}
       # current_shader_index: 0 = simple, 1 = phong, 2 = normals debug
-      {:ok, {program_simple, program_phong, program_normals, model, 0}}
+      {:ok, {program_simple, program_phong, program_normals, model, 0, :os.system_time(:millisecond)}}
     end
   end
 
 
 
   @impl true
-  def render(viewport_width, viewport_height, {program_simple, program_phong, program_normals, model, current_shader}) do
+  def render(viewport_width, viewport_height, {program_simple, program_phong, program_normals, model, current_shader, time}) do
     # Select which program to use
     program = case current_shader do
       0 -> program_simple
@@ -83,7 +75,7 @@ defmodule EAGL.Examples.Teapot do
     :gl.polygonMode(@gl_front, @gl_fill)
 
     # Common transformation matrices
-    model_matrix = mat4_identity()
+    model_matrix =mat4_rotate_y(time / -5000.0)
     camera_position = vec3(0.0, 4.0, -8.0)
     view_matrix = mat4_look_at(
       camera_position,          # camera position
@@ -103,9 +95,8 @@ defmodule EAGL.Examples.Teapot do
 
         # Set lighting uniforms for Phong and debug shaders
     if current_shader == 1 or current_shader == 2 do
-      # Light positioned with camera - should illuminate visible surfaces
-      # Camera at (0, 4, -8) looking at teapot, light should be nearby to illuminate what we see
-      light_position = vec3(0.0, 4.0, -8.0)
+      IO.puts("time: #{time}")
+      light_position = mat4_rotate_y(time / 1000.0) |> mat4_transform_point(vec3(4.0, 4.0, -4.0))
       light_color = vec3(1.0, 1.0, 1.0)  # White light
 
       [{cam_x, cam_y, cam_z}] = camera_position
@@ -125,7 +116,11 @@ defmodule EAGL.Examples.Teapot do
   end
 
   @impl true
-  def handle_event({:key, key_code}, {program_simple, program_phong, program_normals, model, current_shader}) do
+  def handle_event(:tick, {program_simple, program_phong, program_normals, model, current_shader, _}) do
+    {:ok, {program_simple, program_phong, program_normals, model, current_shader, :erlang.monotonic_time(:millisecond)}}
+  end
+
+  def handle_event({:key, key_code}, {program_simple, program_phong, program_normals, model, current_shader,time}) do
     new_shader = case key_code do
       49 -> 0                     # Key '1' - simple red shader
       50 -> 1                     # Key '2' - phong porcelain shader
@@ -133,11 +128,11 @@ defmodule EAGL.Examples.Teapot do
       27 -> throw(:close_window)  # ESC key - quit
       _ -> current_shader
     end
-    {:ok, {program_simple, program_phong, program_normals, model, new_shader}}
+    {:ok, {program_simple, program_phong, program_normals, model, new_shader, time}}
   end
 
   @impl true
-  def cleanup({program_simple, program_phong, program_normals, model, _current_shader}) do
+  def cleanup({program_simple, program_phong, program_normals, model, _current_shader, _time}) do
     cleanup_program(program_simple)
     cleanup_program(program_phong)
     cleanup_program(program_normals)

@@ -876,6 +876,55 @@ defmodule EAGL.Math do
       end
 
       # ============================================================================
+      # MATRIX-VECTOR OPERATIONS
+      # ============================================================================
+
+      @doc """
+      Multiply a 3D vector by a 4x4 matrix (treating vector as point with w=1).
+      Returns a 3D vector with the w component divided out.
+      """
+      @spec mat4_transform_point(mat4(), vec3()) :: vec3()
+      def mat4_transform_point([{m00, m01, m02, m03, m10, m11, m12, m13, m20, m21, m22, m23, m30, m31, m32, m33}], [{x, y, z}]) do
+        # Multiply as if the vector has w=1
+        new_x = m00 * x + m10 * y + m20 * z + m30
+        new_y = m01 * x + m11 * y + m21 * z + m31
+        new_z = m02 * x + m12 * y + m22 * z + m32
+        new_w = m03 * x + m13 * y + m23 * z + m33
+
+        # Divide by w if not 1 (for perspective division)
+        if new_w != 1.0 and new_w != 0.0 do
+          [{new_x / new_w, new_y / new_w, new_z / new_w}]
+        else
+          [{new_x, new_y, new_z}]
+        end
+      end
+
+      @doc """
+      Multiply a 3D vector by a 4x4 matrix (treating vector as direction with w=0).
+      Used for transforming direction vectors (normals, etc.) where translation should be ignored.
+      """
+      @spec mat4_transform_vector(mat4(), vec3()) :: vec3()
+      def mat4_transform_vector([{m00, m01, m02, _m03, m10, m11, m12, _m13, m20, m21, m22, _m23, _m30, _m31, _m32, _m33}], [{x, y, z}]) do
+        # Multiply as if the vector has w=0 (ignore translation)
+        new_x = m00 * x + m10 * y + m20 * z
+        new_y = m01 * x + m11 * y + m21 * z
+        new_z = m02 * x + m12 * y + m22 * z
+        [{new_x, new_y, new_z}]
+      end
+
+      @doc """
+      Multiply a 4D vector by a 4x4 matrix.
+      """
+      @spec mat4_transform_vec4(mat4(), vec4()) :: vec4()
+      def mat4_transform_vec4([{m00, m01, m02, m03, m10, m11, m12, m13, m20, m21, m22, m23, m30, m31, m32, m33}], [{x, y, z, w}]) do
+        new_x = m00 * x + m10 * y + m20 * z + m30 * w
+        new_y = m01 * x + m11 * y + m21 * z + m31 * w
+        new_z = m02 * x + m12 * y + m22 * z + m32 * w
+        new_w = m03 * x + m13 * y + m23 * z + m33 * w
+        [{new_x, new_y, new_z, new_w}]
+      end
+
+      # ============================================================================
       # TRIGONOMETRIC AND UTILITY FUNCTIONS
       # ============================================================================
 
