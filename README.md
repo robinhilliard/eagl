@@ -1,14 +1,13 @@
-# EAGL
+# EaGL
 
 ![An Eagle carrying a teapot](/priv/images/eagl_logo.png "EAGL Logo")
 
-Make it **EA**sier to work with Open**GL** in Elixir, using the Erlang WX bindings to OpenGL.
+Make it **Ea**sier to work with Open**GL** in Elixir, using the Erlang WX bindings to OpenGL.
 
 ## Overview
 
 Most examples of working with OpenGL are written in C++ or C# (Unity). The purpose of the EAGL library is to make it easier to translate OpenGL tutorials
-and examples from sites like [Learn OpenGL](https://learnopengl.com) into Elixir with some help to get over the initial learning curve and eventually write arbitrarily complex OpenGL applications without a 
-pile of boilerplate.
+and examples from resources like [Learn OpenGL](https://learnopengl.com) into Elixir with some help to get over the initial learning bump and eventually write arbitrarily complex OpenGL applications with minimal boilerplate (using the Wings 3D Erlang source as a guide).
 
 EAGL provides a clean, idiomatic Elixir interface for:
 - OpenGL shader management and compilation
@@ -22,6 +21,7 @@ Non-goals:
 - Heavy abstraction/wrapping of the Erlang wx library: we want it to be easy to see the correspondence betweeen OpenGL examples in other languages and ours
 - A Shader DSL like Nx
 - A UI layout/component library
+- 3D mesh modelling (leave that to Wings 3D, Blender etc)
 
 ## Features
 
