@@ -1,6 +1,8 @@
 defmodule EAGL.Const do
   @moduledoc """
-  Comprehensive OpenGL constants for 3D graphics programming.
+  Curated set of 300 OpenGL constants for 3D graphics programming. Additional constants
+  can be added as needed from the 4,925 constants in the wx/include/gl.hrl file.
+
   Use this module to inject OpenGL constants as module attributes.
 
   ## Usage
@@ -166,8 +168,8 @@ defmodule EAGL.Const do
       @gl_double 5130  # GL_DOUBLE
       @gl_half_float 5131  # GL_HALF_FLOAT
       @gl_fixed 5132  # GL_FIXED
-      @gl_int_2_10_10_10_rev 33640  # GL_INT_2_10_10_10_REV
-      @gl_unsigned_int_2_10_10_10_rev 33641  # GL_UNSIGNED_INT_2_10_10_10_REV
+      @gl_int_2_10_10_10_rev 36255  # GL_INT_2_10_10_10_REV
+      @gl_unsigned_int_2_10_10_10_rev 33640  # GL_UNSIGNED_INT_2_10_10_10_REV
       @gl_unsigned_int_10f_11f_11f_rev 35899  # GL_UNSIGNED_INT_10F_11F_11F_REV
 
       # ============================================================================
