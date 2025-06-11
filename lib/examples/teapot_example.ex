@@ -12,6 +12,9 @@ defmodule EAGL.Examples.Teapot do
   import EAGL.Model
   import EAGL.Math
 
+  @teapot_360_rotation_ms 5000.0
+  @light_360_rotation_ms 1000.0
+
   @spec run_example() :: :ok | {:error, term()}
   def run_example, do: EAGL.Window.run(__MODULE__, "EaGL Utah Teapot Example")
 
@@ -52,7 +55,7 @@ defmodule EAGL.Examples.Teapot do
     :gl.polygonMode(@gl_front_and_back, @gl_fill)
 
     # Common transformation matrices
-    model_matrix =mat4_rotate_y(time / -5000.0)
+    model_matrix =mat4_rotate_y(time / -@teapot_360_rotation_ms)
     camera_position = vec3(0.0, 4.0, -8.0)
     view_matrix = mat4_look_at(
       camera_position,          # camera position
@@ -63,7 +66,7 @@ defmodule EAGL.Examples.Teapot do
     # Guard against division by zero
     aspect_ratio = if viewport_height > 0, do: viewport_width / viewport_height, else: 1.0
     projection_matrix = mat4_perspective(radians(45.0), aspect_ratio, 1.0, 20.0)
-    light_position = mat4_rotate_y(time / 1000.0) |> mat4_transform_point(vec3(4.0, 4.0, -4.0))
+    light_position = mat4_rotate_y(time / @light_360_rotation_ms) |> mat4_transform_point(vec3(4.0, 4.0, -4.0))
     light_color = vec3(1.0, 1.0, 1.0)  # White light
 
     # Set all uniforms at once using helper function
