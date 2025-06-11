@@ -250,7 +250,6 @@ defmodule EAGL.Window do
 
       {:wx, _, _, _, {:wxKey, :char_hook, _, _, key_code, _, _, _, _, _, _, _}} ->
         # Handle keyboard events
-        IO.puts("Key pressed: #{key_code}")
         new_state = if function_exported?(callback_module, :handle_event, 2) do
           try do
             case callback_module.handle_event({:key, key_code}, state) do
