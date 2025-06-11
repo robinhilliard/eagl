@@ -40,6 +40,9 @@ defmodule WX.Const do
 
       # Sizer flags
       @wx_expand 2  # wxEXPAND
+
+      # Background styles
+      @wx_bg_style_paint 2  # wxBG_STYLE_PAINT
     end
   end
 end

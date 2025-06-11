@@ -13,7 +13,7 @@ defmodule EAGL.Examples.Teapot do
   import EAGL.Math
 
   @spec run_example() :: :ok | {:error, term()}
-  def run_example, do: EAGL.Window.run(__MODULE__, "EAGL Utah Teapot Example")
+  def run_example, do: EAGL.Window.run(__MODULE__, "EaGL Utah Teapot Example")
 
   @impl true
   def setup do

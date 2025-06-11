@@ -59,7 +59,7 @@ defmodule EAGL.Window do
       IO.puts("✓ OpenGL canvas created successfully with requested attributes")
 
       # Set background style following wings_gl pattern
-      :wxGLCanvas.setBackgroundStyle(gl_canvas, 2)  # wxBG_STYLE_PAINT
+      :wxGLCanvas.setBackgroundStyle(gl_canvas, @wx_bg_style_paint)
 
       # Set up event handlers
       :wxFrame.connect(frame, :size)
@@ -181,6 +181,28 @@ defmodule EAGL.Window do
     end
   end
 
+  # Private helper to handle window cleanup consistently
+  @spec cleanup_and_exit(:wxFrame.wxFrame(), :wxGLContext.wxGLContext(), module(), any()) :: no_return()
+  defp cleanup_and_exit(frame, gl_context, callback_module, state) do
+    # Clean up OpenGL resources before destroying context
+    :gl.useProgram(0)  # Unbind shader program
+    callback_module.cleanup(state)
+    :wxGLContext.destroy(gl_context)
+    :wxFrame.destroy(frame)
+    throw(:exit_main_loop)
+  end
+
+  # Private helper to handle window cleanup for close event (returns :ok)
+  @spec cleanup_and_close(:wxFrame.wxFrame(), :wxGLContext.wxGLContext(), module(), any()) :: :ok
+  defp cleanup_and_close(frame, gl_context, callback_module, state) do
+    # Clean up OpenGL resources before destroying context
+    :gl.useProgram(0)  # Unbind shader program
+    callback_module.cleanup(state)
+    :wxGLContext.destroy(gl_context)
+    :wxFrame.destroy(frame)
+    :ok
+  end
+
   @spec main_loop(:wxFrame.wxFrame(), :wxGLCanvas.wxGLCanvas(), :wxGLContext.wxGLContext(), module(), any()) :: :ok
   defp main_loop(frame, gl_canvas, gl_context, callback_module, state) do
     receive do
@@ -234,12 +256,7 @@ defmodule EAGL.Window do
             end
           catch
             :close_window ->
-              # Clean up and exit
-              :gl.useProgram(0)
-              callback_module.cleanup(state)
-              :wxGLContext.destroy(gl_context)
-              :wxFrame.destroy(frame)
-              throw(:exit_main_loop)
+              cleanup_and_exit(frame, gl_context, callback_module, state)
           end
         else
           state
@@ -250,12 +267,7 @@ defmodule EAGL.Window do
         main_loop(frame, gl_canvas, gl_context, callback_module, new_state)
 
       {:wx, _, _, _, {:wxClose, :close_window}} ->
-        # Clean up OpenGL resources before destroying context
-        :gl.useProgram(0)  # Unbind shader program
-        callback_module.cleanup(state)
-        :wxGLContext.destroy(gl_context)
-        :wxFrame.destroy(frame)
-        :ok
+        cleanup_and_close(frame, gl_context, callback_module, state)
 
       {:wx, _, _, _, {:wxPaint, :paint}} ->
         :wxGLCanvas.setCurrent(gl_canvas, gl_context)
@@ -283,12 +295,7 @@ defmodule EAGL.Window do
             end
           catch
             :close_window ->
-              # Clean up and exit
-              :gl.useProgram(0)
-              callback_module.cleanup(state)
-              :wxGLContext.destroy(gl_context)
-              :wxFrame.destroy(frame)
-              throw(:exit_main_loop)
+              cleanup_and_exit(frame, gl_context, callback_module, state)
           end
         else
           state
