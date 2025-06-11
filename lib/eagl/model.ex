@@ -12,7 +12,7 @@ defmodule EAGL.Model do
   Returns the processed model data ready for OpenGL.
 
   Options:
-    - :clockwise_winding - boolean, set to true if the model uses clockwise vertex winding (default: false)
+    - :flip_normal_direction - boolean, set to true to flip generated normal direction (default: false)
   """
   @spec load_model(String.t(), keyword()) :: {:ok, map()} | {:error, String.t()}
   def load_model(filename, opts \\ []) do
@@ -49,7 +49,7 @@ defmodule EAGL.Model do
   - Location 2: Normals (vec3)
 
   Options:
-    - :clockwise_winding - boolean, set to true if the model uses clockwise vertex winding (default: false)
+    - :flip_normal_direction - boolean, set to true to flip generated normal direction (default: false)
   """
   @spec load_model_to_vao(String.t(), keyword()) :: {:ok, %{vao: integer(), vertex_count: integer()}} | {:error, String.t()}
   def load_model_to_vao(filename, opts \\ []) do

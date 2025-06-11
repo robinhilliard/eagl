@@ -13,7 +13,7 @@ defmodule EAGL.ObjLoader do
     - :indices - List of integers for indexed drawing
 
   Options:
-    - :clockwise_winding - boolean, set to true if the model uses clockwise vertex winding (default: false)
+    - :flip_normal_direction - boolean, set to true to flip generated normal direction (default: false)
   """
   @spec load_obj(String.t(), keyword()) :: {:ok, map()} | {:error, String.t()}
   def load_obj(file_path, opts \\ []) do
@@ -40,8 +40,8 @@ defmodule EAGL.ObjLoader do
         |> Enum.reduce(initial_state, &parse_line/2)
 
       # Process faces to create indexed data
-      clockwise_winding = Keyword.get(opts, :clockwise_winding, false)
-      final_data = process_faces(parsed_data, clockwise_winding)
+      flip_normal_direction = Keyword.get(opts, :flip_normal_direction, false)
+      final_data = process_faces(parsed_data, flip_normal_direction)
 
       {:ok, final_data}
     rescue
@@ -101,10 +101,10 @@ defmodule EAGL.ObjLoader do
   end
 
   # Process faces to create indexed vertex data
-  defp process_faces(data, clockwise_winding) do
+  defp process_faces(data, flip_normal_direction) do
     # Generate normals if none exist
     data_with_normals = if length(data.normals) == 0 do
-      generate_face_normals(data, clockwise_winding)
+      generate_face_normals(data, flip_normal_direction)
     else
       data
     end
@@ -195,12 +195,12 @@ defmodule EAGL.ObjLoader do
   end
 
     # Generate face normals when none exist in the OBJ file
-  defp generate_face_normals(data, clockwise_winding) do
+  defp generate_face_normals(data, flip_normal_direction) do
     # Calculate normals for each face
     face_normals = Enum.map(data.faces, fn face ->
       # Get the first triangle of the face (if it has more than 3 vertices, we use the first triangle)
       triangle = Enum.take(face, 3)
-      calculate_face_normal(triangle, data.vertices, clockwise_winding)
+      calculate_face_normal(triangle, data.vertices, flip_normal_direction)
     end)
 
     # Create a normal for each vertex in each face
@@ -238,7 +238,7 @@ defmodule EAGL.ObjLoader do
   end
 
   # Calculate normal for a face given three vertex indices
-  defp calculate_face_normal(triangle, vertices, clockwise_winding) do
+  defp calculate_face_normal(triangle, vertices, flip_normal_direction) do
     # Get the first three vertices of the face
     [[v1_idx, _, _], [v2_idx, _, _], [v3_idx, _, _]] = Enum.take(triangle, 3)
 
@@ -252,10 +252,11 @@ defmodule EAGL.ObjLoader do
     edge2 = subtract_vectors(v3_pos, v1_pos)
 
     # Calculate cross product to get normal
-    normal = if clockwise_winding do
-      cross_product(edge1, edge2)
+    # Default (false) uses edge1 × edge2 which works correctly for CCW-wound faces
+    normal = if flip_normal_direction do
+      cross_product(edge2, edge1)  # Flipped: edge2 × edge1
     else
-      cross_product(edge2, edge1)
+      cross_product(edge1, edge2)  # Standard: edge1 × edge2 for CCW faces
     end
 
     normalize_vector(normal)

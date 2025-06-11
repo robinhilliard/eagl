@@ -23,10 +23,177 @@ Non-goals:
 - A Shader DSL like Nx
 - A UI layout/component library
 
+## Features
+
+- **Math Library**: Complete 3D math operations (vectors, matrices, quaternions)
+- **Shader Management**: Easy shader compilation and program linking
+- **Uniform Helpers**: Simplified uniform value setting with automatic type detection
+- **Model Loading**: OBJ file loader with automatic normal generation
+- **Window Management**: OpenGL context creation and event handling
+- **Examples**: Ready-to-run examples demonstrating various features
+
+## Quick Start
+
+```elixir
+# Add to mix.exs
+{:eagl, "~> 0.1.0"}
+```
+
+### Running Examples
+
+EAGL includes several examples to demonstrate its capabilities:
+
+```bash
+# Simple point rendering
+priv/scripts/simple_shader
+
+# 3D teapot with Phong shading
+priv/scripts/teapot
+
+# All math library demonstrations
+priv/scripts/math
+```
+
+## Usage
+
+### Math Operations
+
+```elixir
+import EAGL.Math
+
+# Vector operations
+position = vec3(1.0, 2.0, 3.0)
+direction = vec3(0.0, 1.0, 0.0) 
+result = vec_add(position, direction)
+length = vec_length(position)
+
+# Matrix transformations
+model = mat4_translate(vec3(5.0, 0.0, 0.0))
+view = mat4_look_at(
+  vec3(0.0, 0.0, 5.0),  # eye
+  vec3(0.0, 0.0, 0.0),  # target
+  vec3(0.0, 1.0, 0.0)   # up
+)
+projection = mat4_perspective(radians(45.0), 16.0/9.0, 0.1, 100.0)
+```
+
+### Shader Management
+
+```elixir
+import EAGL.Shader
+
+# Compile and link shaders
+{:ok, vertex} = create_shader(@gl_vertex_shader, "vertex.glsl")
+{:ok, fragment} = create_shader(@gl_fragment_shader, "fragment.glsl")
+{:ok, program} = create_attach_link([vertex, fragment])
+
+# Set uniforms with automatic type detection
+set_uniform(program, "model_matrix", model_matrix)
+set_uniform(program, "light_position", vec3(10.0, 10.0, 5.0))
+set_uniform(program, "time", :erlang.monotonic_time(:millisecond))
+
+# Or set multiple uniforms at once
+set_uniforms(program, [
+  model: model_matrix,
+  view: view_matrix,
+  projection: projection_matrix,
+  light_position: vec3(10.0, 10.0, 5.0),
+  light_color: vec3(1.0, 1.0, 1.0)
+])
+```
+
+### Uniform Helper Features
+
+The uniform helpers automatically detect the type of EAGL.Math values:
+
+- `vec2/3/4` → `glUniform2f/3f/4f`
+- `mat2/3/4` → `glUniformMatrix2fv/3fv/4fv` 
+- Numbers → `glUniform1f/1i`
+- Booleans → `glUniform1i` (0 or 1)
+
+This eliminates the need to manually unpack vectors or handle different uniform types.
+
+### Model Loading
+
+```elixir
+import EAGL.Model
+
+# Load OBJ file with automatic normal generation
+{:ok, model} = load_model_to_vao("teapot.obj")
+
+# Render the model
+:gl.bindVertexArray(model.vao)
+:gl.drawElements(@gl_triangles, model.vertex_count, @gl_unsigned_int, 0)
+```
+
+### Window Creation
+
+```elixir
+defmodule MyApp do
+  use EAGL.Window
+  import EAGL.Shader
+  import EAGL.Math
+
+  def run_example do
+    EAGL.Window.run(__MODULE__, "My OpenGL App")
+  end
+
+  @impl true
+  def setup do
+    # Initialize shaders, load models, etc.
+    {:ok, initial_state}
+  end
+
+  @impl true
+  def render(width, height, state) do
+    # Render frame
+    :ok
+  end
+
+  @impl true
+  def cleanup(state) do
+    # Clean up resources
+    :ok
+  end
+end
+```
+
+## Library Structure
+
+- `EAGL.Math` - Vector and matrix math operations
+- `EAGL.Shader` - Shader compilation and uniform management  
+- `EAGL.Model` - 3D model loading and vertex array management
+- `EAGL.Window` - OpenGL context and window management
+- `EAGL.Const` - OpenGL constants
+
+## Math Library
+
+Comprehensive 3D math library supporting:
+
+- **Vectors**: 2D, 3D, 4D vector operations
+- **Matrices**: 2x2, 3x3, 4x4 matrix operations  
+- **Quaternions**: Rotation representation and SLERP
+- **Utilities**: Trigonometry, interpolation, clamping
+- **Geometric**: Cross products, normals, projections
+
+All math functions work with the tuple-in-list format required by Erlang's OpenGL bindings.
+
 ## Examples
 
-1. **`EAGL.Examples.SimpleShader`** - A minimal example demonstrating shader creation, compilation, and basic point rendering
-2. **`EAGL.Examples.Teapot`** - A comprehensive 3D model rendering example with vertex arrays, matrix transformations, and proper resource management
+### Simple Rendering
+```elixir
+EAGL.Examples.SimpleShader.run_example()
+```
+
+### 3D Teapot
+```elixir  
+EAGL.Examples.Teapot.run_example()
+```
+
+### Math Demonstrations
+```elixir
+EAGL.Examples.Math.run_all_demos()
+```
 
 ## Requirements
 
@@ -77,147 +244,6 @@ OpenGL is typically available through graphics drivers. If you encounter issues,
    ```bash
    mix test
    ```
-
-## Usage
-
-### Quick Start
-
-#### Simple Shader Example
-```bash
-mix run -e "EAGL.Examples.SimpleShader.run_example()"
-```
-Creates a window with a blue point rendered using vertex and fragment shaders.
-
-#### 3D Teapot Example  
-```bash
-mix run -e "EAGL.Examples.Teapot.run_example()"
-```
-Renders a 3D teapot model with proper 3D transformations and lighting setup.
-
-### Convenience Scripts
-
-For easier example running, use the scripts in `priv/scripts/`:
-
-```bash
-# Run the teapot example
-./priv/scripts/teapot
-
-# Run the simple shader example
-./priv/scripts/simple_shader
-
-# Run all examples interactively
-./priv/scripts/all_examples
-```
-
-See [`priv/scripts/README.md`](priv/scripts/README.md) for more details about the available scripts.
-
-### Using EAGL in Your Project
-
-Add EAGL as a dependency in your `mix.exs`:
-
-```elixir
-defp deps do
-  [
-    {:eagl, "~> 0.1.0"}
-  ]
-end
-```
-
-### Basic Example
-
-```elixir
-defmodule MyApp.GLExample do
-  use EAGL.Window
-  use EAGL.Const
-  import EAGL.Shader
-
-  def run do
-    EAGL.Window.run(__MODULE__, "My OpenGL App")
-  end
-
-  @impl true
-  def setup do
-    with {:ok, vertex_shader} <- create_shader(@gl_vertex_shader, "vertex.glsl"),
-         {:ok, fragment_shader} <- create_shader(@gl_fragment_shader, "fragment.glsl"),
-         {:ok, program} <- create_attach_link([vertex_shader, fragment_shader]) do
-      {:ok, program}
-    end
-  end
-
-  @impl true
-  def render(_width, _height, program) do
-    :gl.useProgram(program)
-    # Your rendering code here
-    :ok
-  end
-
-  @impl true
-  def cleanup(program) do
-    cleanup_program(program)
-  end
-end
-```
-
-## API Documentation
-
-### Core Modules
-
-- **`EAGL.Window`** - Window creation and event loop management
-- **`EAGL.Shader`** - Shader compilation and program linking  
-- **`EAGL.Model`** - 3D model loading and VAO creation
-- **`EAGL.ObjLoader`** - Wavefront OBJ file parsing
-- **`EAGL.Math`** - GLM-style math library with vectors, matrices, and quaternions
-- **`EAGL.Const`** - OpenGL constants and enums
-- **`EAGL.WindowBehaviour`** - Behavior for window callbacks
-
-### Window Management
-
-```elixir
-# Create a window with default size (1024x768)
-EAGL.Window.run(MyModule, "Window Title")
-
-# Create a window with custom size
-EAGL.Window.run(MyModule, "Window Title", {800, 600})
-```
-
-### Model Loading
-
-```elixir
-# Load a model from priv/models/
-{:ok, model} = EAGL.Model.load_model_to_vao("teapot.obj")
-
-# Use the model in rendering
-:gl.bindVertexArray(model.vao)
-:gl.drawElements(@gl_triangles, model.vertex_count, @gl_unsigned_int, 0)
-
-# Clean up when done
-EAGL.Model.delete_vao(model.vao)
-```
-
-### Math Operations
-
-```elixir
-use EAGL.Math
-
-# Create vectors and matrices
-position = vec3(1.0, 2.0, 3.0)
-rotation = quat_from_euler(radians(45.0), 0.0, 0.0)
-model_matrix = mat4_translate(mat4_identity(), position)
-
-# Transform operations
-view_matrix = mat4_look_at(
-  vec3(0.0, 0.0, 5.0),  # eye position
-  vec3(0.0, 0.0, 0.0),  # look at center
-  vec3(0.0, 1.0, 0.0)   # up vector
-)
-
-projection_matrix = mat4_perspective(
-  radians(45.0),  # field of view
-  16.0/9.0,       # aspect ratio
-  0.1,            # near plane
-  100.0           # far plane
-)
-```
 
 ## Project Structure
 

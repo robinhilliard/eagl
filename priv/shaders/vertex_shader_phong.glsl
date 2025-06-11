@@ -20,7 +20,7 @@ void main() {
     
     // Transform normal to world space (assuming uniform scaling)
     // For non-uniform scaling, use transpose(inverse(mat3(model)))
-    // Testing: Remove flip to see if clockwise_winding: true fixes normals
+    // Note: Normal transformation for standard CCW-wound models
     frag_normal = normalize(mat3(model) * normal);
     
     // Pass through texture coordinates

@@ -118,36 +118,12 @@ defmodule EAGL.Window do
       :gl.viewport(0, 0, safe_width, safe_height)
       :gl.clearColor(0.0, 0.0, 0.0, 1.0)
 
-      # Check depth buffer availability - should now have 24-bit depth buffer
-      depth_bits = try do
-        case :gl.getIntegerv(@gl_depth_bits) do
-          [bits] when bits > 0 ->
-            IO.puts("✓ OpenGL initialized with #{bits}-bit depth buffer (requested 24-bit)")
-            if bits >= 24 do
-              IO.puts("✓ Depth buffer meets or exceeds requirements")
-            else
-              IO.puts("⚠ Depth buffer is smaller than requested, but should still work")
-            end
-            bits
-          _ ->
-            IO.puts("✗ Warning: No depth buffer available despite requesting 24-bit")
-            0
-        end
-      rescue
-        e ->
-          IO.puts("✗ Warning: Could not query depth buffer: #{Exception.message(e)}")
-          0
-      end
-
-      # Enable depth testing if available
-      if depth_bits > 0 do
-        :gl.enable(@gl_depth_test)
-        :gl.depthFunc(@gl_less)
-        :gl.clearDepth(1.0)
-        :gl.clear(@gl_color_buffer_bit ||| @gl_depth_buffer_bit)
-      else
-        :gl.clear(@gl_color_buffer_bit)
-      end
+      # Enable depth testing - Wings3D approach: trust the attributes we requested
+      # Since we requested 24-bit depth buffer in canvas attributes, it should be available
+      :gl.enable(@gl_depth_test)
+      :gl.depthFunc(@gl_less)
+      :gl.clearDepth(1.0)
+      :gl.clear(@gl_color_buffer_bit ||| @gl_depth_buffer_bit)
 
       # Check for OpenGL errors
       case :gl.getError() do

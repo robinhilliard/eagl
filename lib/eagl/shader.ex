@@ -6,6 +6,19 @@ defmodule EAGL.Shader do
 
   use EAGL.Const
 
+  # Import types from EAGL.Math for uniform function specs
+  @type vec2 :: EAGL.Math.vec2()
+  @type vec3 :: EAGL.Math.vec3()
+  @type vec4 :: EAGL.Math.vec4()
+  @type mat2 :: EAGL.Math.mat2()
+  @type mat3 :: EAGL.Math.mat3()
+  @type mat4 :: EAGL.Math.mat4()
+  @type quat :: EAGL.Math.quat()
+
+  @type uniform_value ::
+    vec2() | vec3() | vec4() | mat2() | mat3() | mat4() | quat() |
+    float() | integer() | boolean()
+
   @app Mix.Project.config()[:app]
 
   # Cache shader type values for pattern matching
@@ -138,5 +151,117 @@ defmodule EAGL.Shader do
     check_link_status(program)
   end
 
+  # ============================================================================
+  # UNIFORM HELPER FUNCTIONS
+  # ============================================================================
+
+  @doc """
+  Get uniform location for a program. Similar to wings_gl:uloc/2.
+  Returns the uniform location or -1 if not found.
+  """
+  @spec get_uniform_location(non_neg_integer(), String.t() | charlist()) :: integer()
+  def get_uniform_location(program, uniform_name) when is_binary(uniform_name) do
+    :gl.getUniformLocation(program, String.to_charlist(uniform_name))
+  end
+
+  def get_uniform_location(program, uniform_name) when is_list(uniform_name) do
+    :gl.getUniformLocation(program, uniform_name)
+  end
+
+  @doc """
+  Set uniform value with automatic type detection. Similar to wings_gl:set_uloc/3.
+  Supports various EAGL.Math types and basic values.
+  """
+  @spec set_uniform(non_neg_integer(), String.t() | charlist(), uniform_value()) :: :ok
+  def set_uniform(program, uniform_name, value) do
+    location = get_uniform_location(program, uniform_name)
+    set_uniform_at_location(location, value)
+  end
+
+  @doc """
+  Set uniform value at a specific location with automatic type detection.
+  """
+  @spec set_uniform_at_location(integer(), uniform_value()) :: :ok
+    def set_uniform_at_location(location, _value) when location < 0 do
+    # Invalid location, uniform not found - silently ignore
+    :ok
+  end
+
+  # vec3 uniform
+  @spec set_uniform_at_location(integer(), vec3()) :: :ok
+  def set_uniform_at_location(location, [{x, y, z}]) when is_number(x) and is_number(y) and is_number(z) do
+    :gl.uniform3f(location, x, y, z)
+  end
+
+  # vec2 uniform
+  @spec set_uniform_at_location(integer(), vec2()) :: :ok
+  def set_uniform_at_location(location, [{x, y}]) when is_number(x) and is_number(y) do
+    :gl.uniform2f(location, x, y)
+  end
+
+  # vec4 uniform (also handles quaternions which have the same structure)
+  @spec set_uniform_at_location(integer(), vec4() | quat()) :: :ok
+  def set_uniform_at_location(location, [{x, y, z, w}]) when is_number(x) and is_number(y) and is_number(z) and is_number(w) do
+    :gl.uniform4f(location, x, y, z, w)
+  end
+
+  # mat4 uniform (16 element tuple)
+  @spec set_uniform_at_location(integer(), mat4()) :: :ok
+  def set_uniform_at_location(location, [{_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _}] = matrix) do
+    :gl.uniformMatrix4fv(location, 0, matrix)
+  end
+
+  # mat3 uniform (9 element tuple)
+  @spec set_uniform_at_location(integer(), mat3()) :: :ok
+  def set_uniform_at_location(location, [{_, _, _, _, _, _, _, _, _}] = matrix) do
+    :gl.uniformMatrix3fv(location, 0, matrix)
+  end
+
+  # mat2 uniform (4 element tuple)
+  @spec set_uniform_at_location(integer(), mat2()) :: :ok
+  def set_uniform_at_location(location, [{_, _, _, _}] = matrix) do
+    :gl.uniformMatrix2fv(location, 0, matrix)
+  end
+
+  # Float uniform
+  @spec set_uniform_at_location(integer(), float()) :: :ok
+  def set_uniform_at_location(location, value) when is_number(value) do
+    :gl.uniform1f(location, value)
+  end
+
+  # Integer uniform
+  @spec set_uniform_at_location(integer(), integer()) :: :ok
+  def set_uniform_at_location(location, value) when is_integer(value) do
+    :gl.uniform1i(location, value)
+  end
+
+  # Boolean uniform (as integer)
+  @spec set_uniform_at_location(integer(), boolean()) :: :ok
+  def set_uniform_at_location(location, value) when is_boolean(value) do
+    :gl.uniform1i(location, (if value, do: 1, else: 0))
+  end
+
+  @doc """
+  Convenience function to set multiple uniforms at once.
+  Takes a program and a keyword list of uniform_name -> value pairs.
+  """
+  @spec set_uniforms(non_neg_integer(), [{atom(), uniform_value()}]) :: :ok
+  def set_uniforms(program, uniforms) when is_list(uniforms) do
+    Enum.each(uniforms, fn {name, value} ->
+      set_uniform(program, Atom.to_string(name), value)
+    end)
+  end
+
+  @doc """
+  Convenience function to cache uniform locations for repeated use.
+  Returns a map of uniform names to their locations.
+  """
+  @spec cache_uniform_locations(non_neg_integer(), [String.t() | atom()]) :: %{String.t() => integer()}
+  def cache_uniform_locations(program, uniform_names) do
+    Enum.into(uniform_names, %{}, fn name ->
+      uniform_name = if is_atom(name), do: Atom.to_string(name), else: name
+      {uniform_name, get_uniform_location(program, uniform_name)}
+    end)
+  end
 
 end

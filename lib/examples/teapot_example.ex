@@ -21,13 +21,12 @@ defmodule EAGL.Examples.Teapot do
     with {:ok, vertex_phong} <- create_shader(@gl_vertex_shader, "vertex_shader_phong.glsl"),
          {:ok, fragment_phong} <- create_shader(@gl_fragment_shader, "fragment_shader_phong_porcelain.glsl"),
          {:ok, program} <- create_attach_link([vertex_phong, fragment_phong]),
-         {:ok, model} <- load_model_to_vao("teapot.obj", clockwise_winding: true) do
+         {:ok, model} <- load_model_to_vao("teapot.obj") do
 
       # State: {program, model, time}
       {:ok, {program, model, :erlang.monotonic_time(:millisecond)}}
     end
   end
-
 
   @impl true
   def render(viewport_width, viewport_height, {program, model, time}) do
@@ -46,7 +45,7 @@ defmodule EAGL.Examples.Teapot do
     :gl.enable(@gl_cull_face)
     :gl.cullFace(@gl_back)
 
-    # The teapot uses non-standard clockwise winding for front faces
+    # The teapot uses standard counter-clockwise winding for front faces
     :gl.frontFace(@gl_ccw)
 
     # Set polygon mode
@@ -63,29 +62,23 @@ defmodule EAGL.Examples.Teapot do
 
     # Guard against division by zero
     aspect_ratio = if viewport_height > 0, do: viewport_width / viewport_height, else: 1.0
-    projection_matrix = mat4_perspective(
-      radians(45.0), aspect_ratio, 1.0, 20.0)
-
-    # Set common uniforms
-    :gl.getUniformLocation(program, ~c"model") |> :gl.uniformMatrix4fv(0, model_matrix)
-    :gl.getUniformLocation(program, ~c"view") |> :gl.uniformMatrix4fv(0, view_matrix)
-    :gl.getUniformLocation(program, ~c"projection") |> :gl.uniformMatrix4fv(0, projection_matrix)
-
+    projection_matrix = mat4_perspective(radians(45.0), aspect_ratio, 1.0, 20.0)
     light_position = mat4_rotate_y(time / 1000.0) |> mat4_transform_point(vec3(4.0, 4.0, -4.0))
     light_color = vec3(1.0, 1.0, 1.0)  # White light
 
-    [{cam_x, cam_y, cam_z}] = camera_position
-    [{light_x, light_y, light_z}] = light_position
-    [{light_r, light_g, light_b}] = light_color
-
-    :gl.getUniformLocation(program, ~c"light_position") |> :gl.uniform3f(light_x, light_y, light_z)
-    :gl.getUniformLocation(program, ~c"light_color") |> :gl.uniform3f(light_r, light_g, light_b)
-    :gl.getUniformLocation(program, ~c"camera_position") |> :gl.uniform3f(cam_x, cam_y, cam_z)
+    # Set all uniforms at once using helper function
+    set_uniforms(program, [
+      model: model_matrix,
+      view: view_matrix,
+      projection: projection_matrix,
+      light_position: light_position,
+      light_color: light_color,
+      camera_position: camera_position
+    ])
 
     # Render the model
     :gl.bindVertexArray(model.vao)
     :gl.drawElements(@gl_triangles, model.vertex_count, @gl_unsigned_int, 0)
-
     :ok
   end
 
@@ -94,11 +87,11 @@ defmodule EAGL.Examples.Teapot do
     {:ok, {program, model, :erlang.monotonic_time(:millisecond)}}
   end
 
-  def handle_event({:key, key_code}, {program, model, time}) do
+  def handle_event({:key, key_code}, state) do
     if key_code == 27 do
       throw(:close_window)
     end
-    {:ok, {program, model, time}}
+    {:ok, state}
   end
 
   @impl true
