@@ -1,6 +1,6 @@
 defmodule EAGL.MathTest do
   use ExUnit.Case, async: true
-  use EAGL.Math
+  import EAGL.Math
 
   # Helper function for floating point comparison
   defp assert_float_equal(a, b, tolerance \\ 1.0e-6) do

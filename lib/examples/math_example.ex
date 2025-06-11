@@ -5,7 +5,7 @@ defmodule EAGL.Examples.Math do
   quaternions, matrices, utility functions, and real-world OpenGL usage patterns.
   """
 
-  use EAGL.Math
+  import EAGL.Math
 
   @doc """
   Example showing various vector and quaternion constructors.

@@ -6,11 +6,11 @@ defmodule EAGL.Examples.Teapot do
 
   use EAGL.Window
   use EAGL.Const
-  use EAGL.Math
 
   import Bitwise
   import EAGL.Shader
   import EAGL.Model
+  import EAGL.Math
 
   @spec run_example() :: :ok | {:error, term()}
   def run_example, do: EAGL.Window.run(__MODULE__, "EAGL Utah Teapot Example")
