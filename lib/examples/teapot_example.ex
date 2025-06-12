@@ -14,6 +14,8 @@ defmodule EAGL.Examples.Teapot do
 
   @teapot_360_rotation_ms 5000.0
   @light_360_rotation_ms 1000.0
+  @vertex_source_file "vertex_shader_phong.glsl"
+  @fragment_source_file "fragment_shader_phong_porcelain.glsl"
 
   @spec run_example() :: :ok | {:error, term()}
   def run_example, do: EAGL.Window.run(__MODULE__, "EaGL Utah Teapot Example")
@@ -21,8 +23,8 @@ defmodule EAGL.Examples.Teapot do
   @impl true
   def setup do
     # Load all three shader programs
-    with {:ok, vertex_phong} <- create_shader(@gl_vertex_shader, "vertex_shader_phong.glsl"),
-         {:ok, fragment_phong} <- create_shader(@gl_fragment_shader, "fragment_shader_phong_porcelain.glsl"),
+    with {:ok, vertex_phong} <- create_shader(@gl_vertex_shader, @vertex_source_file),
+         {:ok, fragment_phong} <- create_shader(@gl_fragment_shader, @fragment_source_file),
          {:ok, program} <- create_attach_link([vertex_phong, fragment_phong]),
          {:ok, model} <- load_model_to_vao("teapot.obj") do
 

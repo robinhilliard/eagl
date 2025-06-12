@@ -14,6 +14,8 @@ defmodule EAGL.Model do
   Options:
     - :flip_normal_direction - boolean, set to true to flip normal direction for all models (default: false)
                                This works for both models with existing normals and models that need generated normals.
+    - :smooth_normals - boolean, set to true to generate smooth normals by averaging across adjacent faces (default: false)
+                        This gives a smoother appearance by eliminating the faceted look.
   """
   @spec load_model(String.t(), keyword()) :: {:ok, map()} | {:error, String.t()}
   def load_model(filename, opts \\ []) do
@@ -53,6 +55,9 @@ defmodule EAGL.Model do
     - :flip_normal_direction - boolean, set to true to flip normal direction for all models (default: false)
                                This works for both models with existing normals and models that need generated normals.
                                Useful when model normals are pointing in the wrong direction for your lighting setup.
+    - :smooth_normals - boolean, set to true to generate smooth normals by averaging across adjacent faces (default: false)
+                        This gives a smoother appearance by eliminating the faceted look.
+                        When true, existing normals are ignored and smooth normals are generated.
   """
   @spec load_model_to_vao(String.t(), keyword()) :: {:ok, %{vao: integer(), vertex_count: integer()}} | {:error, String.t()}
   def load_model_to_vao(filename, opts \\ []) do

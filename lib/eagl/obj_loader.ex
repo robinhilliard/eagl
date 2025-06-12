@@ -17,6 +17,9 @@ defmodule EAGL.ObjLoader do
                                This works consistently for both models with existing normals and models that need generated normals.
                                For models with existing normals: negates all normal components
                                For models without normals: generates normals with flipped direction
+    - :smooth_normals - boolean, set to true to generate smooth normals by averaging across adjacent faces (default: false)
+                        This gives a smoother appearance by eliminating the faceted look.
+                        When true, existing normals are ignored and smooth normals are generated.
   """
   @spec load_obj(String.t(), keyword()) :: {:ok, map()} | {:error, String.t()}
   def load_obj(file_path, opts \\ []) do
@@ -44,7 +47,8 @@ defmodule EAGL.ObjLoader do
 
       # Process faces to create indexed data
       flip_normal_direction = Keyword.get(opts, :flip_normal_direction, false)
-      final_data = process_faces(parsed_data, flip_normal_direction)
+      smooth_normals = Keyword.get(opts, :smooth_normals, false)
+      final_data = process_faces(parsed_data, flip_normal_direction, smooth_normals)
 
       {:ok, final_data}
     rescue
@@ -104,18 +108,18 @@ defmodule EAGL.ObjLoader do
   end
 
   # Process faces to create indexed vertex data
-  defp process_faces(data, flip_normal_direction) do
-    # Generate normals if none exist
-    data_with_normals = if length(data.normals) == 0 do
-      generate_face_normals(data, flip_normal_direction)
-    else
-      # Apply flipping to existing normals if requested
-      if flip_normal_direction do
+  defp process_faces(data, flip_normal_direction, smooth_normals) do
+    # Handle smooth normals first (they override existing normals)
+    data_with_normals = cond do
+      smooth_normals ->
+        generate_smooth_normals(data, flip_normal_direction)
+      length(data.normals) == 0 ->
+        generate_face_normals(data, flip_normal_direction)
+      flip_normal_direction ->
         flipped_normals = flip_existing_normals(data.normals)
         %{data | normals: flipped_normals}
-      else
+      true ->
         data
-      end
     end
 
     # Create a map to store unique vertex combinations
@@ -246,6 +250,89 @@ defmodule EAGL.ObjLoader do
     %{data | normals: flat_normals, faces: updated_faces}
   end
 
+  # Generate smooth normals by averaging normals across adjacent faces
+  defp generate_smooth_normals(data, flip_normal_direction) do
+    vertex_count = div(length(data.vertices), 3)
+
+    # Initialize accumulator for each vertex normal
+    vertex_normals = for _ <- 1..vertex_count, do: [0.0, 0.0, 0.0]
+    vertex_face_counts = for _ <- 1..vertex_count, do: 0
+
+    # For each face, calculate its normal and add it to each vertex
+    {accumulated_normals, face_counts} =
+      Enum.reduce(data.faces, {vertex_normals, vertex_face_counts}, fn face, {acc_normals, acc_counts} ->
+        # Get the first triangle of the face for normal calculation
+        triangle = Enum.take(face, 3)
+        face_normal = calculate_face_normal(triangle, data.vertices, flip_normal_direction)
+
+        # Add this face normal to each vertex in the face
+        {updated_normals, updated_counts} =
+          Enum.reduce(face, {acc_normals, acc_counts}, fn [v_idx, _t_idx, _n_idx], {curr_normals, curr_counts} ->
+            list_idx = v_idx - 1  # Convert to 0-based indexing
+
+            # Add face normal to vertex normal
+            current_normal = Enum.at(curr_normals, list_idx)
+            new_normal = add_vectors(current_normal, face_normal)
+            new_normals = List.replace_at(curr_normals, list_idx, new_normal)
+
+            # Increment face count for this vertex
+            current_count = Enum.at(curr_counts, list_idx)
+            new_counts = List.replace_at(curr_counts, list_idx, current_count + 1)
+
+            {new_normals, new_counts}
+          end)
+
+        {updated_normals, updated_counts}
+      end)
+
+    # Average the normals and normalize them
+    averaged_normals =
+      accumulated_normals
+      |> Enum.with_index()
+      |> Enum.map(fn {normal, idx} ->
+        count = Enum.at(face_counts, idx)
+        if count > 0 do
+          averaged = divide_vector(normal, count)
+          normalize_vector(averaged)
+        else
+          [0.0, 1.0, 0.0]  # Default up normal
+        end
+      end)
+
+    # Create normal entries for each vertex in each face
+    {normals, updated_faces} =
+      data.faces
+      |> Enum.reduce({[], []}, fn face, {acc_normals, acc_faces} ->
+        # For each vertex in the face, add its smooth normal
+        face_normal_indices = Enum.map(face, fn [v_idx, _t_idx, _n_idx] ->
+          vertex_normal = Enum.at(averaged_normals, v_idx - 1)
+
+          # Add this normal to our list and get its index
+          new_normal_idx = length(acc_normals) + 1  # 1-based indexing for OBJ
+          {vertex_normal, new_normal_idx}
+        end)
+
+        # Extract normals and indices
+        {face_normals, normal_indices} = Enum.unzip(face_normal_indices)
+        new_normals = acc_normals ++ face_normals
+
+        # Update face to reference the new normals
+        updated_face = face
+        |> Enum.with_index()
+        |> Enum.map(fn {[v_idx, t_idx, _n_idx], vertex_idx} ->
+          normal_idx = Enum.at(normal_indices, vertex_idx)
+          [v_idx, t_idx, normal_idx]
+        end)
+
+        {new_normals, acc_faces ++ [updated_face]}
+      end)
+
+    # Flatten the normals list
+    flat_normals = Enum.flat_map(normals, fn [x, y, z] -> [x, y, z] end)
+
+    %{data | normals: flat_normals, faces: updated_faces}
+  end
+
   # Calculate normal for a face given three vertex indices
   defp calculate_face_normal(triangle, vertices, flip_normal_direction) do
     # Get the first three vertices of the face
@@ -283,6 +370,14 @@ defmodule EAGL.ObjLoader do
 
   defp subtract_vectors([x1, y1, z1], [x2, y2, z2]) do
     [x1 - x2, y1 - y2, z1 - z2]
+  end
+
+  defp add_vectors([x1, y1, z1], [x2, y2, z2]) do
+    [x1 + x2, y1 + y2, z1 + z2]
+  end
+
+  defp divide_vector([x, y, z], scalar) do
+    [x / scalar, y / scalar, z / scalar]
   end
 
   defp cross_product([x1, y1, z1], [x2, y2, z2]) do
