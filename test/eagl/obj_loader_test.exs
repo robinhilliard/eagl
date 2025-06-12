@@ -56,6 +56,66 @@ defmodule EAGL.ObjLoaderTest do
       end)
     end
 
+    test "flip_normal_direction works for models with existing normals" do
+      model_path = Path.join([
+        :code.priv_dir(@app),
+        "models",
+        "cube.obj"
+      ])
+
+      # Load cube normally
+      assert {:ok, normal_model} = EAGL.ObjLoader.load_obj(model_path, flip_normal_direction: false)
+
+      # Load cube with flipped normals
+      assert {:ok, flipped_model} = EAGL.ObjLoader.load_obj(model_path, flip_normal_direction: true)
+
+      # Both should have the same structure
+      assert length(normal_model.normals) == length(flipped_model.normals)
+      assert length(normal_model.vertices) == length(flipped_model.vertices)
+
+      # Normals should be flipped (negated)
+      normal_normals = Enum.chunk_every(normal_model.normals, 3)
+      flipped_normals = Enum.chunk_every(flipped_model.normals, 3)
+
+      Enum.zip(normal_normals, flipped_normals)
+      |> Enum.each(fn {[nx, ny, nz], [fx, fy, fz]} ->
+        assert_in_delta nx, -fx, 0.0001
+        assert_in_delta ny, -fy, 0.0001
+        assert_in_delta nz, -fz, 0.0001
+      end)
+    end
+
+    test "flip_normal_direction works for models without existing normals" do
+      model_path = Path.join([
+        :code.priv_dir(@app),
+        "models",
+        "teapot.obj"
+      ])
+
+      # Load teapot normally (generates normals)
+      assert {:ok, normal_model} = EAGL.ObjLoader.load_obj(model_path, flip_normal_direction: false)
+
+      # Load teapot with flipped normals (generates flipped normals)
+      assert {:ok, flipped_model} = EAGL.ObjLoader.load_obj(model_path, flip_normal_direction: true)
+
+      # Both should have the same structure
+      assert length(normal_model.normals) == length(flipped_model.normals)
+      assert length(normal_model.vertices) == length(flipped_model.vertices)
+
+      # Normals should be flipped (negated)
+      normal_normals = Enum.chunk_every(normal_model.normals, 3)
+      flipped_normals = Enum.chunk_every(flipped_model.normals, 3)
+
+      # Test a sample of normals to ensure they're flipped
+      sample_pairs = Enum.zip(normal_normals, flipped_normals) |> Enum.take(10)
+
+      Enum.each(sample_pairs, fn {[nx, ny, nz], [fx, fy, fz]} ->
+        assert_in_delta nx, -fx, 0.0001
+        assert_in_delta ny, -fy, 0.0001
+        assert_in_delta nz, -fz, 0.0001
+      end)
+    end
+
     test "returns error for non-existent file" do
       assert {:error, _reason} = EAGL.ObjLoader.load_obj("nonexistent.obj")
     end

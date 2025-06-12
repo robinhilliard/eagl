@@ -12,7 +12,8 @@ defmodule EAGL.Model do
   Returns the processed model data ready for OpenGL.
 
   Options:
-    - :flip_normal_direction - boolean, set to true to flip generated normal direction (default: false)
+    - :flip_normal_direction - boolean, set to true to flip normal direction for all models (default: false)
+                               This works for both models with existing normals and models that need generated normals.
   """
   @spec load_model(String.t(), keyword()) :: {:ok, map()} | {:error, String.t()}
   def load_model(filename, opts \\ []) do
@@ -49,7 +50,9 @@ defmodule EAGL.Model do
   - Location 2: Normals (vec3)
 
   Options:
-    - :flip_normal_direction - boolean, set to true to flip generated normal direction (default: false)
+    - :flip_normal_direction - boolean, set to true to flip normal direction for all models (default: false)
+                               This works for both models with existing normals and models that need generated normals.
+                               Useful when model normals are pointing in the wrong direction for your lighting setup.
   """
   @spec load_model_to_vao(String.t(), keyword()) :: {:ok, %{vao: integer(), vertex_count: integer()}} | {:error, String.t()}
   def load_model_to_vao(filename, opts \\ []) do
@@ -103,90 +106,31 @@ defmodule EAGL.Model do
           index_data = for x <- model_data.indices, into: <<>>, do: <<x::unsigned-32-native>>
           :gl.bufferData(@gl_element_array_buffer, byte_size(index_data), index_data, @gl_static_draw)
 
+          # Store vertex count
+          vertex_count = length(model_data.indices)
+
           # Unbind VAO
           :gl.bindVertexArray(0)
 
-                      {:ok, %{
-              vao: vao,
-              vertex_count: length(model_data.indices)
-            }}
-          rescue
-            e -> {:error, "Failed to create VAO: #{Exception.message(e)}"}
-          end
+          {:ok, %{vao: vao, vertex_count: vertex_count}}
+            rescue
+              e ->
+                IO.puts("Error creating VAO: #{inspect(e)}")
+                {:error, "Failed to create VAO: #{Exception.message(e)}"}
+            end
         end
 
-      {:error, reason} -> {:error, reason}
+      {:error, reason} ->
+        {:error, reason}
     end
   end
 
   @doc """
-  Deletes a VAO and all its associated buffers.
-  Note: This function requires an active OpenGL context.
+  Deletes a vertex array object and its associated buffers.
   """
-  @spec delete_vao(integer()) :: :ok | {:error, String.t()}
+  @spec delete_vao(integer()) :: :ok
   def delete_vao(vao) do
-    try do
-      # Check if we have a valid OpenGL context
-      case :gl.getError() do
-        error when error != 0 ->
-          # If there's already an error, the context might be invalid
-          # Just try to delete the VAO directly
-          :gl.deleteVertexArrays([vao])
-        _ ->
-          # We have a valid context, do full cleanup
-          # Bind VAO to get access to its buffers
-          :gl.bindVertexArray(vao)
-
-          # Get buffer names - handle cases where buffers might not exist
-          vbo = try do
-            {buffer, _, _, _} = :gl.getVertexAttribiv(0, @gl_vertex_attrib_array_buffer_binding)
-            buffer
-          rescue
-            _ -> 0
-          end
-
-          tbo = try do
-            {buffer, _, _, _} = :gl.getVertexAttribiv(1, @gl_vertex_attrib_array_buffer_binding)
-            buffer
-          rescue
-            _ -> 0
-          end
-
-          nbo = try do
-            {buffer, _, _, _} = :gl.getVertexAttribiv(2, @gl_vertex_attrib_array_buffer_binding)
-            buffer
-          rescue
-            _ -> 0
-          end
-
-          ebo = try do
-            [buffer] = :gl.getIntegerv(@gl_element_array_buffer_binding)
-            buffer
-          rescue
-            _ -> 0
-          end
-
-          # Delete buffers only if they exist (non-zero)
-          if vbo > 0, do: :gl.deleteBuffers([vbo])
-          if tbo > 0, do: :gl.deleteBuffers([tbo])
-          if nbo > 0, do: :gl.deleteBuffers([nbo])
-          if ebo > 0, do: :gl.deleteBuffers([ebo])
-
-          # Unbind and delete VAO
-          :gl.bindVertexArray(0)
-          :gl.deleteVertexArrays([vao])
-      end
-
-            :ok
-    rescue
-      e ->
-        # Check if it's a wx environment error
-        if Exception.message(e) =~ "unknown_env" do
-          # OpenGL context is not available, skip cleanup
-          :ok
-        else
-          {:error, "Failed to delete VAO: #{Exception.message(e)}"}
-        end
-    end
+    :gl.deleteVertexArrays([vao])
+    :ok
   end
 end

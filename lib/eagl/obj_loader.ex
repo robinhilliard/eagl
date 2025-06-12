@@ -13,7 +13,10 @@ defmodule EAGL.ObjLoader do
     - :indices - List of integers for indexed drawing
 
   Options:
-    - :flip_normal_direction - boolean, set to true to flip generated normal direction (default: false)
+    - :flip_normal_direction - boolean, set to true to flip normal direction for all models (default: false)
+                               This works consistently for both models with existing normals and models that need generated normals.
+                               For models with existing normals: negates all normal components
+                               For models without normals: generates normals with flipped direction
   """
   @spec load_obj(String.t(), keyword()) :: {:ok, map()} | {:error, String.t()}
   def load_obj(file_path, opts \\ []) do
@@ -106,7 +109,13 @@ defmodule EAGL.ObjLoader do
     data_with_normals = if length(data.normals) == 0 do
       generate_face_normals(data, flip_normal_direction)
     else
-      data
+      # Apply flipping to existing normals if requested
+      if flip_normal_direction do
+        flipped_normals = flip_existing_normals(data.normals)
+        %{data | normals: flipped_normals}
+      else
+        data
+      end
     end
 
     # Create a map to store unique vertex combinations
@@ -291,6 +300,11 @@ defmodule EAGL.ObjLoader do
     else
       [0.0, 1.0, 0.0]  # Default up normal if zero length
     end
+  end
+
+  # Flip existing normals by negating each component
+  defp flip_existing_normals(normals) do
+    Enum.map(normals, fn component -> -component end)
   end
 
 
