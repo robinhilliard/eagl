@@ -31,6 +31,7 @@ end
 
 examples = [
   {"Simple Shader Example", "EAGL.Examples.SimpleShader.run_example()"},
+  {"Triangle Example", "EAGL.Examples.LearnOpenGL.GettingStarted.HelloTriangleExercise3.run_example()"},
   {"Teapot Example", "EAGL.Examples.Teapot.run_example()"}
 ]
 

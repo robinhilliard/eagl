@@ -1,0 +1,23 @@
+#!/usr/bin/env elixir
+
+# EAGL Triangle Example Runner
+# Demonstrates LearnOpenGL Hello Triangle Exercise 3
+
+Mix.install([], system_env: [{"MIX_ENV", "dev"}])
+
+# Change to the project directory
+project_dir = Path.dirname(__DIR__) |> Path.dirname()
+File.cd!(project_dir)
+
+# Compile and run the example
+case System.cmd("mix", ["run", "-e", "EAGL.Examples.LearnOpenGL.GettingStarted.HelloTriangleExercise3.run_example()"],
+                stderr_to_stdout: true) do
+  {output, 0} ->
+    IO.puts(output)
+    IO.puts("\n✓ Triangle example completed successfully!")
+
+  {output, exit_code} ->
+    IO.puts("✗ Error running triangle example (exit code #{exit_code}):")
+    IO.puts(output)
+    System.halt(1)
+end

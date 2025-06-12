@@ -291,13 +291,20 @@ defmodule EAGL.Window do
               {:ok, updated_state} ->
                 self() |> send({:wx, :ignore, :ignore, :ignore, {:wxPaint, :paint}})
                 updated_state
-              _ -> state
+              _ ->
+                state
             end
+          rescue
+            # Handle FunctionClauseError when :tick handler is not defined
+            e in [FunctionClauseError] ->
+              self() |> send({:wx, :ignore, :ignore, :ignore, {:wxPaint, :paint}})
+              state
           catch
             :close_window ->
               cleanup_and_exit(frame, gl_context, callback_module, state)
           end
         else
+          self() |> send({:wx, :ignore, :ignore, :ignore, {:wxPaint, :paint}})
           state
         end
         main_loop(frame, gl_canvas, gl_context, callback_module, new_state)
