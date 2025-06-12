@@ -10,7 +10,8 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.HelloTriangleExercise3 do
   - Using different fragment shaders (orange and yellow)
   - Rendering with different shader programs
 
-  Run with: mix run lib/examples/learnopengl/1_getting_started/hello_triangle_exercise_3.ex
+  Run with: mix run -e "EAGL.Examples.LearnOpenGL.GettingStarted.HelloTriangleExercise3.run_example()"
+  Or use the script: ./priv/scripts/triangle
   """
 
   use EAGL.Window
@@ -33,37 +34,20 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.HelloTriangleExercise3 do
   @spec run_example() :: :ok | {:error, term()}
   def run_example, do: EAGL.Window.run(__MODULE__, "LearnOpenGL - Hello Triangle Exercise 3")
 
-  @impl true
+    @impl true
   def setup do
     IO.puts("Starting LearnOpenGL Hello Triangle Exercise 3...")
 
     # Compile and link shaders
-    IO.puts("Creating shader programs...")
-    case create_shader_program("orange") do
-      {:ok, orange_program} ->
-        IO.puts("Orange program created successfully")
-        case create_shader_program("yellow") do
-          {:ok, yellow_program} ->
-            IO.puts("Yellow program created successfully")
+    with {:ok, orange_program} <- create_shader_program("orange"),
+         {:ok, yellow_program} <- create_shader_program("yellow") do
 
-            # Create VAOs and VBOs for both triangles
-            IO.puts("Creating triangle data...")
-            {vao1, vbo1} = create_triangle_data(@first_triangle)
-            {vao2, vbo2} = create_triangle_data(@second_triangle)
-            IO.puts("Triangle data created successfully")
+      # Create VAOs and VBOs for both triangles
+      {vao1, vbo1} = create_triangle_data(@first_triangle)
+      {vao2, vbo2} = create_triangle_data(@second_triangle)
 
-            # State: {orange_program, yellow_program, vao1, vao2, vbo1, vbo2}
-            IO.puts("Setup completed successfully!")
-            {:ok, {orange_program, yellow_program, vao1, vao2, vbo1, vbo2}}
-
-          {:error, reason} ->
-            IO.puts("Failed to create yellow shader program: #{reason}")
-            {:error, reason}
-        end
-
-      {:error, reason} ->
-        IO.puts("Failed to create orange shader program: #{reason}")
-        {:error, reason}
+      # State: {orange_program, yellow_program, vao1, vao2, vbo1, vbo2}
+      {:ok, {orange_program, yellow_program, vao1, vao2, vbo1, vbo2}}
     end
   end
 
