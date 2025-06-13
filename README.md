@@ -126,6 +126,39 @@ import EAGL.Model
 :gl.drawElements(@gl_triangles, model.vertex_count, @gl_unsigned_int, 0)
 ```
 
+### Buffer Management
+
+```elixir
+import EAGL.Buffer
+
+# Create simple position-only VAO/VBO
+vertices = [-0.5, -0.5, 0.0, 0.5, -0.5, 0.0, 0.0, 0.5, 0.0]
+{vao, vbo} = create_position_array(vertices)
+
+# Or create with custom attributes
+{vao, vbo} = create_vertex_array(vertices, [
+  {0, 3, @gl_float, @gl_false, 0, 0}  # position at location 0
+])
+
+# Clean up
+delete_vertex_array(vao, vbo)
+```
+
+### Error Handling
+
+```elixir
+import EAGL.Error
+
+# Check for OpenGL errors
+check("After buffer creation")  # Returns :ok or {:error, message}
+
+# Get error string for error code
+error_string(1280)  # "GL_INVALID_ENUM"
+
+# Check and raise on error (useful for debugging)
+check!("Critical operation")  # Raises RuntimeError if error found
+```
+
 ### Window Creation
 
 ```elixir

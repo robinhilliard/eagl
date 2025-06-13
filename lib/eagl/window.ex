@@ -296,7 +296,7 @@ defmodule EAGL.Window do
             end
           rescue
             # Handle FunctionClauseError when :tick handler is not defined
-            e in [FunctionClauseError] ->
+            _e in [FunctionClauseError] ->
               self() |> send({:wx, :ignore, :ignore, :ignore, {:wxPaint, :paint}})
               state
           catch
