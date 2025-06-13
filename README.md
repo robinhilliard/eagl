@@ -318,6 +318,26 @@ priv/
 - ✅ **LearnOpenGL Examples**: Direct ports of popular OpenGL tutorials
 - ✅ **Testing**: Full test suite with OpenGL context mocking
 
+## Roadmap
+
+The current focus is to:
+
+- [ ] Port all the Learning OpenGL examples, adding helper functions when necessary
+- [ ] Load common model types like GLTF
+
+And in future:
+
+- [ ] Be able to apply post-processing effects
+- [ ] More extensive camera/lighting/material helpers
+- [ ] Access to a physics engine
+- [ ] Built-in GPU profiling tools
+
+### Community Contributions Welcome
+- Documentation improvements and tutorials
+- Additional LearnOpenGL tutorial ports
+- Platform-specific optimizations
+- Example applications and demos
+
 ## Contributing
 
 1. Fork the repository
