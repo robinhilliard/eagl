@@ -1,0 +1,119 @@
+#!/bin/bash
+
+# EAGL Examples Runner - Simple and Reliable Version
+
+# Colors
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+PURPLE='\033[0;35m'
+CYAN='\033[0;36m'
+NC='\033[0m'
+
+# Check if we're in the right directory
+if [[ ! -f "mix.exs" ]]; then
+    echo -e "${RED}Error: Run this script from the EAGL project root directory.${NC}"
+    exit 1
+fi
+
+# Simple function to show menu and get examples
+show_menu() {
+    clear
+    echo -e "${PURPLE}═══════════════════════════════════════════════════════════════${NC}"
+    echo -e "${PURPLE}                    EAGL Examples Menu                        ${NC}"
+    echo -e "${PURPLE}═══════════════════════════════════════════════════════════════${NC}"
+    echo
+    
+    # Hardcoded examples for reliability
+    echo -e "${CYAN} 1)${NC} ${GREEN}Math Example${NC}"
+    echo -e "    ${YELLOW}Comprehensive example demonstrating all EAGL.Math functionality${NC}"
+    echo
+    
+    echo -e "${CYAN} 2)${NC} ${GREEN}Teapot Example${NC}"
+    echo -e "    ${YELLOW}Draw a 3D teapot with Phong shading${NC}"
+    echo
+    
+    echo -e "${BLUE}LearnOpenGL Examples:${NC}"
+    echo
+    echo -e "  ${BLUE}1. Getting Started:${NC}"
+    
+    echo -e "    ${CYAN} 3)${NC} ${GREEN}2.4 Hello Triangle Exercise 2${NC}"
+    echo -e "        ${YELLOW}Element Buffer Objects (EBO) - Rectangle using shared vertices${NC}"
+    echo
+    
+    echo -e "    ${CYAN} 4)${NC} ${GREEN}2.5 Hello Triangle Exercise 3${NC}"
+    echo -e "        ${YELLOW}Multiple Shader Programs - Two triangles with different colors${NC}"
+    echo
+    
+    echo -e "${PURPLE}═══════════════════════════════════════════════════════════════${NC}"
+}
+
+# Function to run an example
+run_example() {
+    local choice=$1
+    local module=""
+    
+    case $choice in
+        1)
+            module="EAGL.Examples.Math"
+            ;;
+        2)
+            module="EAGL.Examples.Teapot"
+            ;;
+        3)
+            module="EAGL.Examples.LearnOpenGL.GettingStarted.HelloTriangleExercise2"
+            ;;
+        4)
+            module="EAGL.Examples.LearnOpenGL.GettingStarted.HelloTriangleExercise3"
+            ;;
+        *)
+            echo -e "${RED}Invalid choice: $choice${NC}"
+            return 1
+            ;;
+    esac
+    
+    echo -e "${GREEN}Running: $module.run_example()${NC}"
+    echo
+    
+    # Run the example
+    mix run -e "$module.run_example()"
+    
+    echo
+    echo -e "${GREEN}Example finished.${NC}"
+}
+
+# Main loop
+while true; do
+    show_menu
+    echo -e "Enter example number (1-4), 'q' to quit, or 'r' to refresh:"
+    echo -n "> "
+    
+    read -r choice
+    
+    case "$choice" in
+        q|Q|quit|exit)
+            echo -e "${GREEN}Goodbye!${NC}"
+            exit 0
+            ;;
+        r|R|refresh)
+            continue
+            ;;
+        1|2|3|4)
+            clear
+            if run_example "$choice"; then
+                echo
+                echo -n "Press Enter to return to menu..."
+                read -r
+            else
+                echo -n "Press Enter to continue..."
+                read -r
+            fi
+            ;;
+        *)
+            echo -e "${RED}Invalid input. Please enter 1, 2, 3, 4, 'q', or 'r'.${NC}"
+            echo -n "Press Enter to continue..."
+            read -r
+            ;;
+    esac
+done 

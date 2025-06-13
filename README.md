@@ -1,36 +1,21 @@
-# EaGL
+# EAGL
 
 ![An Eagle carrying a teapot](/priv/images/eagl_logo.png "EAGL Logo")
 
-Make it **Ea**sier to work with Open**GL** in Elixir, using the Erlang WX bindings to OpenGL.
+Make it **EA**sier to work with Open**GL** in Elixir, using the Erlang WX bindings to OpenGL.
 
 ## Overview
 
-Most examples of working with OpenGL are written in C++ or C# (Unity). The purpose of the EAGL library is to make it easier to translate OpenGL tutorials
-and examples from resources like [Learn OpenGL](https://learnopengl.com) into Elixir with some help to get over the initial learning bump and eventually write arbitrarily complex OpenGL applications with minimal boilerplate (using the Wings 3D Erlang source as a guide).
-
-EAGL provides a clean, idiomatic Elixir interface for:
-- OpenGL shader management and compilation
-- 3D model loading (Wavefront OBJ format)
-- Window creation and event handling
-- Vertex Array Objects (VAO) management
-- OpenGL constants and utilities
-- A port of the GLM math header library
+Most examples of working with OpenGL are written in C++ or C# (Unity). The purpose of the EAGL library is to
+- Make it easier to translate OpenGL tutorials and examples from resources like [Learn OpenGL](https://learnopengl.com) into Elixir. 
+- Provide basic helper functions to bridge the gap between idiomatic Elixir and OpenGL's state machine, using the Wings 3D Erlang source as a guide.
+- Enable other libraries and apps to build on this one - e.g. there should be Unity-like tool for the BEAM.
 
 Non-goals:
-- Heavy abstraction/wrapping of the Erlang wx library: we want it to be easy to see the correspondence betweeen OpenGL examples in other languages and ours
-- A Shader DSL like Nx
+- Wrapping of the Erlang wx library
+- A Shader DSL
 - A UI layout/component library
 - 3D mesh modelling (leave that to Wings 3D, Blender etc)
-
-## Features
-
-- **Math Library**: Complete 3D math operations (vectors, matrices, quaternions)
-- **Shader Management**: Easy shader compilation and program linking
-- **Uniform Helpers**: Simplified uniform value setting with automatic type detection
-- **Model Loading**: OBJ file loader with automatic normal generation
-- **Window Management**: OpenGL context creation and event handling
-- **Examples**: Ready-to-run examples demonstrating various features
 
 ## Quick Start
 
@@ -41,18 +26,18 @@ Non-goals:
 
 ### Running Examples
 
-EAGL includes several examples to demonstrate its capabilities:
+EAGL includes several examples to demonstrate its capabilities. Use the unified examples runner:
 
 ```bash
-# Simple point rendering
-priv/scripts/simple_shader
-
-# 3D teapot with Phong shading
-priv/scripts/teapot
-
-# All math library demonstrations
-priv/scripts/math
+# Interactive menu with all examples
+./priv/scripts/run_examples
 ```
+
+Available examples:
+1. **Math Example** - Comprehensive demonstration of all EAGL.Math functionality (terminal-based)
+2. **Teapot Example** - 3D teapot with Phong shading (OpenGL window)
+3. **LearnOpenGL 2.4** - Hello Triangle Exercise 2 (Element Buffer Objects)
+4. **LearnOpenGL 2.5** - Hello Triangle Exercise 3 (Multiple Shader Programs)
 
 ## Usage
 
@@ -102,7 +87,7 @@ set_uniforms(program, [
 ])
 ```
 
-### Uniform Helper Features
+### Uniform Helper Features (from Wings 3D)
 
 The uniform helpers automatically detect the type of EAGL.Math values:
 
@@ -131,11 +116,11 @@ import EAGL.Model
 ```elixir
 import EAGL.Buffer
 
-# Create simple position-only VAO/VBO
+# Create simple position-only VAO/VBO (convenience function)
 vertices = [-0.5, -0.5, 0.0, 0.5, -0.5, 0.0, 0.0, 0.5, 0.0]
 {vao, vbo} = create_position_array(vertices)
 
-# Or create with custom attributes
+# Or create with custom attributes (general function)
 {vao, vbo} = create_vertex_array(vertices, [
   {0, 3, @gl_float, @gl_false, 0, 0}  # position at location 0
 ])
@@ -149,10 +134,10 @@ delete_vertex_array(vao, vbo)
 ```elixir
 import EAGL.Error
 
-# Check for OpenGL errors
+# Check for OpenGL errors with context
 check("After buffer creation")  # Returns :ok or {:error, message}
 
-# Get error string for error code
+# Get human-readable error string for error code
 error_string(1280)  # "GL_INVALID_ENUM"
 
 # Check and raise on error (useful for debugging)
@@ -193,9 +178,11 @@ end
 
 ## Library Structure
 
-- `EAGL.Math` - Vector and matrix math operations
+- `EAGL.Math` - Vector and matrix math operations (GLM-inspired)
 - `EAGL.Shader` - Shader compilation and uniform management  
 - `EAGL.Model` - 3D model loading and vertex array management
+- `EAGL.Buffer` - VAO/VBO helper functions (Wings3D-inspired)
+- `EAGL.Error` - OpenGL error checking and reporting
 - `EAGL.Window` - OpenGL context and window management
 - `EAGL.Const` - OpenGL constants
 
@@ -203,29 +190,32 @@ end
 
 Comprehensive 3D math library supporting:
 
-- **Vectors**: 2D, 3D, 4D vector operations
-- **Matrices**: 2x2, 3x3, 4x4 matrix operations  
-- **Quaternions**: Rotation representation and SLERP
-- **Utilities**: Trigonometry, interpolation, clamping
-- **Geometric**: Cross products, normals, projections
+- **Vectors**: 2D, 3D, 4D vector operations with constructor macros
+- **Matrices**: 2x2, 3x3, 4x4 matrix operations with transformation functions
+- **Quaternions**: Rotation representation, SLERP, and conversion functions
+- **Utilities**: Trigonometry, interpolation, clamping, and geometric functions
+- **OpenGL Integration**: All functions work with Erlang's OpenGL binding format
 
 All math functions work with the tuple-in-list format required by Erlang's OpenGL bindings.
 
 ## Examples
 
-### Simple Rendering
-```elixir
-EAGL.Examples.SimpleShader.run_example()
+### Interactive Examples Runner
+```bash
+./priv/scripts/run_examples
 ```
 
-### 3D Teapot
-```elixir  
+### Individual Examples
+```elixir
+# Math library demonstrations (terminal output)
+EAGL.Examples.Math.run_example()
+
+# 3D teapot with Phong shading (OpenGL window)
 EAGL.Examples.Teapot.run_example()
-```
 
-### Math Demonstrations
-```elixir
-EAGL.Examples.Math.run_all_demos()
+# LearnOpenGL tutorials (OpenGL windows)
+EAGL.Examples.LearnOpenGL.GettingStarted.HelloTriangleExercise2.run_example()
+EAGL.Examples.LearnOpenGL.GettingStarted.HelloTriangleExercise3.run_example()
 ```
 
 ## Requirements
@@ -278,12 +268,19 @@ OpenGL is typically available through graphics drivers. If you encounter issues,
    mix test
    ```
 
+5. Try the examples:
+   ```bash
+   ./priv/scripts/run_examples
+   ```
+
 ## Project Structure
 
 ```
 lib/
 ├── eagl/                   # Core EAGL modules
+│   ├── buffer.ex           # VAO/VBO helper functions
 │   ├── const.ex            # OpenGL constants
+│   ├── error.ex            # Error checking and reporting
 │   ├── math.ex             # GLM-style math library
 │   ├── model.ex            # 3D model management
 │   ├── obj_loader.ex       # Wavefront OBJ parser
@@ -291,14 +288,19 @@ lib/
 │   ├── window.ex           # Window management
 │   └── window_behaviour.ex # Window callback behavior
 ├── examples/               # Example applications
+│   ├── math_example.ex     # Math library demonstrations
+│   ├── teapot_example.ex   # 3D teapot rendering
+│   └── learnopengl/        # LearnOpenGL tutorial ports
 └── wx/                     # wxWidgets constants
 test/
 ├── eagl/                   # Unit tests for EAGL modules
 └── eagl_test.exs           # Integration tests
 priv/
 ├── models/                 # 3D model files (.obj)
-├── scripts/                # Convenience scripts for running examples
+├── scripts/                # Convenience scripts
+│   └── run_examples        # Unified examples runner
 └── shaders/                # GLSL shader files
+    └── learnopengl/        # LearnOpenGL tutorial shaders
 ```
 
 ## Features
@@ -306,10 +308,12 @@ priv/
 - ✅ **Shader Management**: Automatic compilation, linking, and error reporting
 - ✅ **3D Model Loading**: Wavefront OBJ format with normals and texture coordinates
 - ✅ **Math Library**: GLM-compatible vectors, matrices, quaternions with full OpenGL integration
+- ✅ **Buffer Helpers**: Wings3D-inspired VAO/VBO management functions
+- ✅ **Error Handling**: Comprehensive OpenGL error checking and reporting
 - ✅ **Window Management**: Cross-platform window creation with wxWidgets
 - ✅ **Event Handling**: Resize, close, and paint events
 - ✅ **Resource Cleanup**: Automatic cleanup of OpenGL resources
-- ✅ **Error Handling**: Comprehensive error reporting and graceful degradation
+- ✅ **LearnOpenGL Examples**: Direct ports of popular OpenGL tutorials
 - ✅ **Testing**: Full test suite with OpenGL context mocking
 
 ## Contributing
@@ -327,8 +331,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## Acknowledgments
 
 - [Learn OpenGL](https://learnopengl.com) for excellent OpenGL tutorials
+- [Wings3D](https://wings3d.com) for inspiration and helper function patterns - the name EAGL(e) is a tip of the hat to this project
 - The Erlang/OTP team for wxWidgets bindings
-- The Elixir community for inspiration and support, particularly the Elixir Sydney/Australia User Group
-- Claude Sonnet for giving me the patience to work through the lack of examples and get to running code on my 3rd or 4th attempt over the years to do something with gl via Erlang and WX
-- The name EAGL(e) is a tip of the hat to [Wings3D](https://wings3d.com), a highpoint in BEAM-based 3D programming to date.
+- The Elixir community for inspiration and support, particularly the [Elixir Sydney/Australia User Group](https://https://elixir.sydney)
+- [Cursor](https://cursor.com) and Claude Sonnet for giving me the patience to get to running code and port the Learning OpenGL examples
 

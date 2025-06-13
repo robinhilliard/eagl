@@ -420,9 +420,13 @@ defmodule EAGL.Examples.Math do
   end
 
   @doc """
-  Run all demonstrations.
+  Run the math example - consistent interface with other examples.
   """
-  def run_all_demos do
+  def run_example do
+    IO.puts("EAGL Math Library Comprehensive Demo")
+    IO.puts("====================================")
+    IO.puts("This example demonstrates all EAGL.Math functionality without OpenGL.")
+
     constructor_examples()
     vector_operations_demo()
     quaternion_operations_demo()
@@ -431,6 +435,10 @@ defmodule EAGL.Examples.Math do
     transformation_pipeline_demo()
     lighting_demo()
     opengl_usage_examples()
+
+    IO.puts("\n====================================")
+    IO.puts("Math demo completed successfully!")
+    IO.puts("Check out the other examples for OpenGL rendering demos.")
   end
 
   # Helper function to check if a matrix is approximately identity
@@ -440,7 +448,4 @@ defmodule EAGL.Examples.Math do
     abs(i) < tolerance and abs(j) < tolerance and abs(k - 1.0) < tolerance and abs(l) < tolerance and
     abs(m) < tolerance and abs(n) < tolerance and abs(o) < tolerance and abs(p - 1.0) < tolerance
   end
-
-  # Legacy function names for backward compatibility
-  def math_examples, do: constructor_examples()
 end

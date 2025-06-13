@@ -2,7 +2,8 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.HelloTriangleExercise3 do
   @moduledoc """
   Port of LearnOpenGL's Hello Triangle Exercise 3 to EAGL framework.
 
-  Original: https://learnopengl.com/code_viewer_gh.php?code=src/1.getting_started/2.5.hello_triangle_exercise3/hello_triangle_exercise3.cpp
+  Original: https://learnopengl.com/Getting-started/Hello-Triangle (Exercise 3)
+  Chapter 1, Section 2.5: Hello Triangle Exercise 3
 
   This example demonstrates:
   - Creating two triangles using separate VAOs and VBOs
@@ -17,15 +18,15 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.HelloTriangleExercise3 do
   use EAGL.Window
   use EAGL.Const
   import EAGL.Shader
-  import EAGL.Buffer
 
-  # Triangle vertex data
+  # First triangle (left side)
   @first_triangle [
     -0.9, -0.5, 0.0,  # left
     -0.0, -0.5, 0.0,  # right
     -0.45, 0.5, 0.0   # top
   ]
 
+  # Second triangle (right side)
   @second_triangle [
     0.0, -0.5, 0.0,   # left
     0.9, -0.5, 0.0,   # right
@@ -33,28 +34,27 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.HelloTriangleExercise3 do
   ]
 
   @spec run_example() :: :ok | {:error, term()}
-  def run_example, do: EAGL.Window.run(__MODULE__, "LearnOpenGL - Hello Triangle Exercise 3")
+  def run_example, do: EAGL.Window.run(__MODULE__, "LearnOpenGL - 1 Getting Started - 2.5 Hello Triangle Exercise 3")
 
   @impl true
   def setup do
     IO.puts("Starting LearnOpenGL Hello Triangle Exercise 3...")
 
-    # Compile and link shaders for both programs
-    with {:ok, vertex_shader} <- create_shader(@gl_vertex_shader, "learnopengl/1_getting_started/hello_triangle_exercise_3/vertex_shader.glsl"),
-         {:ok, orange_fragment} <- create_shader(@gl_fragment_shader, "learnopengl/1_getting_started/hello_triangle_exercise_3/fragment_shader_orange.glsl"),
-         {:ok, yellow_fragment} <- create_shader(@gl_fragment_shader, "learnopengl/1_getting_started/hello_triangle_exercise_3/fragment_shader_yellow.glsl"),
+    # Compile and link shaders - using a single with statement for educational clarity
+    with {:ok, vertex_shader} <- create_shader(@gl_vertex_shader, "learnopengl/1_getting_started/2_5_hello_triangle_exercise_3/vertex_shader.glsl"),
+         {:ok, orange_fragment} <- create_shader(@gl_fragment_shader, "learnopengl/1_getting_started/2_5_hello_triangle_exercise_3/orange_fragment_shader.glsl"),
+         {:ok, yellow_fragment} <- create_shader(@gl_fragment_shader, "learnopengl/1_getting_started/2_5_hello_triangle_exercise_3/yellow_fragment_shader.glsl"),
          {:ok, orange_program} <- create_attach_link([vertex_shader, orange_fragment]),
          {:ok, yellow_program} <- create_attach_link([vertex_shader, yellow_fragment]) do
 
-      IO.puts("✓ Created orange shader program")
-      IO.puts("✓ Created yellow shader program")
+      IO.puts("✓ Created shader programs")
 
-      # Create VAOs and VBOs for both triangles using EAGL.Buffer helpers
-      {vao1, vbo1} = create_position_array(@first_triangle)
-      {vao2, vbo2} = create_position_array(@second_triangle)
+      # Create VAOs and VBOs using EAGL.Buffer helpers
+      {first_vao, first_vbo} = EAGL.Buffer.create_position_array(@first_triangle)
+      {second_vao, second_vbo} = EAGL.Buffer.create_position_array(@second_triangle)
 
-      # State: {orange_program, yellow_program, vao1, vao2, vbo1, vbo2}
-      {:ok, {orange_program, yellow_program, vao1, vao2, vbo1, vbo2}}
+      # State: {orange_program, yellow_program, first_vao, first_vbo, second_vao, second_vbo}
+      {:ok, {orange_program, yellow_program, first_vao, first_vbo, second_vao, second_vbo}}
     else
       {:error, reason} ->
         IO.puts("✗ Failed to create shader programs: #{reason}")
@@ -63,7 +63,7 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.HelloTriangleExercise3 do
   end
 
   @impl true
-  def render(viewport_width, viewport_height, {orange_program, yellow_program, vao1, vao2, _vbo1, _vbo2}) do
+  def render(viewport_width, viewport_height, {orange_program, yellow_program, first_vao, _first_vbo, second_vao, _second_vbo}) do
     # Set viewport
     :gl.viewport(0, 0, trunc(viewport_width), trunc(viewport_height))
 
@@ -73,12 +73,12 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.HelloTriangleExercise3 do
 
     # Draw first triangle (orange)
     :gl.useProgram(orange_program)
-    :gl.bindVertexArray(vao1)
+    :gl.bindVertexArray(first_vao)
     :gl.drawArrays(@gl_triangles, 0, 3)
 
     # Draw second triangle (yellow)
     :gl.useProgram(yellow_program)
-    :gl.bindVertexArray(vao2)
+    :gl.bindVertexArray(second_vao)
     :gl.drawArrays(@gl_triangles, 0, 3)
 
     :ok
@@ -93,10 +93,10 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.HelloTriangleExercise3 do
   end
 
   @impl true
-  def cleanup({orange_program, yellow_program, vao1, vao2, vbo1, vbo2}) do
-    # Cleanup triangle data using EAGL.Buffer helpers
-    delete_vertex_array(vao1, vbo1)
-    delete_vertex_array(vao2, vbo2)
+  def cleanup({orange_program, yellow_program, first_vao, first_vbo, second_vao, second_vbo}) do
+    # Cleanup geometry data
+    EAGL.Buffer.delete_vertex_array(first_vao, first_vbo)
+    EAGL.Buffer.delete_vertex_array(second_vao, second_vbo)
 
     # Cleanup shader programs
     cleanup_program(orange_program)
