@@ -28,6 +28,7 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.HelloTriangleExercise2 do
   use EAGL.Window
   use EAGL.Const
   import EAGL.Shader
+  import EAGL.Buffer
 
   # Rectangle vertex data (4 vertices shared between 2 triangles)
   @vertices [
@@ -59,8 +60,8 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.HelloTriangleExercise2 do
 
       IO.puts("✓ Created shader program")
 
-      # Create VAO, VBO, and EBO
-      {vao, vbo, ebo} = create_rectangle_data()
+      # Create VAO, VBO, and EBO for indexed rectangle geometry
+      {vao, vbo, ebo} = create_indexed_position_array(@vertices, @indices)
 
       # State: {program, vao, vbo, ebo}
       {:ok, {program, vao, vbo, ebo}}
@@ -102,43 +103,12 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.HelloTriangleExercise2 do
   @impl true
   def cleanup({program, vao, vbo, ebo}) do
     # Cleanup geometry data
-    :gl.deleteVertexArrays([vao])
-    :gl.deleteBuffers([vbo])
-    :gl.deleteBuffers([ebo])
+    delete_indexed_array(vao, vbo, ebo)
 
     # Cleanup shader program
     cleanup_program(program)
     :ok
   end
 
-  defp create_rectangle_data do
-    # Generate VAO, VBO, and EBO
-    [vao] = :gl.genVertexArrays(1)
-    [vbo] = :gl.genBuffers(1)
-    [ebo] = :gl.genBuffers(1)
 
-    # Bind VAO first
-    :gl.bindVertexArray(vao)
-
-    # Bind and fill VBO with vertex data
-    :gl.bindBuffer(@gl_array_buffer, vbo)
-    vertex_data = for v <- @vertices, into: <<>>, do: <<v::float-32-native>>
-    :gl.bufferData(@gl_array_buffer, byte_size(vertex_data), vertex_data, @gl_static_draw)
-
-    # Bind and fill EBO with index data
-    :gl.bindBuffer(@gl_element_array_buffer, ebo)
-    index_data = for i <- @indices, into: <<>>, do: <<i::unsigned-32-native>>
-    :gl.bufferData(@gl_element_array_buffer, byte_size(index_data), index_data, @gl_static_draw)
-
-    # Configure vertex attribute (position at location 0)
-    :gl.vertexAttribPointer(0, 3, @gl_float, @gl_false, 3 * 4, 0)  # 4 bytes per float
-    :gl.enableVertexAttribArray(0)
-
-    # Unbind (good practice)
-    :gl.bindBuffer(@gl_array_buffer, 0)
-    # Note: Don't unbind EBO while VAO is active - VAO stores the EBO binding
-    :gl.bindVertexArray(0)
-
-    {vao, vbo, ebo}
-  end
 end
