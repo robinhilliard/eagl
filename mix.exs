@@ -1,14 +1,33 @@
 defmodule EAGL.MixProject do
   use Mix.Project
 
+  @version "0.1.0"
+  @source_url "https://github.com/robinhilliard/eagl"
+
   def project do
     [
       app: :eagl,
-      version: "0.1.0",
-      elixir: "~> 1.17",
+      version: @version,
+      elixir: "~> 1.14",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
-      included_files: ["priv/**/*"]
+      included_files: ["priv/**/*"],
+
+      # Hex.pm metadata
+      description: description(),
+      package: package(),
+
+      # Documentation
+      docs: docs(),
+
+      # Testing
+      test_coverage: [tool: ExCoveralls],
+      preferred_cli_env: [
+        coveralls: :test,
+        "coveralls.detail": :test,
+        "coveralls.post": :test,
+        "coveralls.html": :test
+      ]
     ]
   end
 
@@ -22,7 +41,90 @@ defmodule EAGL.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
+      # Development and documentation
+      {:ex_doc, "~> 0.31", only: :dev, runtime: false},
+      {:excoveralls, "~> 0.18", only: :test}
     ]
   end
 
+    defp description do
+    """
+    EAGL (Easier OpenGL) - A clean, idiomatic Elixir interface for OpenGL programming.
+    Features GLM-inspired 3D math, Wings3D-inspired helpers, comprehensive error handling,
+    and direct ports of LearnOpenGL.com tutorials. Perfect for 3D graphics and game development.
+    """
+  end
+
+  defp package do
+    [
+      name: "eagl",
+      files: [
+        "lib",
+        "priv/models",
+        "priv/shaders",
+        "priv/scripts/run_examples",
+        "mix.exs",
+        "README.md",
+        "LICENSE"
+      ],
+      maintainers: ["Robin Hilliard"],
+      licenses: ["MIT"],
+      links: %{
+        "GitHub" => @source_url,
+        "Documentation" => "https://hexdocs.pm/eagl",
+        "Changelog" => "#{@source_url}/blob/main/CHANGELOG.md"
+      },
+      exclude_patterns: [
+        "priv/scripts/debug_*",
+        "test/",
+        "_build/",
+        ".git/",
+        ".elixir_ls/",
+        "erl_crash.dump"
+      ]
+    ]
+  end
+
+  defp docs do
+    [
+      name: "EAGL",
+      source_ref: "v#{@version}",
+      source_url: @source_url,
+      homepage_url: @source_url,
+      main: "readme",
+      logo: "priv/images/eagl_logo.png",
+      extras: [
+        "README.md",
+        "LICENSE"
+      ],
+      groups_for_modules: [
+        "Core": [
+          EAGL.Math,
+          EAGL.Shader,
+          EAGL.Buffer,
+          EAGL.Error,
+          EAGL.Window
+        ],
+        "Model Loading": [
+          EAGL.Model,
+          EAGL.ObjLoader
+        ],
+        "Constants": [
+          EAGL.Const
+        ],
+        "Examples": [
+          EAGL.Examples.Math,
+          EAGL.Examples.Teapot,
+          EAGL.Examples.LearnOpenGL.GettingStarted.HelloTriangleExercise2,
+          EAGL.Examples.LearnOpenGL.GettingStarted.HelloTriangleExercise3
+        ]
+      ],
+      groups_for_docs: [
+        "Vector Operations": &(&1[:group] == :vector),
+        "Matrix Operations": &(&1[:group] == :matrix),
+        "Quaternion Operations": &(&1[:group] == :quaternion),
+        "Utility Functions": &(&1[:group] == :utility)
+      ]
+    ]
+  end
 end
