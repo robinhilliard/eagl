@@ -180,9 +180,9 @@ end
 ## Library Structure
 
 - `EAGL.Math` - Vector and matrix math operations (GLM-inspired)
-- `EAGL.Shader` - Shader compilation and uniform management  
+- `EAGL.Shader` - Shader compilation and uniform management (Wings3D-inspired)
 - `EAGL.Model` - 3D model loading and vertex array management
-- `EAGL.Buffer` - VAO/VBO helper functions (Wings3D-inspired)
+- `EAGL.Buffer` - VAO/VBO helper functions
 - `EAGL.Error` - OpenGL error checking and reporting
 - `EAGL.Window` - OpenGL context and window management
 - `EAGL.Const` - OpenGL constants
