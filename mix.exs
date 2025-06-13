@@ -62,7 +62,7 @@ defmodule EAGL.MixProject do
         "lib",
         "priv/models",
         "priv/shaders",
-        "priv/scripts/run_examples",
+        "priv/scripts",
         "mix.exs",
         "README.md",
         "LICENSE"

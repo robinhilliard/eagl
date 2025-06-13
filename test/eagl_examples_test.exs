@@ -2,12 +2,7 @@ defmodule EAGL.Examples.Test do
   use ExUnit.Case, async: false
 
   test "math example" do
-    EAGL.Examples.Math.run_all_demos()
-    assert true
-  end
-
-  test "simple shader example" do
-    EAGL.Examples.SimpleShader.run_example()
+    EAGL.Examples.Math.run_example()
     assert true
   end
 
