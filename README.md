@@ -1,6 +1,6 @@
 # EAGL
 
-![An Eagle carrying a teapot](/priv/images/eagl_logo.png "EAGL Logo")
+![An Eagle carrying a teapot](assets/eagl_logo_grey_on_transparent.png "EAGL Logo")
 
 Make it **EA**sier to work with Open**GL** in Elixir, using the Erlang WX bindings to OpenGL.
 
