@@ -93,6 +93,7 @@ defmodule EAGL.MixProject do
       homepage_url: @source_url,
       main: "readme",
       logo: "priv/images/eagl_logo.png",
+      assets: %{"priv/images" => "assets"},
       extras: [
         "README.md",
         "LICENSE"
