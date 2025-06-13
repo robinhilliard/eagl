@@ -115,8 +115,9 @@ defmodule EAGL.MixProject do
         "Examples": [
           EAGL.Examples.Math,
           EAGL.Examples.Teapot,
-          EAGL.Examples.LearnOpenGL.GettingStarted.HelloTriangleExercise2,
-          EAGL.Examples.LearnOpenGL.GettingStarted.HelloTriangleExercise3
+                          EAGL.Examples.LearnOpenGL.GettingStarted.HelloTriangleExercise1,
+                EAGL.Examples.LearnOpenGL.GettingStarted.HelloTriangleExercise2,
+                EAGL.Examples.LearnOpenGL.GettingStarted.HelloTriangleExercise3
         ]
       ],
       groups_for_docs: [

@@ -36,8 +36,9 @@ EAGL includes several examples to demonstrate its capabilities. Use the unified 
 Available examples:
 1. **Math Example** - Comprehensive demonstration of all EAGL.Math functionality (terminal-based)
 2. **Teapot Example** - 3D teapot with Phong shading (OpenGL window)
-3. **LearnOpenGL 2.4** - Hello Triangle Exercise 2 (Element Buffer Objects)
-4. **LearnOpenGL 2.5** - Hello Triangle Exercise 3 (Multiple Shader Programs)
+3. **LearnOpenGL 2.3** - Hello Triangle Exercise 1 (glDrawArrays)
+4. **LearnOpenGL 2.4** - Hello Triangle Exercise 2 (Element Buffer Objects)
+5. **LearnOpenGL 2.5** - Hello Triangle Exercise 3 (Multiple Shader Programs)
 
 ## Usage
 
@@ -214,6 +215,7 @@ EAGL.Examples.Math.run_example()
 EAGL.Examples.Teapot.run_example()
 
 # LearnOpenGL tutorials (OpenGL windows)
+EAGL.Examples.LearnOpenGL.GettingStarted.HelloTriangleExercise1.run_example()
 EAGL.Examples.LearnOpenGL.GettingStarted.HelloTriangleExercise2.run_example()
 EAGL.Examples.LearnOpenGL.GettingStarted.HelloTriangleExercise3.run_example()
 ```
