@@ -1,8 +1,10 @@
-# EAGL
-
-![An Eagle carrying a teapot](assets/eagl_logo_grey_on_transparent.png "EAGL Logo")
-
-Make it **EA**sier to work with Open**GL** in Elixir, using the Erlang WX bindings to OpenGL.
+<div align="center">
+  <h1>EAGL</h1>
+  <img src="assets/eagl_logo_grey_on_transparent.png" alt="EAGL Logo" title="EAGL Logo" width="200">
+  <p style="max-width: 200px; margin: 10px auto 0;">
+    Make it <strong>EA</strong>sier to work with Open<strong>GL</strong> in Elixir.
+  </p>
+</div>
 
 ## Overview
 
