@@ -186,7 +186,11 @@ defmodule MyApp do
 
   @impl true
   def render(width, height, state) do
-    # Render frame
+    # Your render function should handle clearing the screen
+    :gl.clearColor(0.2, 0.3, 0.3, 1.0)
+    :gl.clear(@gl_color_buffer_bit ||| @gl_depth_buffer_bit)
+    
+    # Render your content here
     :ok
   end
 

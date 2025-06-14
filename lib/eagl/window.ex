@@ -130,13 +130,15 @@ defmodule EAGL.Window do
 
       # Initialize OpenGL with proper setup
       :gl.viewport(0, 0, safe_width, safe_height)
-      :gl.clearColor(0.0, 0.0, 0.0, 1.0)
 
       # Enable depth testing - Wings3D approach: trust the attributes we requested
       # Since we requested 24-bit depth buffer in canvas attributes, it should be available
       :gl.enable(@gl_depth_test)
       :gl.depthFunc(@gl_less)
       :gl.clearDepth(1.0)
+
+      # Initial clear to ensure clean state - examples will handle their own clearing
+      :gl.clearColor(0.0, 0.0, 0.0, 1.0)
       :gl.clear(@gl_color_buffer_bit ||| @gl_depth_buffer_bit)
 
       # Check for OpenGL errors
@@ -253,8 +255,6 @@ defmodule EAGL.Window do
           safe_height = max(final_height, 1)
 
           :gl.viewport(0, 0, safe_width, safe_height)
-          :gl.clearColor(0.0, 0.0, 0.0, 1.0)
-          :gl.clear(@gl_color_buffer_bit ||| @gl_depth_buffer_bit)
           callback_module.render(safe_width * 1.0, safe_height * 1.0, state)
           :wxGLCanvas.swapBuffers(gl_canvas)
         end
@@ -292,8 +292,6 @@ defmodule EAGL.Window do
         safe_height = max(height, 1)
 
         :gl.viewport(0, 0, safe_width, safe_height)
-        :gl.clearColor(0.0, 0.0, 0.0, 1.0)
-        :gl.clear(@gl_color_buffer_bit ||| @gl_depth_buffer_bit)
         callback_module.render(safe_width * 1.0, safe_height * 1.0, state)
         :wxGLCanvas.swapBuffers(gl_canvas)
         main_loop(frame, gl_canvas, gl_context, callback_module, state)
