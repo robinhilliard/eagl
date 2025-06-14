@@ -147,8 +147,8 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.ShadersUniform do
       IO.puts("✓ Ready to render! You should see a color-changing triangle.")
 
       # State: {program, vao, vbo, start_time}
-      start_time = :erlang.monotonic_time(:millisecond)
-      {:ok, {program, vao, vbo, start_time}}
+      current_time = :erlang.monotonic_time(:millisecond)
+      {:ok, {program, vao, vbo, current_time}}
     else
       {:error, reason} ->
         IO.puts("✗ Failed to create shader program: #{reason}")
@@ -192,7 +192,7 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.ShadersUniform do
 
   @impl true
   def handle_event(:tick, {program, vao, vbo, _time}) do
-    # EAGL Framework Pattern: Update time state on each tick
+    # EAGL Framework Pattern: Update time state on each tick (1/60th of a second)
     # This differs from original LearnOpenGL where glfwGetTime() is called in render loop
     # Benefits:
     #   - Separates state updates from rendering

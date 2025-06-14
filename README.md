@@ -65,6 +65,8 @@ LearnOpenGL Examples:
      9) 2.5 Hello Triangle Exercise 3
         Multiple Shader Programs - Two triangles with different colors
 
+     ...
+
 ═══════════════════════════════════════════════════════════════
 Enter example number (1-9), 'q' to quit, or 'r' to refresh:
 >
@@ -181,8 +183,9 @@ check!("Critical operation")  # Raises RuntimeError if error found
 
 ### Window Creation
 
-EAGL provides flexible window creation with optional features:
+EAGL provides flexible window creation with a clean, options-based API:
 
+- **Default Size**: 1024x768 pixels (can be customized with `size:` option)
 - **2D Rendering** (default): No depth buffer, suitable for triangles, sprites, UI elements
 - **3D Rendering**: Enables depth testing and depth buffer for proper 3D scene rendering
 - **Automatic ESC Handling**: Optional ESC key handling for simple examples and tutorials
@@ -194,14 +197,17 @@ defmodule MyApp do
   import EAGL.Math
 
   def run_example do
-    # For 2D rendering (triangles, sprites, UI)
+    # For 2D rendering (triangles, sprites, UI) - uses default 1024x768 size
     EAGL.Window.run(__MODULE__, "My 2D OpenGL App")
     
     # For 3D rendering (models, scenes with depth)
-    EAGL.Window.run(__MODULE__, "My 3D OpenGL App", {1024, 768}, depth_testing: true)
+    EAGL.Window.run(__MODULE__, "My 3D OpenGL App", depth_testing: true)
     
     # For tutorials/examples with automatic ESC key handling
-    EAGL.Window.run(__MODULE__, "Tutorial Example", {1024, 768}, esc_to_exit: true)
+    EAGL.Window.run(__MODULE__, "Tutorial Example", esc_to_exit: true)
+    
+    # Custom window size and options
+    EAGL.Window.run(__MODULE__, "Custom Size App", size: {1280, 720}, depth_testing: true, esc_to_exit: true)
   end
 
   @impl true
