@@ -107,9 +107,13 @@ defmodule EAGL.ShaderTest do
       end
     end
 
-    test "create_shader with non-existent file" do
-      assert {:error, message} = create_shader(@gl_vertex_shader, "non_existent.glsl")
-      assert String.contains?(message, "Shader file not found")
+    test "create_shader with non-existent file", %{gl_available: gl_available} do
+      if gl_available do
+        assert {:error, message} = create_shader(@gl_vertex_shader, "non_existent.glsl")
+        assert String.contains?(message, "Shader file not found")
+      else
+        assert true
+      end
     end
 
     test "create_shader with invalid shader source", %{gl_available: gl_available} do

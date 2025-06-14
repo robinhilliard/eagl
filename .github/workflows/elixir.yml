@@ -25,10 +25,19 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     
-    - name: Install OpenGL and display dependencies
+    - name: Install GUI and OpenGL dependencies
       run: |
         sudo apt-get update
+        
+        # Install wxWidgets 3.2 packages (Ubuntu 24.04 has 3.2, not 3.0)
         sudo apt-get install -y \
+          libwxgtk3.2-1t64 \
+          libwxgtk3.2-dev \
+          libwxgtk-gl3.2-1t64 \
+          libwxgtk-media3.2-1t64 \
+          libwxgtk-media3.2-dev \
+          libwxgtk-webview3.2-1t64 \
+          libwxgtk-webview3.2-dev \
           libgl1-mesa-dev \
           libglu1-mesa-dev \
           mesa-common-dev \
@@ -38,7 +47,9 @@ jobs:
           libxrandr2 \
           libxi6 \
           libxcursor1 \
-          libxinerama1
+          libxinerama1 \
+          libgtk-3-dev \
+          libglib2.0-dev
     
     - name: Set up Elixir
       uses: erlef/setup-beam@v1
@@ -64,13 +75,9 @@ jobs:
       run: mix compile --warnings-as-errors
       
     - name: Run tests with virtual display
-      run: |
-        export DISPLAY=:99.0
-        Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
-        sleep 3  # Give Xvfb time to start
-        mix test
+      run: xvfb-run -a mix test --exclude interactive
       env:
         # Ensure software rendering is used
         LIBGL_ALWAYS_SOFTWARE: 1
-        # Mark as CI environment to skip interactive examples
+        # Mark as CI environment
         CI: true
