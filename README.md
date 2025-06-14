@@ -24,21 +24,36 @@ Non-goals:
 {:eagl, "~> 0.1.0"}
 ```
 
-### Running Examples
-
 EAGL includes several examples to demonstrate its capabilities. Use the unified examples runner:
 
-```bash
-# Interactive menu with all examples
-./priv/scripts/run_examples
 ```
+./priv/scripts/run_examples
+═══════════════════════════════════════════════════════════════
+                    EAGL Examples Menu
+═══════════════════════════════════════════════════════════════
 
-Available examples:
-1. **Math Example** - Comprehensive demonstration of all EAGL.Math functionality (terminal-based)
-2. **Teapot Example** - 3D teapot with Phong shading (OpenGL window)
-3. **LearnOpenGL 2.3** - Hello Triangle Exercise 1 (glDrawArrays)
-4. **LearnOpenGL 2.4** - Hello Triangle Exercise 2 (Element Buffer Objects)
-5. **LearnOpenGL 2.5** - Hello Triangle Exercise 3 (Multiple Shader Programs)
+ 1) Math Example
+    Comprehensive example demonstrating all EAGL.Math functionality
+
+ 2) Teapot Example
+    Draw a 3D teapot with Phong shading
+
+LearnOpenGL Examples:
+
+  1. Getting Started:
+     3) 2.3 Hello Triangle Exercise 1
+        Two Triangles Side by Side - Using glDrawArrays with 6 vertices
+
+     4) 2.4 Hello Triangle Exercise 2
+        Element Buffer Objects (EBO) - Rectangle using shared vertices
+
+     5) 2.5 Hello Triangle Exercise 3
+        Multiple Shader Programs - Two triangles with different colors
+
+═══════════════════════════════════════════════════════════════
+Enter example number (1-5), 'q' to quit, or 'r' to refresh:
+>
+```
 
 ## Usage
 
@@ -62,6 +77,14 @@ view = mat4_look_at(
 )
 projection = mat4_perspective(radians(45.0), 16.0/9.0, 0.1, 100.0)
 ```
+
+EAGL provides a comprehensive 3D math library based on GLM supporting:
+
+- **Vectors**: 2D, 3D, 4D vector operations with constructor macros
+- **Matrices**: 2x2, 3x3, 4x4 matrix operations with transformation functions
+- **Quaternions**: Rotation representation, SLERP, and conversion functions
+- **Utilities**: Trigonometry, interpolation, clamping, and geometric functions
+- **OpenGL Integration**: All functions work with the tuple-in-list format required by Erlang's OpenGL bindings
 
 ### Shader Management
 
@@ -88,23 +111,19 @@ set_uniforms(program, [
 ])
 ```
 
-### Uniform Helper Features (from Wings 3D)
-
-The uniform helpers automatically detect the type of EAGL.Math values:
+The uniform helpers (from Wings3D) automatically detect the type of EAGL.Math values, eliminating the need to manually unpack vectors or handle different uniform types:
 
 - `vec2/3/4` → `glUniform2f/3f/4f`
 - `mat2/3/4` → `glUniformMatrix2fv/3fv/4fv` 
 - Numbers → `glUniform1f/1i`
 - Booleans → `glUniform1i` (0 or 1)
 
-This eliminates the need to manually unpack vectors or handle different uniform types.
-
 ### Model Loading
 
 ```elixir
 import EAGL.Model
 
-# Load OBJ file with automatic normal generation
+# Load OBJ file (with automatic normal generation if missing)
 {:ok, model} = load_model_to_vao("teapot.obj")
 
 # Render the model
@@ -175,49 +194,6 @@ defmodule MyApp do
     :ok
   end
 end
-```
-
-## Library Structure
-
-- `EAGL.Math` - Vector and matrix math operations (GLM-inspired)
-- `EAGL.Shader` - Shader compilation and uniform management (Wings3D-inspired)
-- `EAGL.Model` - 3D model loading and vertex array management
-- `EAGL.Buffer` - VAO/VBO helper functions
-- `EAGL.Error` - OpenGL error checking and reporting
-- `EAGL.Window` - OpenGL context and window management
-- `EAGL.Const` - OpenGL constants
-
-## Math Library
-
-Comprehensive 3D math library supporting:
-
-- **Vectors**: 2D, 3D, 4D vector operations with constructor macros
-- **Matrices**: 2x2, 3x3, 4x4 matrix operations with transformation functions
-- **Quaternions**: Rotation representation, SLERP, and conversion functions
-- **Utilities**: Trigonometry, interpolation, clamping, and geometric functions
-- **OpenGL Integration**: All functions work with Erlang's OpenGL binding format
-
-All math functions work with the tuple-in-list format required by Erlang's OpenGL bindings.
-
-## Examples
-
-### Interactive Examples Runner
-```bash
-./priv/scripts/run_examples
-```
-
-### Individual Examples
-```elixir
-# Math library demonstrations (terminal output)
-EAGL.Examples.Math.run_example()
-
-# 3D teapot with Phong shading (OpenGL window)
-EAGL.Examples.Teapot.run_example()
-
-# LearnOpenGL tutorials (OpenGL windows)
-EAGL.Examples.LearnOpenGL.GettingStarted.HelloTriangleExercise1.run_example()
-EAGL.Examples.LearnOpenGL.GettingStarted.HelloTriangleExercise2.run_example()
-EAGL.Examples.LearnOpenGL.GettingStarted.HelloTriangleExercise3.run_example()
 ```
 
 ## Requirements
