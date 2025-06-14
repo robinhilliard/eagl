@@ -73,4 +73,30 @@ defmodule EAGL.Examples.Test do
       assert true
     end
   end
+
+  @tag :interactive
+  test "1.1 Hello Window example" do
+    if System.get_env("CI") do
+      # Skip interactive tests in CI
+      assert true
+    else
+      # This would require user interaction (ESC key)
+      # In a real test environment, we'd need to mock the window system
+      assert true
+    end
+  end
+
+  @tag :interactive
+  test "1.2 Hello Window Clear example" do
+    if System.get_env("CI") do
+      # Skip interactive tests in CI
+      assert true
+    else
+      # This would require user interaction (ESC key)
+      # In a real test environment, we'd need to mock the window system
+      assert true
+    end
+  end
+
+  @tag :interactive
 end

@@ -43,17 +43,29 @@ EAGL includes several examples to demonstrate its capabilities. Use the unified 
 LearnOpenGL Examples:
 
   1. Getting Started:
-     3) 2.3 Hello Triangle Exercise 1
+     3) 1.1 Hello Window
+        Basic window creation - Foundation of all OpenGL applications
+
+     4) 1.2 Hello Window Clear
+        Custom clear colors - Understanding OpenGL's state machine
+
+     5) 2.1 Hello Triangle
+        Your first triangle - Basic VAO/VBO and shader fundamentals
+
+     6) 2.2 Hello Triangle Indexed
+        Element Buffer Objects (EBO) - Basic indexed rectangle rendering
+
+     7) 2.3 Hello Triangle Exercise 1
         Two Triangles Side by Side - Using glDrawArrays with 6 vertices
 
-     4) 2.4 Hello Triangle Exercise 2
+     8) 2.4 Hello Triangle Exercise 2
         Element Buffer Objects (EBO) - Rectangle using shared vertices
 
-     5) 2.5 Hello Triangle Exercise 3
+     9) 2.5 Hello Triangle Exercise 3
         Multiple Shader Programs - Two triangles with different colors
 
 ═══════════════════════════════════════════════════════════════
-Enter example number (1-5), 'q' to quit, or 'r' to refresh:
+Enter example number (1-9), 'q' to quit, or 'r' to refresh:
 >
 ```
 
@@ -350,6 +362,17 @@ Interactive examples wait for ESC key presses and will timeout in CI:
 - Use `@tag :interactive` for examples that require user input
 - CI automatically excludes these tests
 - Local development can run them individually
+
+#### Examples Runner Interactive Input
+The examples runner script requires user input and cannot be automated:
+```bash
+# This will hang waiting for user input:
+./priv/scripts/run_examples
+
+# To test examples programmatically, run them directly:
+mix run -e "EAGL.Examples.Math.run_example()"
+timeout 5s mix run -e "EAGL.Examples.Teapot.run_example()"
+```
 
 ## Contributing
 

@@ -39,7 +39,7 @@ defmodule EAGL.ModelTest do
       assert rem(length(model_data.normals), 3) == 0
 
       # Check that normals are normalized (should be close to length 1)
-      normal_count = div(length(model_data.normals), 3)
+      _normal_count = div(length(model_data.normals), 3)
       normals_list = Enum.chunk_every(model_data.normals, 3)
 
       # Test a few normals to ensure they're normalized
