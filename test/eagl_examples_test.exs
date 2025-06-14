@@ -74,6 +74,17 @@ defmodule EAGL.Examples.Test do
     end
   end
 
+  @tag :skip_in_ci
+  test "shaders uniform" do
+    if System.get_env("CI") do
+      IO.puts("Skipping interactive LearnOpenGL example in CI environment")
+      assert true
+    else
+      EAGL.Examples.LearnOpenGL.GettingStarted.ShadersUniform.run_example()
+      assert true
+    end
+  end
+
   @tag :interactive
   test "1.1 Hello Window example" do
     if System.get_env("CI") do

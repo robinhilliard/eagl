@@ -66,6 +66,10 @@ show_menu() {
     echo -e "        ${YELLOW}Multiple Shader Programs - Two triangles with different colors${NC}"
     echo
     
+    echo -e "    ${CYAN}10)${NC} ${GREEN}3.1 Shaders Uniform${NC}"
+    echo -e "        ${YELLOW}Uniform Variables - Animated triangle with time-based color changes${NC}"
+    echo
+    
     echo -e "${PURPLE}═══════════════════════════════════════════════════════════════${NC}"
 }
 
@@ -102,6 +106,9 @@ run_example() {
         9)
             module="EAGL.Examples.LearnOpenGL.GettingStarted.HelloTriangleExercise3"
             ;;
+        10)
+            module="EAGL.Examples.LearnOpenGL.GettingStarted.ShadersUniform"
+            ;;
         *)
             echo -e "${RED}Invalid choice: $choice${NC}"
             return 1
@@ -121,7 +128,7 @@ run_example() {
 # Main loop
 while true; do
     show_menu
-    echo -e "Enter example number (1-9), 'q' to quit, or 'r' to refresh:"
+    echo -e "Enter example number (1-10), 'q' to quit, or 'r' to refresh:"
     echo -n "> "
     
     read -r choice
@@ -134,7 +141,7 @@ while true; do
         r|R|refresh)
             continue
             ;;
-        1|2|3|4|5|6|7|8|9)
+        1|2|3|4|5|6|7|8|9|10)
             clear
             if run_example "$choice"; then
                 echo
@@ -146,7 +153,7 @@ while true; do
             fi
             ;;
         *)
-            echo -e "${RED}Invalid input. Please enter 1-9, 'q', or 'r'.${NC}"
+            echo -e "${RED}Invalid input. Please enter 1-10, 'q', or 'r'.${NC}"
             echo -n "Press Enter to continue..."
             read -r
             ;;

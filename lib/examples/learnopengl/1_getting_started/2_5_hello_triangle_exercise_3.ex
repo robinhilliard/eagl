@@ -5,6 +5,11 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.HelloTriangleExercise3 do
   This example demonstrates using multiple shader programs to render different colored triangles.
   It solves the third exercise from the Hello Triangle tutorial.
 
+  ## Original C++ Source
+
+  This example is based on the original LearnOpenGL C++ tutorial:
+  <https://github.com/JoeyDeVries/LearnOpenGL/tree/master/src/1.getting_started/2.5.hello_triangle_exercise3>
+
   ## Framework Adaptation Notes
 
   In the original LearnOpenGL C++ tutorial, this exercise asks you to create two triangles

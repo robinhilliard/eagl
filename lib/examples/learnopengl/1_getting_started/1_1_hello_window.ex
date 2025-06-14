@@ -5,6 +5,11 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.HelloWindow do
   This example demonstrates basic window creation and OpenGL context setup.
   It corresponds to the first rendering example in the LearnOpenGL tutorial series.
 
+  ## Original C++ Source
+
+  This example is based on the original LearnOpenGL C++ tutorial:
+  <https://github.com/JoeyDeVries/LearnOpenGL/tree/master/src/1.getting_started/1.1.hello_window>
+
   ## Framework Adaptation Notes
 
   In the original LearnOpenGL C++ tutorial, this example shows a completely black window

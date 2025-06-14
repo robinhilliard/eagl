@@ -5,6 +5,11 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.HelloWindowClear do
   This example demonstrates setting a custom clear color for the OpenGL framebuffer.
   It builds upon the 1.1 Hello Window example by showing how to control the background color.
 
+  ## Original C++ Source
+
+  This example is based on the original LearnOpenGL C++ tutorial:
+  <https://github.com/JoeyDeVries/LearnOpenGL/tree/master/src/1.getting_started/1.2.hello_window_clear>
+
   ## Framework Adaptation Notes
 
   In the original LearnOpenGL C++ tutorial, this example introduces the concept of:

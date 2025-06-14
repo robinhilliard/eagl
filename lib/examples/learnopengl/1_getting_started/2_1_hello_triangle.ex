@@ -5,6 +5,11 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.HelloTriangle do
   This example demonstrates your first triangle in OpenGL - the foundation of all 3D graphics.
   It corresponds to the Hello Triangle tutorial in the LearnOpenGL series.
 
+  ## Original C++ Source
+
+  This example is based on the original LearnOpenGL C++ tutorial:
+  <https://github.com/JoeyDeVries/LearnOpenGL/tree/master/src/1.getting_started/2.1.hello_triangle>
+
   ## Framework Adaptation Notes
 
   In the original LearnOpenGL C++ tutorial, this example introduces the core OpenGL rendering pipeline:

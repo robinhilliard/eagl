@@ -5,6 +5,11 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.HelloTriangleExercise2 do
   This example demonstrates creating two triangles using Element Buffer Objects.
   It solves the second exercise from the Hello Triangle tutorial.
 
+  ## Original C++ Source
+
+  This example is based on the original LearnOpenGL C++ tutorial:
+  <https://github.com/JoeyDeVries/LearnOpenGL/tree/master/src/1.getting_started/2.4.hello_triangle_exercise2>
+
   ## Framework Adaptation Notes
 
   In the original LearnOpenGL C++ tutorial, this exercise asks you to create two triangles

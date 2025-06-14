@@ -5,6 +5,11 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.HelloTriangleExercise1 do
   This example demonstrates drawing multiple triangles with a single draw call.
   It solves the first exercise from the Hello Triangle tutorial.
 
+  ## Original C++ Source
+
+  This example is based on the original LearnOpenGL C++ tutorial:
+  <https://github.com/JoeyDeVries/LearnOpenGL/tree/master/src/1.getting_started/2.3.hello_triangle_exercise1>
+
   ## Framework Adaptation Notes
 
   In the original LearnOpenGL C++ tutorial, this exercise asks you to draw 2 triangles

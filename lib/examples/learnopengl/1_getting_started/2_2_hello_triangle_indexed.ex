@@ -5,6 +5,11 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.HelloTriangleIndexed do
   This example demonstrates Element Buffer Objects (EBO) for efficient indexed rendering.
   It shows how to draw a rectangle using two triangles with shared vertices.
 
+  ## Original C++ Source
+
+  This example is based on the original LearnOpenGL C++ tutorial:
+  <https://github.com/JoeyDeVries/LearnOpenGL/tree/master/src/1.getting_started/2.2.hello_triangle_indexed>
+
   ## Framework Adaptation Notes
 
   In the original LearnOpenGL C++ tutorial, this example introduces Element Buffer Objects (EBOs)
