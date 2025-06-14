@@ -222,6 +222,8 @@ sudo dnf install mesa-libGL-devel mesa-libGLU-devel
 #### macOS
 OpenGL is included with macOS. No additional setup required.
 
+**Note**: EAGL automatically detects macOS and enables forward compatibility for OpenGL 3.0+ contexts, which is required by Apple's OpenGL implementation. This matches the behavior of the `#ifdef __APPLE__` code commonly found in OpenGL tutorials.
+
 #### Windows  
 OpenGL is typically available through graphics drivers. If you encounter issues, ensure your graphics drivers are up to date.
 
@@ -315,6 +317,35 @@ And in future:
 - Additional LearnOpenGL tutorial ports
 - Platform-specific optimizations
 - Example applications and demos
+
+## Troubleshooting
+
+### Development Issues
+Most of these are obvious, but it helps AI assistants remember how to get around the project.
+
+#### Interactive Examples Hanging
+Examples require user interaction (ESC key to exit). When running tests:
+```bash
+# Run only unit tests, exclude interactive examples
+mix test test/eagl/ --exclude interactive
+
+# Or set a timeout for interactive tests
+mix test --timeout 10000
+```
+
+#### IEx Session Conflicts
+If stuck in an IEx session when trying to run mix commands:
+```bash
+# Press 'a' to abort the IEx session, then run your command
+# Example: after getting stuck, press 'a' then run:
+mix compile
+```
+
+#### Test Timeouts
+Interactive examples wait for ESC key presses and will timeout in CI:
+- Use `@tag :interactive` for examples that require user input
+- CI automatically excludes these tests
+- Local development can run them individually
 
 ## Contributing
 

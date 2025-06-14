@@ -15,17 +15,31 @@ defmodule EAGL.Window do
   # Based on Wings3D's wings_gl.erl attributes/0 function.
   # Ensures proper OpenGL context with depth buffer, double buffering, and RGBA mode.
   defp gl_attributes do
-    # Wings3D format: return a proplist with attribList key
+    base_attributes = [
+      @wx_gl_rgba,                    # Use RGBA mode
+      @wx_gl_min_red, 8,             # Minimum 8 bits for red channel
+      @wx_gl_min_green, 8,           # Minimum 8 bits for green channel
+      @wx_gl_min_blue, 8,            # Minimum 8 bits for blue channel
+      @wx_gl_depth_size, 24,         # 24-bit depth buffer (critical for 3D)
+      @wx_gl_doublebuffer            # Double buffering for smooth animation
+    ]
+
+    # Add macOS-specific forward compatibility (equivalent to GLFW_OPENGL_FORWARD_COMPAT)
+    # This is required for OpenGL 3.0+ contexts on macOS and matches the behavior of:
+    # #ifdef __APPLE__
+    #     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+    # #endif
+    macos_attributes = case :os.type() do
+      {:unix, :darwin} ->
+        IO.puts("Detected macOS: Adding forward compatibility for OpenGL 3.0+")
+        [@wx_gl_forward_compat]
+      _ ->
+        []
+    end
+
+    # Combine base attributes with platform-specific ones and terminate
     [
-      attribList: [
-        @wx_gl_rgba,                    # Use RGBA mode
-        @wx_gl_min_red, 8,             # Minimum 8 bits for red channel
-        @wx_gl_min_green, 8,           # Minimum 8 bits for green channel
-        @wx_gl_min_blue, 8,            # Minimum 8 bits for blue channel
-        @wx_gl_depth_size, 24,         # 24-bit depth buffer (critical for 3D)
-        @wx_gl_doublebuffer,           # Double buffering for smooth animation
-        0                              # Terminate attribute list
-      ]
+      attribList: base_attributes ++ macos_attributes ++ [0]  # 0 terminates attribute list
     ]
   end
 

@@ -53,6 +53,9 @@ defmodule WX.Const do
       @wx_gl_reset_isolation 30  # WX_GL_RESET_ISOLATION
       @wx_gl_release_flush 31  # WX_GL_RELEASE_FLUSH
       @wx_gl_release_none 32  # WX_GL_RELEASE_NONE
+      @wx_gl_core_profile 20  # WX_GL_CORE_PROFILE
+      @wx_gl_major_version 21  # WX_GL_MAJOR_VERSION
+      @wx_gl_minor_version 22  # WX_GL_MINOR_VERSION
 
       # ============================================================================
       # LAYOUT DIRECTIONS
