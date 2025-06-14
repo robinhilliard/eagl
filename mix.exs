@@ -1,7 +1,7 @@
 defmodule EAGL.MixProject do
   use Mix.Project
 
-  @version "0.2.0"
+  @version "0.3.0"
   @source_url "https://github.com/robinhilliard/eagl"
 
   def project do
@@ -42,6 +42,9 @@ defmodule EAGL.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
+      # Optional dependencies for enhanced functionality
+      {:stb_image, "~> 0.6", optional: true},
+
       # Development and documentation
       {:ex_doc, "~> 0.31", only: :dev, runtime: false},
       {:excoveralls, "~> 0.18", only: :test}
@@ -104,6 +107,7 @@ defmodule EAGL.MixProject do
           EAGL.Math,
           EAGL.Shader,
           EAGL.Buffer,
+          EAGL.Texture,
           EAGL.Error,
           EAGL.Window
         ],
@@ -126,7 +130,13 @@ defmodule EAGL.MixProject do
           EAGL.Examples.LearnOpenGL.GettingStarted.HelloTriangleExercise1,
           EAGL.Examples.LearnOpenGL.GettingStarted.HelloTriangleExercise2,
           EAGL.Examples.LearnOpenGL.GettingStarted.HelloTriangleExercise3,
-          EAGL.Examples.LearnOpenGL.GettingStarted.ShadersUniform
+          EAGL.Examples.LearnOpenGL.GettingStarted.ShadersUniform,
+          EAGL.Examples.LearnOpenGL.GettingStarted.ShadersInterpolation,
+          EAGL.Examples.LearnOpenGL.GettingStarted.ShadersClass,
+          EAGL.Examples.LearnOpenGL.GettingStarted.ShadersExercise1,
+          EAGL.Examples.LearnOpenGL.GettingStarted.ShadersExercise2,
+          EAGL.Examples.LearnOpenGL.GettingStarted.ShadersExercise3,
+          EAGL.Examples.LearnOpenGL.GettingStarted.Textures
         ]
       ],
       groups_for_docs: [

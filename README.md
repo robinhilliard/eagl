@@ -83,10 +83,13 @@ LearnOpenGL Examples:
     15) 3.6 Shaders Exercise 3
         Position as Color - Visualizing coordinates as RGB values
 
+    16) 4.1 Textures
+        Basic Texture Mapping - Applying 2D images to geometry
+
      ...
 
 ═══════════════════════════════════════════════════════════════
-Enter example number (1-15), 'q' to quit, or 'r' to refresh:
+Enter example number (1-17), 'q' to quit, or 'r' to refresh:
 >
 ```
 
@@ -152,6 +155,61 @@ The uniform helpers (from Wings3D) automatically detect the type of EAGL.Math va
 - `mat2/3/4` → `glUniformMatrix2fv/3fv/4fv` 
 - Numbers → `glUniform1f/1i`
 - Booleans → `glUniform1i` (0 or 1)
+
+### Texture Management
+
+```elixir
+import EAGL.Texture
+import EAGL.Error
+
+# Load texture from image file (requires optional stb_image dependency)
+{:ok, texture_id, width, height} = load_texture_from_file("priv/images/eagl_logo_black_on_white.jpg")
+
+# Or create procedural textures for testing
+{:ok, texture_id, width, height} = create_checkerboard_texture(256, 32)
+
+# Manual texture creation and configuration
+{:ok, texture_id} = create_texture()
+:gl.bindTexture(@gl_texture_2d, texture_id)
+
+# Set texture parameters with atom-to-constant conversion
+set_texture_parameters(
+  wrap_s: :repeat,
+  wrap_t: :repeat,
+  min_filter: :linear_mipmap_linear,
+  mag_filter: :linear
+)
+
+# Load pixel data with format handling
+load_texture_data(width, height, pixel_data, 
+  internal_format: :rgb,
+  format: :rgb,
+  type: :unsigned_byte
+)
+
+# Generate mipmaps and check for errors
+:gl.generateMipmap(@gl_texture_2d)
+check("After generating mipmaps")
+
+# Use multiple textures
+:gl.activeTexture(@gl_texture0)
+:gl.bindTexture(@gl_texture_2d, texture1_id)
+:gl.activeTexture(@gl_texture1)
+:gl.bindTexture(@gl_texture_2d, texture2_id)
+
+# Clean up
+:gl.deleteTextures([texture_id])
+```
+
+EAGL provides meaningful texture abstractions rather than thin wrappers:
+
+- **Image Loading**: `load_texture_from_file()` with automatic fallback to checkerboard patterns
+- **Texture Creation**: `create_texture()` returns `{:ok, id}` tuples for error handling
+- **Parameter Setting**: `set_texture_parameters()` converts atoms to OpenGL constants
+- **Data Loading**: `load_texture_data()` handles format/type conversion with defaults
+- **Procedural Textures**: `create_checkerboard_texture()` generates test patterns
+- **Graceful Degradation**: Helpful warnings when optional dependencies aren't available
+- **Direct OpenGL**: Use `:gl` functions directly for binding, mipmaps, and cleanup
 
 ### Model Loading
 
@@ -347,6 +405,7 @@ priv/
 ## Features
 
 - ✅ **Shader Management**: Automatic compilation, linking, and error reporting
+- ✅ **Texture Management**: Comprehensive texture creation, configuration, and loading with Wings3D-inspired helpers
 - ✅ **3D Model Loading**: Wavefront OBJ format with normals and texture coordinates
 - ✅ **Math Library**: GLM-compatible vectors, matrices, quaternions with full OpenGL integration
 - ✅ **Buffer Helpers**: Wings3D-inspired VAO/VBO management functions
@@ -400,6 +459,14 @@ If stuck in an IEx session when trying to run mix commands:
 mix compile
 ```
 
+#### BREAK Prompt in IEx
+If you encounter an unexpected error in IEx and see a `BREAK: (a)bort` prompt:
+```bash
+# Press 'a' to abort and exit the IEx session
+# This commonly happens when OpenGL context errors occur
+# After pressing 'a', you can run your mix commands normally
+```
+
 #### Test Timeouts
 Interactive examples wait for ESC key presses and will timeout in CI:
 - Use `@tag :interactive` for examples that require user input
@@ -412,10 +479,40 @@ The examples runner script requires user input and cannot be automated:
 # This will hang waiting for user input:
 ./priv/scripts/run_examples
 
+# Piping input incorrectly will also hang:
+echo "16" | ./priv/scripts/run_examples  # WRONG - hangs waiting for ENTER
+
 # To test examples programmatically, run them directly:
 mix run -e "EAGL.Examples.Math.run_example()"
 timeout 5s mix run -e "EAGL.Examples.Teapot.run_example()"
+
+# If you need to script the examples runner, use proper input format:
+printf "16\nq\n" | timeout 10s ./priv/scripts/run_examples
 ```
+
+## Design Philosophy
+
+EAGL focuses on **meaningful abstractions** rather than thin wrappers around OpenGL calls:
+
+### ✅ **Provide When Valuable**
+- **Error handling patterns**: `{:ok, result}` tuples and comprehensive error checking
+- **Type conversions**: Atoms to OpenGL constants (`set_texture_parameters(wrap_s: :repeat)`)
+- **Sensible defaults**: Reduce boilerplate with common parameter combinations
+- **Complex operations**: Multi-step procedures like shader compilation and linking
+- **Data transformations**: Converting Elixir data structures to OpenGL formats
+- **Procedural generation**: Built-in patterns like checkerboard textures for testing
+
+### ❌ **Avoid Thin Wrappers**
+- **Simple OpenGL calls**: Use `:gl.bindTexture()`, `:gl.generateMipmap()` directly
+- **One-line functions**: Don't wrap functions that only add `check()` calls
+- **State management**: Let users manage OpenGL state explicitly when appropriate
+
+### 🎯 **User Experience**
+- **Import what you need**: `import EAGL.Error` for explicit error checking
+- **Call OpenGL directly**: When EAGL doesn't add substantial value
+- **Mix and match**: Use EAGL helpers alongside direct OpenGL calls seamlessly
+
+This philosophy keeps the API clean, focused, and educational while providing real value where it matters most.
 
 ## Contributing
 

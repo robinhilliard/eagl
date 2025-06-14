@@ -188,6 +188,13 @@ defmodule EAGL.Const do
       @gl_vertex_attrib_array_divisor 35070  # GL_VERTEX_ATTRIB_ARRAY_DIVISOR
 
       # ============================================================================
+      # PIXEL STORE PARAMETERS
+      # ============================================================================
+
+      @gl_unpack_alignment 3317  # GL_UNPACK_ALIGNMENT
+      @gl_pack_alignment 3333  # GL_PACK_ALIGNMENT
+
+      # ============================================================================
       # TEXTURES
       # ============================================================================
 
@@ -225,6 +232,27 @@ defmodule EAGL.Const do
       @gl_texture_lod_bias 34049  # GL_TEXTURE_LOD_BIAS
       @gl_texture_compare_mode 34892  # GL_TEXTURE_COMPARE_MODE
       @gl_texture_compare_func 34893  # GL_TEXTURE_COMPARE_FUNC
+
+      # ============================================================================
+      # TEXTURE UNITS
+      # ============================================================================
+
+      @gl_texture0 33984  # GL_TEXTURE0
+      @gl_texture1 33985  # GL_TEXTURE1
+      @gl_texture2 33986  # GL_TEXTURE2
+      @gl_texture3 33987  # GL_TEXTURE3
+      @gl_texture4 33988  # GL_TEXTURE4
+      @gl_texture5 33989  # GL_TEXTURE5
+      @gl_texture6 33990  # GL_TEXTURE6
+      @gl_texture7 33991  # GL_TEXTURE7
+      @gl_texture8 33992  # GL_TEXTURE8
+      @gl_texture9 33993  # GL_TEXTURE9
+      @gl_texture10 33994  # GL_TEXTURE10
+      @gl_texture11 33995  # GL_TEXTURE11
+      @gl_texture12 33996  # GL_TEXTURE12
+      @gl_texture13 33997  # GL_TEXTURE13
+      @gl_texture14 33998  # GL_TEXTURE14
+      @gl_texture15 33999  # GL_TEXTURE15
 
       # ============================================================================
       # TEXTURE FILTERING

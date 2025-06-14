@@ -90,6 +90,10 @@ show_menu() {
     echo -e "        ${YELLOW}Position as Color - Visualizing coordinates as RGB values${NC}"
     echo
     
+    echo -e "    ${CYAN}16)${NC} ${GREEN}4.1 Textures${NC}"
+    echo -e "        ${YELLOW}Basic Texture Mapping - Applying 2D images to geometry${NC}"
+    echo
+    
     echo -e "${PURPLE}═══════════════════════════════════════════════════════════════${NC}"
 }
 
@@ -144,6 +148,9 @@ run_example() {
         15)
             module="EAGL.Examples.LearnOpenGL.GettingStarted.ShadersExercise3"
             ;;
+        16)
+            module="EAGL.Examples.LearnOpenGL.GettingStarted.Textures"
+            ;;
         *)
             echo -e "${RED}Invalid choice: $choice${NC}"
             return 1
@@ -163,7 +170,7 @@ run_example() {
 # Main loop
 while true; do
     show_menu
-    echo -e "Enter example number (1-15), 'q' to quit, or 'r' to refresh:"
+    echo -e "Enter example number (1-17), 'q' to quit, or 'r' to refresh:"
     echo -n "> "
     
     read -r choice
@@ -176,7 +183,7 @@ while true; do
         r|R|refresh)
             continue
             ;;
-        1|2|3|4|5|6|7|8|9|10|11|12|13|14|15)
+        1|2|3|4|5|6|7|8|9|10|11|12|13|14|15|16)
             clear
             if run_example "$choice"; then
                 echo
@@ -188,7 +195,7 @@ while true; do
             fi
             ;;
         *)
-            echo -e "${RED}Invalid input. Please enter 1-15, 'q', or 'r'.${NC}"
+            echo -e "${RED}Invalid input. Please enter 1-16, 'q', or 'r'.${NC}"
             echo -n "Press ENTER to continue..."
             read -r
             ;;
