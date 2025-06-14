@@ -2,8 +2,8 @@
   <h1>EAGL</h1>
   <img src="assets/eagl_logo_grey_on_transparent.png" alt="EAGL Logo" title="EAGL Logo" width="200">
   <p>
-    Make it <strong>EA</strong>sier to work with<br>
-    Open<strong>GL</strong> in Elixir.
+    Make it <strong>EA</strong>sier to work<br>
+    with Open<strong>GL</strong> in Elixir.
   </p>
 </div>
 
