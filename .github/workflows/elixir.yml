@@ -24,11 +24,28 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
+    
+    - name: Install OpenGL and display dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          libgl1-mesa-dev \
+          libglu1-mesa-dev \
+          mesa-common-dev \
+          xvfb \
+          x11-utils \
+          libx11-dev \
+          libxrandr2 \
+          libxi6 \
+          libxcursor1 \
+          libxinerama1
+    
     - name: Set up Elixir
       uses: erlef/setup-beam@v1
       with:
         elixir-version: ${{ matrix.elixir }}
         otp-version: ${{ matrix.otp }}
+        
     - name: Restore dependencies cache
       uses: actions/cache@v4
       with:
@@ -39,9 +56,21 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-mix-${{ matrix.elixir }}-${{ matrix.otp }}-
           ${{ runner.os }}-mix-
+          
     - name: Install dependencies
       run: mix deps.get
+      
     - name: Compile
       run: mix compile --warnings-as-errors
-    - name: Run tests
-      run: mix test
+      
+    - name: Run tests with virtual display
+      run: |
+        export DISPLAY=:99.0
+        Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
+        sleep 3  # Give Xvfb time to start
+        mix test
+      env:
+        # Ensure software rendering is used
+        LIBGL_ALWAYS_SOFTWARE: 1
+        # Mark as CI environment to skip interactive examples
+        CI: true
