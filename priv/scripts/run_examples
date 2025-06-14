@@ -38,15 +38,23 @@ show_menu() {
     echo
     echo -e "  ${BLUE}1. Getting Started:${NC}"
     
-    echo -e "    ${CYAN} 3)${NC} ${GREEN}2.3 Hello Triangle Exercise 1${NC}"
+    echo -e "    ${CYAN} 3)${NC} ${GREEN}2.1 Hello Triangle${NC}"
+    echo -e "        ${YELLOW}Your first triangle - Basic VAO/VBO and shader fundamentals${NC}"
+    echo
+    
+    echo -e "    ${CYAN} 4)${NC} ${GREEN}2.2 Hello Triangle Indexed${NC}"
+    echo -e "        ${YELLOW}Element Buffer Objects (EBO) - Basic indexed rectangle rendering${NC}"
+    echo
+    
+    echo -e "    ${CYAN} 5)${NC} ${GREEN}2.3 Hello Triangle Exercise 1${NC}"
     echo -e "        ${YELLOW}Two Triangles Side by Side - Using glDrawArrays with 6 vertices${NC}"
     echo
     
-    echo -e "    ${CYAN} 4)${NC} ${GREEN}2.4 Hello Triangle Exercise 2${NC}"
+    echo -e "    ${CYAN} 6)${NC} ${GREEN}2.4 Hello Triangle Exercise 2${NC}"
     echo -e "        ${YELLOW}Element Buffer Objects (EBO) - Rectangle using shared vertices${NC}"
     echo
     
-    echo -e "    ${CYAN} 5)${NC} ${GREEN}2.5 Hello Triangle Exercise 3${NC}"
+    echo -e "    ${CYAN} 7)${NC} ${GREEN}2.5 Hello Triangle Exercise 3${NC}"
     echo -e "        ${YELLOW}Multiple Shader Programs - Two triangles with different colors${NC}"
     echo
     
@@ -66,12 +74,18 @@ run_example() {
             module="EAGL.Examples.Teapot"
             ;;
         3)
-            module="EAGL.Examples.LearnOpenGL.GettingStarted.HelloTriangleExercise1"
+            module="EAGL.Examples.LearnOpenGL.GettingStarted.HelloTriangle"
             ;;
         4)
-            module="EAGL.Examples.LearnOpenGL.GettingStarted.HelloTriangleExercise2"
+            module="EAGL.Examples.LearnOpenGL.GettingStarted.HelloTriangleIndexed"
             ;;
         5)
+            module="EAGL.Examples.LearnOpenGL.GettingStarted.HelloTriangleExercise1"
+            ;;
+        6)
+            module="EAGL.Examples.LearnOpenGL.GettingStarted.HelloTriangleExercise2"
+            ;;
+        7)
             module="EAGL.Examples.LearnOpenGL.GettingStarted.HelloTriangleExercise3"
             ;;
         *)
@@ -93,7 +107,7 @@ run_example() {
 # Main loop
 while true; do
     show_menu
-    echo -e "Enter example number (1-5), 'q' to quit, or 'r' to refresh:"
+    echo -e "Enter example number (1-7), 'q' to quit, or 'r' to refresh:"
     echo -n "> "
     
     read -r choice
@@ -106,7 +120,7 @@ while true; do
         r|R|refresh)
             continue
             ;;
-        1|2|3|4|5)
+        1|2|3|4|5|6|7)
             clear
             if run_example "$choice"; then
                 echo
@@ -118,7 +132,7 @@ while true; do
             fi
             ;;
         *)
-            echo -e "${RED}Invalid input. Please enter 1, 2, 3, 4, 5, 'q', or 'r'.${NC}"
+            echo -e "${RED}Invalid input. Please enter 1, 2, 3, 4, 5, 6, 7, 'q', or 'r'.${NC}"
             echo -n "Press Enter to continue..."
             read -r
             ;;

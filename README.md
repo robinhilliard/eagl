@@ -8,12 +8,12 @@
 
 ## Overview
 
-Most examples of working with OpenGL are written in C++ or C# (Unity). The purpose of the EAGL library is to
+Most examples of working with OpenGL are written in C++ or C# (Unity). The purpose of the EAGL library is to:
 - Make it easier to translate OpenGL tutorials and examples from resources like [Learn OpenGL](https://learnopengl.com) into Elixir. 
 - Provide basic helper functions to bridge the gap between idiomatic Elixir and OpenGL's state machine, using the Wings 3D Erlang source as a guide.
 - Enable other libraries and apps to build on this one - e.g. there should be Unity-like tool for the BEAM.
 
-Non-goals:
+The following are non-goals:
 - Wrapping of the Erlang wx library
 - A Shader DSL
 - A UI layout/component library

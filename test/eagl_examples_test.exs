@@ -20,6 +20,28 @@ defmodule EAGL.Examples.Test do
 
   # Add tests for LearnOpenGL examples with CI detection
   @tag :skip_in_ci
+  test "hello triangle" do
+    if System.get_env("CI") do
+      IO.puts("Skipping interactive LearnOpenGL example in CI environment")
+      assert true
+    else
+      EAGL.Examples.LearnOpenGL.GettingStarted.HelloTriangle.run_example()
+      assert true
+    end
+  end
+
+  @tag :skip_in_ci
+  test "hello triangle indexed" do
+    if System.get_env("CI") do
+      IO.puts("Skipping interactive LearnOpenGL example in CI environment")
+      assert true
+    else
+      EAGL.Examples.LearnOpenGL.GettingStarted.HelloTriangleIndexed.run_example()
+      assert true
+    end
+  end
+
+  @tag :skip_in_ci
   test "hello triangle exercise 1" do
     if System.get_env("CI") do
       IO.puts("Skipping interactive LearnOpenGL example in CI environment")
