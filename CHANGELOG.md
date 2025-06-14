@@ -5,6 +5,36 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- **LearnOpenGL Shader Examples Complete**: Added remaining shader tutorial examples (3.2-3.6)
+  - **3.2 Shaders Interpolation**: Vertex color interpolation with red, green, blue corners demonstrating rasterizer interpolation
+  - **3.3 Shaders Class**: Same as 3.2 but emphasizes shader abstraction and clean code organization patterns
+  - **3.4 Shaders Exercise 1**: Upside-down triangle using vertex shader transformations (negating y-coordinate)
+  - **3.5 Shaders Exercise 2**: Horizontal offset via uniform variables for application-controlled positioning
+  - **3.6 Shaders Exercise 3**: Position-as-color visualization showing coordinate-to-RGB mapping and interpolation effects
+
+### Changed
+- **Examples Runner**: Updated to include all new shader examples (options 11-15)
+  - Total examples now: 15 (was 10)
+  - Complete shader tutorial series from basic uniforms to advanced exercises
+  - Comprehensive coverage of vertex attributes, uniforms, interpolation, and transformations
+
+### Technical Details
+- **Shader Exercise Features**:
+  - **3.2 Interpolation**: Multiple vertex attributes (position + color), demonstrates GPU rasterizer interpolation
+  - **3.3 Class**: Emphasizes EAGL.Shader abstraction benefits and clean code organization
+  - **3.4 Exercise 1**: Vertex transformation in shader (`gl_Position = vec4(aPos.x, -aPos.y, aPos.z, 1.0)`)
+  - **3.5 Exercise 2**: Uniform-controlled transformations (`uniform float xOffset` applied to position)
+  - **3.6 Exercise 3**: Position-to-color mapping showing why negative coordinates appear black in RGB space
+
+### Educational Value
+- **Complete Shader Learning Path**: From basic uniforms to advanced vertex transformations
+- **Interpolation Understanding**: Visual demonstration of how GPU interpolates values across triangle surfaces
+- **Coordinate System Concepts**: Shows relationship between coordinate spaces and color spaces
+- **Shader Abstraction**: Demonstrates benefits of clean code organization and reusable shader management
+
 ## [0.2.0] - 2024-12-19
 
 ### Added

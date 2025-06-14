@@ -65,10 +65,28 @@ LearnOpenGL Examples:
      9) 2.5 Hello Triangle Exercise 3
         Multiple Shader Programs - Two triangles with different colors
 
+    10) 3.1 Shaders Uniform
+        Uniform Variables - Animated triangle with time-based color changes
+
+    11) 3.2 Shaders Interpolation
+        Vertex Color Interpolation - Triangle with red, green, blue corners
+
+    12) 3.3 Shaders Class
+        Shader Abstraction - Clean code organization and reusable patterns
+
+    13) 3.4 Shaders Exercise 1
+        Upside-Down Triangle - Vertex transformation in shader
+
+    14) 3.5 Shaders Exercise 2
+        Horizontal Offset - Uniform-controlled triangle positioning
+
+    15) 3.6 Shaders Exercise 3
+        Position as Color - Visualizing coordinates as RGB values
+
      ...
 
 ═══════════════════════════════════════════════════════════════
-Enter example number (1-9), 'q' to quit, or 'r' to refresh:
+Enter example number (1-15), 'q' to quit, or 'r' to refresh:
 >
 ```
 

@@ -70,6 +70,26 @@ show_menu() {
     echo -e "        ${YELLOW}Uniform Variables - Animated triangle with time-based color changes${NC}"
     echo
     
+    echo -e "    ${CYAN}11)${NC} ${GREEN}3.2 Shaders Interpolation${NC}"
+    echo -e "        ${YELLOW}Vertex Color Interpolation - Triangle with red, green, blue corners${NC}"
+    echo
+    
+    echo -e "    ${CYAN}12)${NC} ${GREEN}3.3 Shaders Class${NC}"
+    echo -e "        ${YELLOW}Shader Abstraction - Same as 3.2 but emphasizes clean code organization${NC}"
+    echo
+    
+    echo -e "    ${CYAN}13)${NC} ${GREEN}3.4 Shaders Exercise 1${NC}"
+    echo -e "        ${YELLOW}Upside-Down Triangle - Vertex transformation in shader${NC}"
+    echo
+    
+    echo -e "    ${CYAN}14)${NC} ${GREEN}3.5 Shaders Exercise 2${NC}"
+    echo -e "        ${YELLOW}Horizontal Offset - Uniform-controlled triangle positioning${NC}"
+    echo
+    
+    echo -e "    ${CYAN}15)${NC} ${GREEN}3.6 Shaders Exercise 3${NC}"
+    echo -e "        ${YELLOW}Position as Color - Visualizing coordinates as RGB values${NC}"
+    echo
+    
     echo -e "${PURPLE}═══════════════════════════════════════════════════════════════${NC}"
 }
 
@@ -109,6 +129,21 @@ run_example() {
         10)
             module="EAGL.Examples.LearnOpenGL.GettingStarted.ShadersUniform"
             ;;
+        11)
+            module="EAGL.Examples.LearnOpenGL.GettingStarted.ShadersInterpolation"
+            ;;
+        12)
+            module="EAGL.Examples.LearnOpenGL.GettingStarted.ShadersClass"
+            ;;
+        13)
+            module="EAGL.Examples.LearnOpenGL.GettingStarted.ShadersExercise1"
+            ;;
+        14)
+            module="EAGL.Examples.LearnOpenGL.GettingStarted.ShadersExercise2"
+            ;;
+        15)
+            module="EAGL.Examples.LearnOpenGL.GettingStarted.ShadersExercise3"
+            ;;
         *)
             echo -e "${RED}Invalid choice: $choice${NC}"
             return 1
@@ -128,7 +163,7 @@ run_example() {
 # Main loop
 while true; do
     show_menu
-    echo -e "Enter example number (1-10), 'q' to quit, or 'r' to refresh:"
+    echo -e "Enter example number (1-15), 'q' to quit, or 'r' to refresh:"
     echo -n "> "
     
     read -r choice
@@ -141,7 +176,7 @@ while true; do
         r|R|refresh)
             continue
             ;;
-        1|2|3|4|5|6|7|8|9|10)
+        1|2|3|4|5|6|7|8|9|10|11|12|13|14|15)
             clear
             if run_example "$choice"; then
                 echo
@@ -153,7 +188,7 @@ while true; do
             fi
             ;;
         *)
-            echo -e "${RED}Invalid input. Please enter 1-10, 'q', or 'r'.${NC}"
+            echo -e "${RED}Invalid input. Please enter 1-15, 'q', or 'r'.${NC}"
             echo -n "Press ENTER to continue..."
             read -r
             ;;
