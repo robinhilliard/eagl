@@ -2,7 +2,7 @@ defmodule Mix.Tasks.Eagl.Test do
   @moduledoc """
   Runs EAGL tests excluding interactive examples that require user input.
 
-  This prevents tests from hanging while waiting for ESC key presses.
+  This prevents tests from hanging while waiting for ENTER key presses.
 
   ## Examples
 

@@ -60,7 +60,7 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.HelloTriangleIndexed do
 
       EAGL.Examples.LearnOpenGL.GettingStarted.HelloTriangleIndexed.run_example()
 
-  Press ESC to exit the example.
+  Press ENTER to exit the example.
   """
 
   use EAGL.Window
@@ -92,7 +92,7 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.HelloTriangleIndexed do
       EAGL.Window.run(
         __MODULE__,
         "LearnOpenGL - 1 Getting Started - 2.2 Hello Triangle Indexed",
-        esc_to_exit: true
+        return_to_exit: true
       )
 
   @impl true
@@ -113,7 +113,7 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.HelloTriangleIndexed do
 
     Efficiency gain: 4 vertices + 6 indices vs 6 vertices
 
-    Press ESC to exit.
+    Press ENTER to exit.
     """)
 
     # Compile and link shaders

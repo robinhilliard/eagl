@@ -1,7 +1,7 @@
 defmodule EAGL.Examples.Teapot do
   @moduledoc """
   Draw a 3D teapot with Phong shading.
-  Press ESC to quit
+  Press ENTER to quit
   """
 
   use EAGL.Window
@@ -18,7 +18,7 @@ defmodule EAGL.Examples.Teapot do
   @fragment_source_file "fragment_shader_phong_porcelain.glsl"
 
   @spec run_example() :: :ok | {:error, term()}
-  def run_example, do: EAGL.Window.run(__MODULE__, "EaGL Utah Teapot Example", depth_testing: true, esc_to_exit: true)
+  def run_example, do: EAGL.Window.run(__MODULE__, "EaGL Utah Teapot Example", depth_testing: true, return_to_exit: true)
 
   @impl true
   def setup do

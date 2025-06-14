@@ -60,7 +60,7 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.HelloTriangle do
 
       EAGL.Examples.LearnOpenGL.GettingStarted.HelloTriangle.run_example()
 
-  Press ESC to exit the example.
+  Press ENTER to exit the example.
   """
 
   use EAGL.Window
@@ -82,7 +82,7 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.HelloTriangle do
       EAGL.Window.run(
         __MODULE__,
         "LearnOpenGL - 1 Getting Started - 2.1 Hello Triangle",
-        esc_to_exit: true
+        return_to_exit: true
       )
 
   @impl true
@@ -103,7 +103,7 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.HelloTriangle do
       Left:   (-0.5, -0.5, 0.0)
       Right:  ( 0.5, -0.5, 0.0)
 
-    Press ESC to exit.
+    Press ENTER to exit.
     """)
 
     # Compile and link shaders

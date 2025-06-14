@@ -67,7 +67,7 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.HelloTriangleExercise3 do
 
       EAGL.Examples.LearnOpenGL.GettingStarted.HelloTriangleExercise3.run_example()
 
-  Press ESC to exit the example.
+  Press ENTER to exit the example.
   """
 
   use EAGL.Window
@@ -96,7 +96,7 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.HelloTriangleExercise3 do
       EAGL.Window.run(
         __MODULE__,
         "LearnOpenGL - 1 Getting Started - 2.5 Hello Triangle Exercise 3",
-        esc_to_exit: true
+        return_to_exit: true
       )
 
   @impl true
@@ -120,7 +120,7 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.HelloTriangleExercise3 do
     - Draw call 1: Orange program + Left triangle
     - Draw call 2: Yellow program + Right triangle
 
-    Press ESC to exit.
+    Press ENTER to exit.
     """)
 
     # Compile and link shaders - using a single with statement for educational clarity

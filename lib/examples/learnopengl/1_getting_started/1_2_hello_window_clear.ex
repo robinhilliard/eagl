@@ -40,7 +40,7 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.HelloWindowClear do
 
       EAGL.Examples.LearnOpenGL.GettingStarted.HelloWindowClear.run_example()
 
-  Press ESC to exit the example.
+  Press ENTER to exit the example.
   """
 
   use EAGL.Window
@@ -49,7 +49,7 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.HelloWindowClear do
   import Bitwise
 
   def run_example do
-    EAGL.Window.run(__MODULE__, "LearnOpenGL 1.2 - Hello Window Clear", esc_to_exit: true)
+    EAGL.Window.run(__MODULE__, "LearnOpenGL 1.2 - Hello Window Clear", return_to_exit: true)
   end
 
   @impl true
@@ -72,7 +72,7 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.HelloWindowClear do
     - 1.1 Hello Window: Black background (0.0, 0.0, 0.0)
     - 1.2 Hello Window Clear: Custom color (0.2, 0.3, 0.3)
 
-    Press ESC to exit.
+    Press ENTER to exit.
     """)
 
     {:ok, %{}}

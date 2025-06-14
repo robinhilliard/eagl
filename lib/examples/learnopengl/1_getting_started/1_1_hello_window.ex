@@ -26,7 +26,7 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.HelloWindow do
   1. **Window Creation**: EAGL.Window handles GLFW setup and OpenGL context creation
   2. **Render Loop**: The framework manages the main loop and buffer swapping
   3. **Basic Rendering**: Shows the foundation for all subsequent examples
-  4. **Input Handling**: ESC key to exit (handled by framework)
+  4. **Input Handling**: ENTER key to exit (handled by framework)
 
   ## Key Learning Points
 
@@ -39,7 +39,7 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.HelloWindow do
 
       EAGL.Examples.LearnOpenGL.GettingStarted.HelloWindow.run_example()
 
-  Press ESC to exit the example.
+  Press ENTER to exit the example.
   """
 
   use EAGL.Window
@@ -48,7 +48,7 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.HelloWindow do
   import Bitwise
 
   def run_example do
-    EAGL.Window.run(__MODULE__, "LearnOpenGL 1.1 - Hello Window", esc_to_exit: true)
+    EAGL.Window.run(__MODULE__, "LearnOpenGL 1.1 - Hello Window", return_to_exit: true)
   end
 
   @impl true
@@ -75,7 +75,7 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.HelloWindow do
     - The black background comes from clearing with (0,0,0,1)
     - In raw OpenGL, you'd see undefined buffer contents without clearing
 
-    Press ESC to exit.
+    Press ENTER to exit.
     """)
 
     {:ok, %{}}

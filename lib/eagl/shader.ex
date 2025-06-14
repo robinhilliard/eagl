@@ -223,16 +223,16 @@ defmodule EAGL.Shader do
     :gl.uniformMatrix2fv(location, 0, matrix)
   end
 
+  # Integer uniform (must come before float to avoid pattern matching issues)
+  @spec set_uniform_at_location(integer(), integer()) :: :ok
+  def set_uniform_at_location(location, value) when is_integer(value) do
+    :gl.uniform1i(location, value)
+  end
+
   # Float uniform
   @spec set_uniform_at_location(integer(), float()) :: :ok
   def set_uniform_at_location(location, value) when is_number(value) do
     :gl.uniform1f(location, value)
-  end
-
-  # Integer uniform
-  @spec set_uniform_at_location(integer(), integer()) :: :ok
-  def set_uniform_at_location(location, value) when is_integer(value) do
-    :gl.uniform1i(location, value)
   end
 
   # Boolean uniform (as integer)

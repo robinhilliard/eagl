@@ -65,7 +65,7 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.HelloTriangleExercise2 do
 
       EAGL.Examples.LearnOpenGL.GettingStarted.HelloTriangleExercise2.run_example()
 
-  Press ESC to exit the example.
+  Press ENTER to exit the example.
   """
 
   use EAGL.Window
@@ -96,7 +96,7 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.HelloTriangleExercise2 do
       EAGL.Window.run(
         __MODULE__,
         "LearnOpenGL - 1 Getting Started - 2.4 Hello Triangle Exercise 2",
-        esc_to_exit: true
+        return_to_exit: true
       )
 
   @impl true
@@ -120,7 +120,7 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.HelloTriangleExercise2 do
     - Exercise 1: 6 vertices (no sharing)
     - Exercise 2: 4 vertices + 6 indices (sharing)
 
-    Press ESC to exit.
+    Press ENTER to exit.
     """)
 
     # Compile and link shaders

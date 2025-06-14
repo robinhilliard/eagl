@@ -62,7 +62,7 @@ defmodule EAGL.Window do
   Options:
   - size: {width, height} tuple, defaults to {1024, 768}. Sets the initial window size.
   - depth_testing: boolean, defaults to false. When true, enables depth testing and requests a depth buffer.
-  - esc_to_exit: boolean, defaults to false. When true, pressing ESC will automatically close the window.
+  - return_to_exit: boolean, defaults to false. When true, pressing ENTER will automatically close the window.
   """
 
   @spec run(module(), String.t()) :: :ok | {:error, term()}
@@ -74,7 +74,7 @@ defmodule EAGL.Window do
   def run(callback_module, title, opts) when is_list(opts) do
     size = Keyword.get(opts, :size, @default_window_size)
     depth_testing = Keyword.get(opts, :depth_testing, false)
-    esc_to_exit = Keyword.get(opts, :esc_to_exit, false)
+    return_to_exit = Keyword.get(opts, :return_to_exit, false)
     try do
       # Initialize wx
       :application.start(:wx)
@@ -112,17 +112,20 @@ defmodule EAGL.Window do
       :wxWindow.connect(frame, :show)
       :wxFrame.show(frame)
 
-      # Wait for show event (critical for proper initialization)
+      # Wait for show event with shorter timeout (Wings3D approach)
+      # The show event may come before the window is actually displayed
       receive do
         {:wx, _, _, _, {:wxShow, :show}} -> :ok
       after
-        5000 ->
-          IO.puts("Warning: Show event timeout")
+        1000 ->
+          # If no show event after 1 second, continue anyway
+          # This is more robust than waiting indefinitely
           :ok
       end
 
       # Critical timing from wings_gl: let wxWidgets realize the window
       # "otherwise the setCurrent fails" - especially important on GTK
+      # Always sleep regardless of whether we got the show event
       :timer.sleep(200)
 
       # Create OpenGL context AFTER window is shown and realized
@@ -194,7 +197,7 @@ defmodule EAGL.Window do
 
               # Main loop
               try do
-                main_loop(frame, gl_canvas, gl_context, callback_module, state, esc_to_exit)
+                main_loop(frame, gl_canvas, gl_context, callback_module, state, return_to_exit)
               catch
                 :exit_main_loop -> :ok
               end
@@ -367,7 +370,7 @@ defmodule EAGL.Window do
   end
 
   @spec main_loop(:wxFrame.wxFrame(), :wxGLCanvas.wxGLCanvas(), :wxGLContext.wxGLContext(), module(), any(), boolean()) :: :ok
-  defp main_loop(frame, gl_canvas, gl_context, callback_module, state, esc_to_exit) do
+  defp main_loop(frame, gl_canvas, gl_context, callback_module, state, return_to_exit) do
     receive do
       # Handle both frame and canvas size events
       {:wx, _, obj, _, {:wxSize, :size, {_width, _height}, _}} ->
@@ -405,11 +408,11 @@ defmodule EAGL.Window do
           callback_module.render(safe_width * 1.0, safe_height * 1.0, state)
           :wxGLCanvas.swapBuffers(gl_canvas)
         end
-        main_loop(frame, gl_canvas, gl_context, callback_module, state, esc_to_exit)
+        main_loop(frame, gl_canvas, gl_context, callback_module, state, return_to_exit)
 
       {:wx, _, _, _, {:wxKey, :char_hook, _, _, key_code, _, _, _, _, _, _, _}} ->
-        # Handle ESC key if esc_to_exit is enabled
-        if esc_to_exit and key_code == 27 do  # ESC key
+        # Handle ENTER key if return_to_exit is enabled
+        if return_to_exit and key_code == 13 do  # ENTER key
           cleanup_and_exit(frame, gl_canvas, gl_context, callback_module, state)
         end
 
@@ -430,7 +433,7 @@ defmodule EAGL.Window do
 
         # Trigger a repaint after handling the event
         :wxWindow.refresh(gl_canvas)
-        main_loop(frame, gl_canvas, gl_context, callback_module, new_state, esc_to_exit)
+        main_loop(frame, gl_canvas, gl_context, callback_module, new_state, return_to_exit)
 
       {:wx, _, _, _, {:wxClose, :close_window}} ->
         cleanup_and_close(frame, gl_canvas, gl_context, callback_module, state)
@@ -446,7 +449,7 @@ defmodule EAGL.Window do
         :gl.viewport(0, 0, safe_width, safe_height)
         callback_module.render(safe_width * 1.0, safe_height * 1.0, state)
         :wxGLCanvas.swapBuffers(gl_canvas)
-        main_loop(frame, gl_canvas, gl_context, callback_module, state, esc_to_exit)
+        main_loop(frame, gl_canvas, gl_context, callback_module, state, return_to_exit)
 
       :tick ->
         new_state = if function_exported?(callback_module, :handle_event, 2) do
@@ -471,10 +474,10 @@ defmodule EAGL.Window do
           self() |> send({:wx, :ignore, :ignore, :ignore, {:wxPaint, :paint}})
           state
         end
-        main_loop(frame, gl_canvas, gl_context, callback_module, new_state, esc_to_exit)
+        main_loop(frame, gl_canvas, gl_context, callback_module, new_state, return_to_exit)
 
       _ ->
-        main_loop(frame, gl_canvas, gl_context, callback_module, state, esc_to_exit)
+        main_loop(frame, gl_canvas, gl_context, callback_module, state, return_to_exit)
     end
   end
 end

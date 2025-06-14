@@ -74,7 +74,7 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.ShadersUniform do
 
       EAGL.Examples.LearnOpenGL.GettingStarted.ShadersUniform.run_example()
 
-  Press ESC to exit the example.
+  Press ENTER to exit the example.
   """
 
   use EAGL.Window
@@ -96,7 +96,7 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.ShadersUniform do
       EAGL.Window.run(
         __MODULE__,
         "LearnOpenGL - 1 Getting Started - 3.1 Shaders Uniform",
-        esc_to_exit: true
+        return_to_exit: true
       )
 
   @impl true
@@ -123,7 +123,7 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.ShadersUniform do
     - This separates state management from rendering logic
     - Same visual result, cleaner architecture
 
-    Press ESC to exit.
+    Press ENTER to exit.
     """)
 
     # Compile and link shaders

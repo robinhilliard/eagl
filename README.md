@@ -2,8 +2,8 @@
   <h1>EAGL</h1>
   <img src="assets/eagl_logo_grey_on_transparent.png" alt="EAGL Logo" title="EAGL Logo" width="200">
   <p>
-    Make it <strong>EA</strong>sier to work<br>
-    with Open<strong>GL</strong> in Elixir.
+    Make it EAsier to work<br>
+    with OpenGL in Elixir.
   </p>
 </div>
 
@@ -188,7 +188,7 @@ EAGL provides flexible window creation with a clean, options-based API:
 - **Default Size**: 1024x768 pixels (can be customized with `size:` option)
 - **2D Rendering** (default): No depth buffer, suitable for triangles, sprites, UI elements
 - **3D Rendering**: Enables depth testing and depth buffer for proper 3D scene rendering
-- **Automatic ESC Handling**: Optional ESC key handling for simple examples and tutorials
+- **Automatic ENTER Handling**: Optional ENTER key handling for simple examples and tutorials
 
 ```elixir
 defmodule MyApp do
@@ -203,11 +203,11 @@ defmodule MyApp do
     # For 3D rendering (models, scenes with depth)
     EAGL.Window.run(__MODULE__, "My 3D OpenGL App", depth_testing: true)
     
-    # For tutorials/examples with automatic ESC key handling
-    EAGL.Window.run(__MODULE__, "Tutorial Example", esc_to_exit: true)
+    # For tutorials/examples with automatic ENTER key handling
+    EAGL.Window.run(__MODULE__, "Tutorial Example", return_to_exit: true)
     
     # Custom window size and options
-    EAGL.Window.run(__MODULE__, "Custom Size App", size: {1280, 720}, depth_testing: true, esc_to_exit: true)
+    EAGL.Window.run(__MODULE__, "Custom Size App", size: {1280, 720}, depth_testing: true, return_to_exit: true)
   end
 
   @impl true

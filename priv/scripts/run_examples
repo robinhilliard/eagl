@@ -145,16 +145,16 @@ while true; do
             clear
             if run_example "$choice"; then
                 echo
-                echo -n "Press Enter to return to menu..."
+                echo -n "Press ENTER to return to menu..."
                 read -r
             else
-                echo -n "Press Enter to continue..."
+                echo -n "Press ENTER to continue..."
                 read -r
             fi
             ;;
         *)
             echo -e "${RED}Invalid input. Please enter 1-10, 'q', or 'r'.${NC}"
-            echo -n "Press Enter to continue..."
+            echo -n "Press ENTER to continue..."
             read -r
             ;;
     esac

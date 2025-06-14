@@ -5,83 +5,85 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.1.0] - 2025-06-13
+## [0.2.0] - 2024-12-19
 
 ### Added
+- **LearnOpenGL 3.1 Shaders Uniform Example**: Complete port demonstrating uniform variables, time-based animations, and dynamic color changes
+- **Consistent Original Source Links**: Added "Original C++ Source" sections to all LearnOpenGL examples linking to the original tutorials
+- **Robust OpenGL Context Error Handling**: Comprehensive error handling for OpenGL context cleanup during window shutdown
+- **Enhanced Window API**: Refactored `EAGL.Window.run/3` to use clean options-based API with default window size
+- **Improved Cleanup Procedures**: Added graceful handling of OpenGL resource cleanup when context is destroyed
 
-#### Core Library
-- **EAGL.Math** - Comprehensive 3D math library with GLM-inspired API
-  - Vector operations (2D, 3D, 4D) with constructor macros
-  - Matrix operations (2x2, 3x3, 4x4) with transformation functions
-  - Quaternion operations with SLERP and conversion functions
-  - Utility functions for trigonometry, interpolation, and clamping
-  - All functions work with Erlang's OpenGL binding format
+### Changed
+- **Window API Refactor**: Simplified `EAGL.Window.run` from confusing 4-signature API to clean 2-signature options-based API
+  - Before: `run(module, title)`, `run(module, title, options)`, `run(module, title, size)`, `run(module, title, size, options)`
+  - After: `run(module, title)`, `run(module, title, options)` where size is in options
+  - Default window size: `{1024, 768}`
+  - Options: `size: {width, height}`, `depth_testing: boolean`, `return_to_exit: boolean`
+- **Updated README**: Comprehensive documentation updates with new API examples and clearer usage instructions
+- **Examples Runner**: Updated to include 3.1 Shaders Uniform example (option 10)
 
-- **EAGL.Shader** - Shader compilation and management
-  - Automatic shader compilation with comprehensive error reporting
-  - Program linking with validation
-  - Uniform helpers with automatic type detection for EAGL.Math types
-  - Support for setting multiple uniforms at once
-
-- **EAGL.Buffer** - Wings3D-inspired buffer management
-  - `create_position_array/1` for simple position-only VAOs
-  - `create_vertex_array/2` for custom vertex attribute configurations
-  - `delete_vertex_array/2` for proper resource cleanup
-
-- **EAGL.Error** - Comprehensive OpenGL error handling
-  - `check/1` for error checking with context information
-  - `error_string/1` for human-readable error messages
-  - `check!/1` for error checking with exceptions (debugging)
-
-- **EAGL.Model** - 3D model loading and management
-  - Wavefront OBJ file loader with automatic normal generation
-  - Direct VAO creation from model data
-  - Support for vertices, normals, and texture coordinates
-
-- **EAGL.Window** - Cross-platform window management
-  - OpenGL context creation via Erlang's wx bindings
-  - Event handling for resize, close, and paint events
-  - Automatic resource cleanup
-
-- **EAGL.Const** - OpenGL constants for Elixir
-  - Complete set of OpenGL constants as module attributes
-  - Easy import for use in applications
-
-#### Examples
-- **Math Example** - Terminal-based demonstration of all EAGL.Math functionality
-- **Teapot Example** - 3D teapot rendering with Phong shading
-- **LearnOpenGL Examples** - Direct ports of popular OpenGL tutorials:
-  - Exercise 2.4: Hello Triangle with Element Buffer Objects (EBO)
-  - Exercise 2.5: Hello Triangle with Multiple Shader Programs
-
-#### Development Tools
-- **Unified Examples Runner** - Interactive script for running all examples
-- **Comprehensive Documentation** - Full API documentation with examples
-- **Test Suite** - Complete test coverage for all modules
-
-#### Project Infrastructure
-- MIT License
-- Comprehensive README with usage examples
-- Hex.pm publishing metadata
-- Documentation generation with ExDoc
-- Test coverage reporting with ExCoveralls
+### Fixed
+- **OpenGL Context Errors on Exit**: Eliminated misleading "Error in window setup" messages during ENTER key exit
+- **Resource Cleanup**: Fixed `no_gl_context` errors during cleanup by adding proper error handling for destroyed contexts
+- **Window Shutdown**: Clean application exit with proper wx application termination
 
 ### Technical Details
+- **3.1 Shaders Uniform Features**:
+  - Demonstrates uniform variables with `EAGL.Shader.set_uniform()` automatic type detection
+  - Time-based color animation using `sin(time)` for smooth green color cycling
+  - EAGL's tick handler pattern vs original C++ approach (`handle_event(:tick)` vs `glfwGetTime` in render loop)
+  - State management: `{program, vao, vbo, current_time}`
+- **Error Handling Improvements**:
+  - Added specific handling for `ErlangError` with `{:error, :no_gl_context, _}` pattern
+  - Graceful cleanup when OpenGL context is already destroyed
+  - Proper resource management during window destruction
 
-#### Dependencies
-- **Elixir**: 1.14 or later
-- **Erlang/OTP**: 25 or later (with wx support)
-- **OpenGL**: 3.3 or later
+### Documentation
+- Added links to original LearnOpenGL C++ source code in all example moduledocs
+- Updated API documentation with new window options
+- Enhanced README with comprehensive usage examples
 
-#### Platform Support
-- Linux (with OpenGL drivers)
-- macOS (built-in OpenGL support)
-- Windows (with graphics drivers)
+## [0.1.0] - 2024-12-18
 
-#### Architecture
-- Clean separation between core functionality and examples
-- Wings3D-inspired helper functions for common OpenGL patterns
-- GLM-compatible math library for easy tutorial translation
-- Minimal abstraction over Erlang's wx OpenGL bindings
+### Added
+- Initial release of EAGL (Easier OpenGL) library
+- **Core Modules**:
+  - `EAGL.Math`: GLM-inspired 3D math library with vectors, matrices, quaternions
+  - `EAGL.Shader`: Shader compilation, linking, and uniform management
+  - `EAGL.Buffer`: VAO/VBO helper functions inspired by Wings3D
+  - `EAGL.Model`: 3D model loading with Wavefront OBJ support
+  - `EAGL.Window`: Cross-platform window creation with wxWidgets
+  - `EAGL.Error`: Comprehensive OpenGL error checking and reporting
 
+- **LearnOpenGL Tutorial Ports** (8 examples):
+  - 1.1 Hello Window - Basic window creation
+  - 1.2 Hello Window Clear - Custom clear colors
+  - 2.1 Hello Triangle - Basic VAO/VBO and shaders
+  - 2.2 Hello Triangle Indexed - Element Buffer Objects (EBO)
+  - 2.3 Hello Triangle Exercise 1 - Two triangles side by side
+  - 2.4 Hello Triangle Exercise 2 - EBO rectangle with shared vertices
+  - 2.5 Hello Triangle Exercise 3 - Multiple shader programs
+  - 3.1 Shaders Uniform - Uniform variables and animations
+
+- **Example Applications**:
+  - Math Example: Comprehensive EAGL.Math functionality demonstration
+  - Teapot Example: 3D teapot with Phong shading
+  - Unified examples runner script
+
+- **Features**:
+  - Cross-platform OpenGL 3.3+ support
+  - Automatic OpenGL error checking
+  - GLM-compatible math operations
+  - Wings3D-inspired helper functions
+  - Comprehensive test suite (92 passing tests)
+  - Full documentation with examples
+
+### Technical Specifications
+- **Requirements**: Elixir 1.14+, Erlang/OTP 25+, OpenGL 3.3+
+- **Platform Support**: Linux, macOS, Windows
+- **Dependencies**: Built-in wx module (no external GUI libraries required)
+- **Testing**: Full test coverage with OpenGL context mocking
+
+[0.2.0]: https://github.com/robinhilliard/eagl/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/robinhilliard/eagl/releases/tag/v0.1.0 

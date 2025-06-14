@@ -1,7 +1,7 @@
 defmodule EAGL.MixProject do
   use Mix.Project
 
-  @version "0.1.0"
+  @version "0.2.0"
   @source_url "https://github.com/robinhilliard/eagl"
 
   def project do
@@ -116,10 +116,17 @@ defmodule EAGL.MixProject do
         ],
         "Examples": [
           EAGL.Examples.Math,
-          EAGL.Examples.Teapot,
-                          EAGL.Examples.LearnOpenGL.GettingStarted.HelloTriangleExercise1,
-                EAGL.Examples.LearnOpenGL.GettingStarted.HelloTriangleExercise2,
-                EAGL.Examples.LearnOpenGL.GettingStarted.HelloTriangleExercise3
+          EAGL.Examples.Teapot
+        ],
+        "LearnOpenGL Examples": [
+          EAGL.Examples.LearnOpenGL.GettingStarted.HelloWindow,
+          EAGL.Examples.LearnOpenGL.GettingStarted.HelloWindowClear,
+          EAGL.Examples.LearnOpenGL.GettingStarted.HelloTriangle,
+          EAGL.Examples.LearnOpenGL.GettingStarted.HelloTriangleIndexed,
+          EAGL.Examples.LearnOpenGL.GettingStarted.HelloTriangleExercise1,
+          EAGL.Examples.LearnOpenGL.GettingStarted.HelloTriangleExercise2,
+          EAGL.Examples.LearnOpenGL.GettingStarted.HelloTriangleExercise3,
+          EAGL.Examples.LearnOpenGL.GettingStarted.ShadersUniform
         ]
       ],
       groups_for_docs: [
