@@ -1,23 +1,75 @@
 defmodule EAGL.Examples.LearnOpenGL.GettingStarted.HelloTriangleExercise3 do
   @moduledoc """
-  Port of LearnOpenGL's Hello Triangle Exercise 3 to EAGL framework.
+  LearnOpenGL 2.5 - Hello Triangle Exercise 3 (Multiple Shader Programs)
 
-  Original: https://learnopengl.com/Getting-started/Hello-Triangle (Exercise 3)
-  Chapter 1, Section 2.5: Hello Triangle Exercise 3
+  This example demonstrates using multiple shader programs to render different colored triangles.
+  It solves the third exercise from the Hello Triangle tutorial.
 
-  This example demonstrates:
-  - Creating two triangles using separate VAOs and VBOs
-  - Using the same vertex shader for both triangles
-  - Using different fragment shaders (orange and yellow)
-  - Rendering with different shader programs
+  ## Framework Adaptation Notes
 
-  Run with: mix run -e "EAGL.Examples.LearnOpenGL.GettingStarted.HelloTriangleExercise3.run_example()"
-  Or use the script: ./priv/scripts/triangle
+  In the original LearnOpenGL C++ tutorial, this exercise asks you to create two triangles
+  that render with different colors by using different fragment shaders.
+
+  EAGL's framework maintains the same approach:
+  - Two separate VAO/VBO pairs for independent geometry
+  - Shared vertex shader between both programs
+  - Different fragment shaders for different colors
+  - Multiple draw calls with different shader programs
+
+  ## Original Tutorial Exercise
+
+  **Exercise 3**: Create two shader programs where the second program uses a different
+  fragment shader that outputs the color yellow; draw both triangles again where one
+  outputs the color orange and the other outputs the color yellow.
+
+  ## Solution Concepts Demonstrated
+
+  1. **Multiple Shader Programs**: Creating and managing separate programs
+  2. **Shader Reuse**: Same vertex shader used in both programs
+  3. **Fragment Shader Variants**: Different colors from different shaders
+  4. **Separate Geometry**: Independent VAO/VBO pairs
+  5. **Multi-Pass Rendering**: Multiple draw calls with different programs
+
+  ## Key Learning Points
+
+  - How to create and manage multiple shader programs
+  - Sharing shaders between different programs
+  - The relationship between shader programs and rendering state
+  - When to use separate geometry vs shared geometry
+  - Understanding the cost of shader program switches
+
+  ## Triangle Geometry and Colors
+
+  Two separate triangles with different colors:
+  ```
+  Left Triangle (Orange)    Right Triangle (Yellow)
+        /\\                       /\\
+       /  \\                     /  \\
+      /____\\                   /____\\
+  ```
+
+  - Left triangle: Orange fragment shader
+  - Right triangle: Yellow fragment shader
+  - Same vertex shader for both triangles
+
+  ## Difference from Previous Examples
+
+  - **2.3 Exercise 1**: 2 triangles, 1 shader program, same color
+  - **2.4 Exercise 2**: 2 triangles (rectangle), 1 shader program, same color
+  - **2.5 Exercise 3**: 2 triangles, 2 shader programs, different colors
+
+  ## Usage
+
+      EAGL.Examples.LearnOpenGL.GettingStarted.HelloTriangleExercise3.run_example()
+
+  Press ESC to exit the example.
   """
 
   use EAGL.Window
   use EAGL.Const
+
   import EAGL.Shader
+  import EAGL.Buffer
 
   # First triangle (left side)
   @first_triangle [
@@ -34,24 +86,66 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.HelloTriangleExercise3 do
   ]
 
   @spec run_example() :: :ok | {:error, term()}
-  def run_example, do: EAGL.Window.run(__MODULE__, "LearnOpenGL - 1 Getting Started - 2.5 Hello Triangle Exercise 3")
+  def run_example,
+    do:
+      EAGL.Window.run(
+        __MODULE__,
+        "LearnOpenGL - 1 Getting Started - 2.5 Hello Triangle Exercise 3",
+        esc_to_exit: true
+      )
 
   @impl true
   def setup do
-    IO.puts("Starting LearnOpenGL Hello Triangle Exercise 3...")
+    IO.puts("""
+    === LearnOpenGL 2.5 - Hello Triangle Exercise 3 ===
+    This example demonstrates multiple shader programs with different colors!
+
+    Exercise Goal:
+    - Create two shader programs with different fragment shaders
+    - One triangle outputs orange, the other outputs yellow
+    - Use the same vertex shader for both programs
+
+    Key Concepts:
+    - Multiple shader programs in one application
+    - Shader reuse: same vertex shader, different fragment shaders
+    - Separate VAO/VBO pairs for independent geometry
+    - Multi-pass rendering with program switches
+
+    Rendering approach:
+    - Draw call 1: Orange program + Left triangle
+    - Draw call 2: Yellow program + Right triangle
+
+    Press ESC to exit.
+    """)
 
     # Compile and link shaders - using a single with statement for educational clarity
-    with {:ok, vertex_shader} <- create_shader(@gl_vertex_shader, "learnopengl/1_getting_started/2_5_hello_triangle_exercise_3/vertex_shader.glsl"),
-         {:ok, orange_fragment} <- create_shader(@gl_fragment_shader, "learnopengl/1_getting_started/2_5_hello_triangle_exercise_3/orange_fragment_shader.glsl"),
-         {:ok, yellow_fragment} <- create_shader(@gl_fragment_shader, "learnopengl/1_getting_started/2_5_hello_triangle_exercise_3/yellow_fragment_shader.glsl"),
+    with {:ok, vertex_shader} <-
+           create_shader(
+             @gl_vertex_shader,
+             "learnopengl/1_getting_started/2_5_hello_triangle_exercise_3/vertex_shader.glsl"
+           ),
+         {:ok, orange_fragment} <-
+           create_shader(
+             @gl_fragment_shader,
+             "learnopengl/1_getting_started/2_5_hello_triangle_exercise_3/orange_fragment_shader.glsl"
+           ),
+         {:ok, yellow_fragment} <-
+           create_shader(
+             @gl_fragment_shader,
+             "learnopengl/1_getting_started/2_5_hello_triangle_exercise_3/yellow_fragment_shader.glsl"
+           ),
          {:ok, orange_program} <- create_attach_link([vertex_shader, orange_fragment]),
          {:ok, yellow_program} <- create_attach_link([vertex_shader, yellow_fragment]) do
-
-      IO.puts("✓ Created shader programs")
+      IO.puts("✓ Compiled vertex shader (shared between both programs)")
+      IO.puts("✓ Compiled orange and yellow fragment shaders")
+      IO.puts("✓ Created two shader programs successfully")
 
       # Create VAOs and VBOs using EAGL.Buffer helpers
-      {first_vao, first_vbo} = EAGL.Buffer.create_position_array(@first_triangle)
-      {second_vao, second_vbo} = EAGL.Buffer.create_position_array(@second_triangle)
+      {first_vao, first_vbo} = create_position_array(@first_triangle)
+      {second_vao, second_vbo} = create_position_array(@second_triangle)
+
+      IO.puts("✓ Created separate VAO/VBO pairs for each triangle")
+      IO.puts("✓ Ready to render! You should see an orange and yellow triangle.")
 
       # State: {orange_program, yellow_program, first_vao, first_vbo, second_vao, second_vbo}
       {:ok, {orange_program, yellow_program, first_vao, first_vbo, second_vao, second_vbo}}
@@ -63,7 +157,11 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.HelloTriangleExercise3 do
   end
 
   @impl true
-  def render(viewport_width, viewport_height, {orange_program, yellow_program, first_vao, _first_vbo, second_vao, _second_vbo}) do
+  def render(
+        viewport_width,
+        viewport_height,
+        {orange_program, yellow_program, first_vao, _first_vbo, second_vao, _second_vbo}
+      ) do
     # Set viewport
     :gl.viewport(0, 0, trunc(viewport_width), trunc(viewport_height))
 
@@ -85,18 +183,10 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.HelloTriangleExercise3 do
   end
 
   @impl true
-  def handle_event({:key, key_code}, state) do
-    if key_code == 27 do  # ESC key
-      throw(:close_window)
-    end
-    {:ok, state}
-  end
-
-  @impl true
   def cleanup({orange_program, yellow_program, first_vao, first_vbo, second_vao, second_vbo}) do
     # Cleanup geometry data
-    EAGL.Buffer.delete_vertex_array(first_vao, first_vbo)
-    EAGL.Buffer.delete_vertex_array(second_vao, second_vbo)
+    delete_vertex_array(first_vao, first_vbo)
+    delete_vertex_array(second_vao, second_vbo)
 
     # Cleanup shader programs
     cleanup_program(orange_program)

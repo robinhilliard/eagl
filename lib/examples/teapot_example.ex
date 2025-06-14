@@ -18,7 +18,7 @@ defmodule EAGL.Examples.Teapot do
   @fragment_source_file "fragment_shader_phong_porcelain.glsl"
 
   @spec run_example() :: :ok | {:error, term()}
-  def run_example, do: EAGL.Window.run(__MODULE__, "EaGL Utah Teapot Example")
+  def run_example, do: EAGL.Window.run(__MODULE__, "EaGL Utah Teapot Example", depth_testing: true, esc_to_exit: true)
 
   @impl true
   def setup do
@@ -40,10 +40,7 @@ defmodule EAGL.Examples.Teapot do
     # Set viewport to use the full window
     :gl.viewport(0, 0, trunc(viewport_width), trunc(viewport_height))
 
-    # Enable depth testing and configure it properly
-    :gl.enable(@gl_depth_test)
-    :gl.depthFunc(@gl_less)
-    :gl.clearDepth(1.0)
+    # Clear screen (depth testing is handled by window configuration)
     :gl.clear(@gl_color_buffer_bit ||| @gl_depth_buffer_bit)
 
     # Enable face culling to hide back faces
@@ -92,12 +89,7 @@ defmodule EAGL.Examples.Teapot do
     {:ok, {program, model, :erlang.monotonic_time(:millisecond)}}
   end
 
-  def handle_event({:key, key_code}, state) do
-    if key_code == 27 do
-      throw(:close_window)
-    end
-    {:ok, state}
-  end
+
 
   @impl true
   def cleanup({program, model, _time}) do

@@ -180,6 +180,12 @@ check!("Critical operation")  # Raises RuntimeError if error found
 
 ### Window Creation
 
+EAGL provides flexible window creation with optional features:
+
+- **2D Rendering** (default): No depth buffer, suitable for triangles, sprites, UI elements
+- **3D Rendering**: Enables depth testing and depth buffer for proper 3D scene rendering
+- **Automatic ESC Handling**: Optional ESC key handling for simple examples and tutorials
+
 ```elixir
 defmodule MyApp do
   use EAGL.Window
@@ -187,7 +193,14 @@ defmodule MyApp do
   import EAGL.Math
 
   def run_example do
-    EAGL.Window.run(__MODULE__, "My OpenGL App")
+    # For 2D rendering (triangles, sprites, UI)
+    EAGL.Window.run(__MODULE__, "My 2D OpenGL App")
+    
+    # For 3D rendering (models, scenes with depth)
+    EAGL.Window.run(__MODULE__, "My 3D OpenGL App", {1024, 768}, depth_testing: true)
+    
+    # For tutorials/examples with automatic ESC key handling
+    EAGL.Window.run(__MODULE__, "Tutorial Example", {1024, 768}, esc_to_exit: true)
   end
 
   @impl true
@@ -200,7 +213,12 @@ defmodule MyApp do
   def render(width, height, state) do
     # Your render function should handle clearing the screen
     :gl.clearColor(0.2, 0.3, 0.3, 1.0)
-    :gl.clear(@gl_color_buffer_bit ||| @gl_depth_buffer_bit)
+    
+    # For 2D rendering (depth_testing: false, default)
+    :gl.clear(@gl_color_buffer_bit)
+    
+    # For 3D rendering (depth_testing: true)
+    # :gl.clear(@gl_color_buffer_bit ||| @gl_depth_buffer_bit)
     
     # Render your content here
     :ok

@@ -1,39 +1,66 @@
 defmodule EAGL.Examples.LearnOpenGL.GettingStarted.HelloTriangle do
   @moduledoc """
-  Port of LearnOpenGL's Hello Triangle to EAGL framework.
+  LearnOpenGL 2.1 - Hello Triangle
 
-  Original: https://learnopengl.com/Getting-started/Hello-Triangle (Section 2.1)
-  Chapter 1, Section 2.1: Hello Triangle
+  This example demonstrates your first triangle in OpenGL - the foundation of all 3D graphics.
+  It corresponds to the Hello Triangle tutorial in the LearnOpenGL series.
 
-  This example demonstrates:
-  - Creating your first triangle in OpenGL
-  - Basic vertex buffer objects (VBO) and vertex array objects (VAO)
-  - Simple vertex and fragment shaders
-  - The OpenGL rendering pipeline fundamentals
-  - Drawing with glDrawArrays
+  ## Framework Adaptation Notes
+
+  In the original LearnOpenGL C++ tutorial, this example introduces the core OpenGL rendering pipeline:
+  vertex data → vertex shader → primitive assembly → fragment shader → framebuffer.
+
+  EAGL's framework simplifies the setup while preserving all educational concepts:
+  - Shader compilation and linking are handled by EAGL.Shader helpers
+  - VAO/VBO creation uses EAGL.Buffer convenience functions
+  - Error checking and resource cleanup are automated
+  - The core OpenGL concepts remain unchanged and visible
+
+  ## Original Tutorial Concepts Demonstrated
+
+  1. **Vertex Data**: Defining triangle vertices in normalized device coordinates (-1 to 1)
+  2. **Vertex Buffer Objects (VBO)**: Storing vertex data in GPU memory
+  3. **Vertex Array Objects (VAO)**: Configuring how vertex data is interpreted
+  4. **Vertex Shaders**: Processing each vertex (position transformation)
+  5. **Fragment Shaders**: Determining pixel colors
+  6. **Rendering Pipeline**: glDrawArrays() triggers the complete pipeline
+
+  ## Key Learning Points
+
+  - Understanding normalized device coordinates (NDC)
+  - The relationship between VBOs and VAOs
+  - How shaders process vertices and fragments
+  - The OpenGL rendering pipeline flow
+  - Basic primitive rendering with glDrawArrays
+
+  ## Triangle Geometry
 
   The triangle is defined by 3 vertices in normalized device coordinates:
   ```
       (0.0, 0.5)
-         /\
-        /  \
-       /    \
-      /______\
+         /\\
+        /  \\
+       /    \\
+      /______\\
   (-0.5,-0.5) (0.5,-0.5)
   ```
 
-  Key concepts:
-  - Vertex Buffer Object (VBO) stores vertex data
-  - Vertex Array Object (VAO) stores vertex attribute configuration
-  - Vertex shader processes each vertex
-  - Fragment shader determines pixel colors
-  - glDrawArrays() renders primitives from vertex data
+  ## Difference from Previous Examples
 
-  Run with: mix run -e "EAGL.Examples.LearnOpenGL.GettingStarted.HelloTriangle.run_example()"
+  - **1.1 Hello Window**: Just a black window (no geometry)
+  - **1.2 Hello Window Clear**: Custom clear color (no geometry)
+  - **2.1 Hello Triangle**: First actual geometry rendering with shaders
+
+  ## Usage
+
+      EAGL.Examples.LearnOpenGL.GettingStarted.HelloTriangle.run_example()
+
+  Press ESC to exit the example.
   """
 
   use EAGL.Window
   use EAGL.Const
+
   import EAGL.Shader
   import EAGL.Buffer
 
@@ -45,24 +72,55 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.HelloTriangle do
   ]
 
   @spec run_example() :: :ok | {:error, term()}
-  def run_example, do: EAGL.Window.run(__MODULE__, "LearnOpenGL - 1 Getting Started - 2.1 Hello Triangle")
+  def run_example,
+    do:
+      EAGL.Window.run(
+        __MODULE__,
+        "LearnOpenGL - 1 Getting Started - 2.1 Hello Triangle",
+        esc_to_exit: true
+      )
 
   @impl true
   def setup do
-    IO.puts("Starting LearnOpenGL Hello Triangle...")
+    IO.puts("""
+    === LearnOpenGL 2.1 - Hello Triangle ===
+    This example demonstrates your first triangle in OpenGL!
+
+    Key Concepts:
+    - Vertex Buffer Objects (VBO) store vertex data in GPU memory
+    - Vertex Array Objects (VAO) configure vertex attribute layout
+    - Vertex shaders process each vertex
+    - Fragment shaders determine pixel colors
+    - glDrawArrays() renders primitives from vertex data
+
+    Triangle vertices in Normalized Device Coordinates:
+      Top:    ( 0.0,  0.5, 0.0)
+      Left:   (-0.5, -0.5, 0.0)
+      Right:  ( 0.5, -0.5, 0.0)
+
+    Press ESC to exit.
+    """)
 
     # Compile and link shaders
-    with {:ok, vertex_shader} <- create_shader(@gl_vertex_shader, "learnopengl/1_getting_started/2_1_hello_triangle/vertex_shader.glsl"),
-         {:ok, fragment_shader} <- create_shader(@gl_fragment_shader, "learnopengl/1_getting_started/2_1_hello_triangle/fragment_shader.glsl"),
+    with {:ok, vertex_shader} <-
+           create_shader(
+             @gl_vertex_shader,
+             "learnopengl/1_getting_started/2_1_hello_triangle/vertex_shader.glsl"
+           ),
+         {:ok, fragment_shader} <-
+           create_shader(
+             @gl_fragment_shader,
+             "learnopengl/1_getting_started/2_1_hello_triangle/fragment_shader.glsl"
+           ),
          {:ok, program} <- create_attach_link([vertex_shader, fragment_shader]) do
-
-      IO.puts("✓ Created shader program")
+      IO.puts("✓ Vertex and fragment shaders compiled and linked successfully")
 
       # Create VAO and VBO for triangle geometry
       # This is the fundamental OpenGL pattern: VAO + VBO + vertex attributes
       {vao, vbo} = create_position_array(@vertices)
 
-      IO.puts("✓ Created vertex array (3 vertices)")
+      IO.puts("✓ Created VAO and VBO (3 vertices uploaded to GPU)")
+      IO.puts("✓ Ready to render! You should see an orange triangle.")
 
       # State: {program, vao, vbo}
       {:ok, {program, vao, vbo}}
@@ -91,14 +149,6 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.HelloTriangle do
     :gl.drawArrays(@gl_triangles, 0, 3)
 
     :ok
-  end
-
-  @impl true
-  def handle_event({:key, key_code}, state) do
-    if key_code == 27 do  # ESC key
-      throw(:close_window)
-    end
-    {:ok, state}
   end
 
   @impl true

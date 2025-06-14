@@ -44,7 +44,7 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.HelloWindowClear do
   import Bitwise
 
   def run_example do
-    EAGL.Window.run(__MODULE__, "LearnOpenGL 1.2 - Hello Window Clear")
+    EAGL.Window.run(__MODULE__, "LearnOpenGL 1.2 - Hello Window Clear", esc_to_exit: true)
   end
 
   @impl true
@@ -53,20 +53,22 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.HelloWindowClear do
     # a custom clear color. The key learning point is understanding the
     # difference between state-setting and state-using OpenGL functions.
 
-    IO.puts("=== LearnOpenGL 1.2 - Hello Window Clear ===")
-    IO.puts("This example demonstrates setting a custom clear color.")
-    IO.puts("You should see a dark green-blue window!")
-    IO.puts("")
-    IO.puts("Key Concepts:")
-    IO.puts("- glClearColor() is a STATE-SETTING function")
-    IO.puts("- glClear() is a STATE-USING function")
-    IO.puts("- This demonstrates OpenGL's state machine design")
-    IO.puts("")
-    IO.puts("Difference from 1.1:")
-    IO.puts("- 1.1 Hello Window: Black background (0.0, 0.0, 0.0)")
-    IO.puts("- 1.2 Hello Window Clear: Custom color (0.2, 0.3, 0.3)")
-    IO.puts("")
-    IO.puts("Press ESC to exit.")
+    IO.puts("""
+    === LearnOpenGL 1.2 - Hello Window Clear ===
+    This example demonstrates setting a custom clear color.
+    You should see a dark green-blue window!
+
+    Key Concepts:
+    - glClearColor() is a STATE-SETTING function
+    - glClear() is a STATE-USING function
+    - This demonstrates OpenGL's state machine design
+
+    Difference from 1.1:
+    - 1.1 Hello Window: Black background (0.0, 0.0, 0.0)
+    - 1.2 Hello Window Clear: Custom color (0.2, 0.3, 0.3)
+
+    Press ESC to exit.
+    """)
 
     {:ok, %{}}
   end
@@ -104,18 +106,12 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.HelloWindowClear do
 
   @impl true
   def cleanup(_state) do
-    IO.puts("Hello Window Clear example finished.")
-    IO.puts("")
-    IO.puts("Next: Try the triangle examples to see actual geometry rendering!")
-    :ok
-  end
+    IO.puts("""
+    Hello Window Clear example finished.
 
-  @impl true
-  def handle_event({:key, key_code}, state) do
-    case key_code do
-      # ESC key - exit the example
-      27 -> throw(:close_window)
-      _ -> {:ok, state}
-    end
+    Next: Try the triangle examples to see actual geometry rendering!
+    """)
+
+    :ok
   end
 end

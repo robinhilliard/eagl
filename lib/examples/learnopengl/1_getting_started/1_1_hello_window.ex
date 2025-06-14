@@ -37,13 +37,13 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.HelloWindow do
   Press ESC to exit the example.
   """
 
-    use EAGL.Window
+  use EAGL.Window
   use EAGL.Const
 
   import Bitwise
 
   def run_example do
-    EAGL.Window.run(__MODULE__, "LearnOpenGL 1.1 - Hello Window")
+    EAGL.Window.run(__MODULE__, "LearnOpenGL 1.1 - Hello Window", esc_to_exit: true)
   end
 
   @impl true
@@ -60,16 +60,18 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.HelloWindow do
     # This matches what GLFW + GLAD would do in the C++ version, but with
     # sensible defaults for a graphics framework.
 
-    IO.puts("=== LearnOpenGL 1.1 - Hello Window ===")
-    IO.puts("This example demonstrates basic window creation.")
-    IO.puts("You should see a black window - this is correct!")
-    IO.puts("")
-    IO.puts("Framework Notes:")
-    IO.puts("- EAGL automatically handles OpenGL context setup")
-    IO.puts("- The black background comes from clearing with (0,0,0,1)")
-    IO.puts("- In raw OpenGL, you'd see undefined buffer contents without clearing")
-    IO.puts("")
-    IO.puts("Press ESC to exit.")
+    IO.puts("""
+    === LearnOpenGL 1.1 - Hello Window ===
+    This example demonstrates basic window creation.
+    You should see a black window - this is correct!
+
+    Framework Notes:
+    - EAGL automatically handles OpenGL context setup
+    - The black background comes from clearing with (0,0,0,1)
+    - In raw OpenGL, you'd see undefined buffer contents without clearing
+
+    Press ESC to exit.
+    """)
 
     {:ok, %{}}
   end
@@ -105,14 +107,5 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.HelloWindow do
   def cleanup(_state) do
     IO.puts("Hello Window example finished.")
     :ok
-  end
-
-  @impl true
-  def handle_event({:key, key_code}, state) do
-    case key_code do
-      # ESC key - exit the example
-      27 -> throw(:close_window)
-      _ -> {:ok, state}
-    end
   end
 end

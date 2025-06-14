@@ -13,16 +13,22 @@ defmodule EAGL.Window do
 
   # OpenGL context attributes for wxGLCanvas.
   # Based on Wings3D's wings_gl.erl attributes/0 function.
-  # Ensures proper OpenGL context with depth buffer, double buffering, and RGBA mode.
-  defp gl_attributes do
+  # Ensures proper OpenGL context with optional depth buffer, double buffering, and RGBA mode.
+  defp gl_attributes(depth_testing) do
     base_attributes = [
       @wx_gl_rgba,                    # Use RGBA mode
       @wx_gl_min_red, 8,             # Minimum 8 bits for red channel
       @wx_gl_min_green, 8,           # Minimum 8 bits for green channel
       @wx_gl_min_blue, 8,            # Minimum 8 bits for blue channel
-      @wx_gl_depth_size, 24,         # 24-bit depth buffer (critical for 3D)
       @wx_gl_doublebuffer            # Double buffering for smooth animation
     ]
+
+    # Add depth buffer only if depth testing is requested
+    depth_attributes = if depth_testing do
+      [@wx_gl_depth_size, 24]        # 24-bit depth buffer (for 3D rendering)
+    else
+      []
+    end
 
     # Add macOS-specific forward compatibility (equivalent to GLFW_OPENGL_FORWARD_COMPAT)
     # This is required for OpenGL 3.0+ contexts on macOS and matches the behavior of:
@@ -37,9 +43,9 @@ defmodule EAGL.Window do
         []
     end
 
-    # Combine base attributes with platform-specific ones and terminate
+    # Combine base attributes with depth and platform-specific ones and terminate
     [
-      attribList: base_attributes ++ macos_attributes ++ [0]  # 0 terminates attribute list
+      attribList: base_attributes ++ depth_attributes ++ macos_attributes ++ [0]  # 0 terminates attribute list
     ]
   end
 
@@ -52,15 +58,31 @@ defmodule EAGL.Window do
   @doc """
   Creates and runs an OpenGL window using the given callback module.
   The callback module must implement the GLWindowBehaviour.
+
+  Options:
+  - depth_testing: boolean, defaults to false. When true, enables depth testing and requests a depth buffer.
+  - esc_to_exit: boolean, defaults to false. When true, pressing ESC will automatically close the window.
   """
 
   @spec run(module(), String.t()) :: :ok | {:error, term()}
   def run(callback_module, title) do
-    run(callback_module, title, @default_window_size)
+    run(callback_module, title, @default_window_size, [])
+  end
+
+  @spec run(module(), String.t(), keyword()) :: :ok | {:error, term()}
+  def run(callback_module, title, opts) when is_list(opts) do
+    run(callback_module, title, @default_window_size, opts)
   end
 
   @spec run(module(), String.t(), {integer(), integer()}) :: :ok | {:error, term()}
-  def run(callback_module, title, size) do
+  def run(callback_module, title, size) when is_tuple(size) do
+    run(callback_module, title, size, [])
+  end
+
+  @spec run(module(), String.t(), {integer(), integer()}, keyword()) :: :ok | {:error, term()}
+  def run(callback_module, title, size, opts) do
+    depth_testing = Keyword.get(opts, :depth_testing, false)
+    esc_to_exit = Keyword.get(opts, :esc_to_exit, false)
     try do
       # Initialize wx
       :application.start(:wx)
@@ -68,8 +90,9 @@ defmodule EAGL.Window do
       frame = :wxFrame.new(wx, -1, title, size: size)
 
       IO.puts("Creating OpenGL canvas")
-      IO.puts("Requested: RGBA mode, 8-bit RGB channels, 24-bit depth buffer, double buffering")
-      gl_canvas = :wxGLCanvas.new(frame, gl_attributes())
+      depth_msg = if depth_testing, do: "24-bit depth buffer, ", else: ""
+      IO.puts("Requested: RGBA mode, 8-bit RGB channels, #{depth_msg}double buffering")
+      gl_canvas = :wxGLCanvas.new(frame, gl_attributes(depth_testing))
       IO.puts("✓ OpenGL canvas created successfully with requested attributes")
 
       # Set background style following wings_gl pattern
@@ -131,15 +154,23 @@ defmodule EAGL.Window do
       # Initialize OpenGL with proper setup
       :gl.viewport(0, 0, safe_width, safe_height)
 
-      # Enable depth testing - Wings3D approach: trust the attributes we requested
-      # Since we requested 24-bit depth buffer in canvas attributes, it should be available
-      :gl.enable(@gl_depth_test)
-      :gl.depthFunc(@gl_less)
-      :gl.clearDepth(1.0)
+      # Conditionally enable depth testing based on configuration
+      if depth_testing do
+        # Enable depth testing - Wings3D approach: trust the attributes we requested
+        # Since we requested 24-bit depth buffer in canvas attributes, it should be available
+        :gl.enable(@gl_depth_test)
+        :gl.depthFunc(@gl_less)
+        :gl.clearDepth(1.0)
+      end
 
       # Initial clear to ensure clean state - examples will handle their own clearing
       :gl.clearColor(0.0, 0.0, 0.0, 1.0)
-      :gl.clear(@gl_color_buffer_bit ||| @gl_depth_buffer_bit)
+      clear_bits = if depth_testing do
+        @gl_color_buffer_bit ||| @gl_depth_buffer_bit
+      else
+        @gl_color_buffer_bit
+      end
+      :gl.clear(clear_bits)
 
       # Check for OpenGL errors
       case :gl.getError() do
@@ -160,16 +191,20 @@ defmodule EAGL.Window do
 
           # Main loop
           try do
-            main_loop(frame, gl_canvas, gl_context, callback_module, state)
+            main_loop(frame, gl_canvas, gl_context, callback_module, state, esc_to_exit)
           catch
             :exit_main_loop -> :ok
           end
 
-          # Cleanup
+          # Cleanup - ensure context is current before cleanup
+          :wxGLCanvas.setCurrent(gl_canvas, gl_context)
+          :gl.useProgram(0)  # Unbind shader program
+
           try do
             callback_module.cleanup(state)
           rescue
-            _ -> :ok
+            e ->
+              IO.puts("Warning: Error during cleanup: #{inspect(e)}")
           end
 
           :wxGLContext.destroy(gl_context)
@@ -198,29 +233,49 @@ defmodule EAGL.Window do
   end
 
   # Private helper to handle window cleanup consistently
-  @spec cleanup_and_exit(:wxFrame.wxFrame(), :wxGLContext.wxGLContext(), module(), any()) :: no_return()
-  defp cleanup_and_exit(frame, gl_context, callback_module, state) do
+  @spec cleanup_and_exit(:wxFrame.wxFrame(), :wxGLCanvas.wxGLCanvas(), :wxGLContext.wxGLContext(), module(), any()) :: no_return()
+  defp cleanup_and_exit(frame, gl_canvas, gl_context, callback_module, state) do
+    # Ensure OpenGL context is current before cleanup
+    :wxGLCanvas.setCurrent(gl_canvas, gl_context)
+
     # Clean up OpenGL resources before destroying context
     :gl.useProgram(0)  # Unbind shader program
-    callback_module.cleanup(state)
+
+    try do
+      callback_module.cleanup(state)
+    rescue
+      e ->
+        IO.puts("Warning: Error during cleanup: #{inspect(e)}")
+    end
+
     :wxGLContext.destroy(gl_context)
     :wxFrame.destroy(frame)
     throw(:exit_main_loop)
   end
 
   # Private helper to handle window cleanup for close event (returns :ok)
-  @spec cleanup_and_close(:wxFrame.wxFrame(), :wxGLContext.wxGLContext(), module(), any()) :: :ok
-  defp cleanup_and_close(frame, gl_context, callback_module, state) do
+  @spec cleanup_and_close(:wxFrame.wxFrame(), :wxGLCanvas.wxGLCanvas(), :wxGLContext.wxGLContext(), module(), any()) :: :ok
+  defp cleanup_and_close(frame, gl_canvas, gl_context, callback_module, state) do
+    # Ensure OpenGL context is current before cleanup
+    :wxGLCanvas.setCurrent(gl_canvas, gl_context)
+
     # Clean up OpenGL resources before destroying context
     :gl.useProgram(0)  # Unbind shader program
-    callback_module.cleanup(state)
+
+    try do
+      callback_module.cleanup(state)
+    rescue
+      e ->
+        IO.puts("Warning: Error during cleanup: #{inspect(e)}")
+    end
+
     :wxGLContext.destroy(gl_context)
     :wxFrame.destroy(frame)
     :ok
   end
 
-  @spec main_loop(:wxFrame.wxFrame(), :wxGLCanvas.wxGLCanvas(), :wxGLContext.wxGLContext(), module(), any()) :: :ok
-  defp main_loop(frame, gl_canvas, gl_context, callback_module, state) do
+  @spec main_loop(:wxFrame.wxFrame(), :wxGLCanvas.wxGLCanvas(), :wxGLContext.wxGLContext(), module(), any(), boolean()) :: :ok
+  defp main_loop(frame, gl_canvas, gl_context, callback_module, state, esc_to_exit) do
     receive do
       # Handle both frame and canvas size events
       {:wx, _, obj, _, {:wxSize, :size, {_width, _height}, _}} ->
@@ -258,9 +313,14 @@ defmodule EAGL.Window do
           callback_module.render(safe_width * 1.0, safe_height * 1.0, state)
           :wxGLCanvas.swapBuffers(gl_canvas)
         end
-        main_loop(frame, gl_canvas, gl_context, callback_module, state)
+        main_loop(frame, gl_canvas, gl_context, callback_module, state, esc_to_exit)
 
       {:wx, _, _, _, {:wxKey, :char_hook, _, _, key_code, _, _, _, _, _, _, _}} ->
+        # Handle ESC key if esc_to_exit is enabled
+        if esc_to_exit and key_code == 27 do  # ESC key
+          cleanup_and_exit(frame, gl_canvas, gl_context, callback_module, state)
+        end
+
         # Handle keyboard events
         new_state = if function_exported?(callback_module, :handle_event, 2) do
           try do
@@ -270,7 +330,7 @@ defmodule EAGL.Window do
             end
           catch
             :close_window ->
-              cleanup_and_exit(frame, gl_context, callback_module, state)
+              cleanup_and_exit(frame, gl_canvas, gl_context, callback_module, state)
           end
         else
           state
@@ -278,10 +338,10 @@ defmodule EAGL.Window do
 
         # Trigger a repaint after handling the event
         :wxWindow.refresh(gl_canvas)
-        main_loop(frame, gl_canvas, gl_context, callback_module, new_state)
+        main_loop(frame, gl_canvas, gl_context, callback_module, new_state, esc_to_exit)
 
       {:wx, _, _, _, {:wxClose, :close_window}} ->
-        cleanup_and_close(frame, gl_context, callback_module, state)
+        cleanup_and_close(frame, gl_canvas, gl_context, callback_module, state)
 
       {:wx, _, _, _, {:wxPaint, :paint}} ->
         :wxGLCanvas.setCurrent(gl_canvas, gl_context)
@@ -294,7 +354,7 @@ defmodule EAGL.Window do
         :gl.viewport(0, 0, safe_width, safe_height)
         callback_module.render(safe_width * 1.0, safe_height * 1.0, state)
         :wxGLCanvas.swapBuffers(gl_canvas)
-        main_loop(frame, gl_canvas, gl_context, callback_module, state)
+        main_loop(frame, gl_canvas, gl_context, callback_module, state, esc_to_exit)
 
       :tick ->
         new_state = if function_exported?(callback_module, :handle_event, 2) do
@@ -313,16 +373,16 @@ defmodule EAGL.Window do
               state
           catch
             :close_window ->
-              cleanup_and_exit(frame, gl_context, callback_module, state)
+              cleanup_and_exit(frame, gl_canvas, gl_context, callback_module, state)
           end
         else
           self() |> send({:wx, :ignore, :ignore, :ignore, {:wxPaint, :paint}})
           state
         end
-        main_loop(frame, gl_canvas, gl_context, callback_module, new_state)
+        main_loop(frame, gl_canvas, gl_context, callback_module, new_state, esc_to_exit)
 
       _ ->
-        main_loop(frame, gl_canvas, gl_context, callback_module, state)
+        main_loop(frame, gl_canvas, gl_context, callback_module, state, esc_to_exit)
     end
   end
 end
