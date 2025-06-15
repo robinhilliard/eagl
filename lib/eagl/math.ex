@@ -44,21 +44,17 @@ defmodule EAGL.Math do
   @type quat :: [{float(), float(), float(), float()}]
 
   @type mat2 :: [
-    {float(), float(),
-     float(), float()}
-  ]
+          {float(), float(), float(), float()}
+        ]
 
   @type mat3 :: [
-    {float(), float(), float(),
-     float(), float(), float(),
-     float(), float(), float()}]
+          {float(), float(), float(), float(), float(), float(), float(), float(), float()}
+        ]
 
   @type mat4 :: [
-    {float(), float(), float(), float(),
-    float(), float(), float(), float(),
-    float(), float(), float(), float(),
-    float(), float(), float(), float()}
-  ]
+          {float(), float(), float(), float(), float(), float(), float(), float(), float(),
+           float(), float(), float(), float(), float(), float(), float()}
+        ]
 
   # ============================================================================
   # MATRIX CONSTRUCTORS
@@ -75,7 +71,8 @@ defmodule EAGL.Math do
   @doc """
   Create a 3x3 matrix.
   """
-  @spec mat3(float(), float(), float(), float(), float(), float(), float(), float(), float()) :: mat3()
+  @spec mat3(float(), float(), float(), float(), float(), float(), float(), float(), float()) ::
+          mat3()
   def mat3(a, b, c, d, e, f, g, h, i) do
     [{a, b, c, d, e, f, g, h, i}]
   end
@@ -83,9 +80,245 @@ defmodule EAGL.Math do
   @doc """
   Create a 4x4 matrix.
   """
-  @spec mat4(float(), float(), float(), float(), float(), float(), float(), float(), float(), float(), float(), float(), float(), float(), float(), float()) :: mat4()
+  @spec mat4(
+          float(),
+          float(),
+          float(),
+          float(),
+          float(),
+          float(),
+          float(),
+          float(),
+          float(),
+          float(),
+          float(),
+          float(),
+          float(),
+          float(),
+          float(),
+          float()
+        ) :: mat4()
   def mat4(a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p) do
     [{a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p}]
+  end
+
+  @doc ~S"""
+  A sigil to create a matrix from a string.
+
+  Automatically determines matrix size based on the number of floats:
+  - 4 floats: creates a 2x2 matrix
+  - 9 floats: creates a 3x3 matrix
+  - 16 floats: creates a 4x4 matrix
+
+  Supports comments using '#' - everything after '#' on a line is ignored.
+  Works with module attributes since sigils are evaluated at compile time.
+
+  ## Examples
+
+      # 2x2 matrix (single line)
+      ~m"1.0 0.0 0.0 1.0"
+
+      # 2x2 matrix with comments
+      ~m'''
+      1.0 0.0  # row 1
+      0.0 1.0  # row 2
+      '''
+
+      # 3x3 identity matrix with detailed comments
+      ~m'''
+      1.0 0.0 0.0  # X axis
+      0.0 1.0 0.0  # Y axis
+      0.0 0.0 1.0  # Z axis
+      '''
+
+      # 4x4 transformation matrix
+      ~m'''
+      1.0 0.0 0.0 5.0  # X axis + translation
+      0.0 1.0 0.0 0.0  # Y axis
+      0.0 0.0 1.0 0.0  # Z axis
+      0.0 0.0 0.0 1.0  # homogeneous coordinate
+      '''
+
+  ## Module Attributes
+
+      # Define matrices as module attributes for reuse
+      @identity_4x4 ~m'''
+      1.0 0.0 0.0 0.0  # identity matrix
+      0.0 1.0 0.0 0.0
+      0.0 0.0 1.0 0.0
+      0.0 0.0 0.0 1.0
+      '''
+
+      @projection_matrix ~m'''
+      1.81 0.0  0.0   0.0   # perspective projection
+      0.0  2.41 0.0   0.0   # 45° FOV, 16:9 aspect
+      0.0  0.0 -1.002 -0.2  # near=0.1, far=100.0
+      0.0  0.0 -1.0   0.0
+      '''
+
+      def get_identity, do: @identity_4x4
+      def get_projection, do: @projection_matrix
+  """
+  def sigil_m(string, _opts) do
+    floats =
+      string
+      |> String.split("\n")
+      |> Enum.map(fn line ->
+        # Remove comments (everything after #)
+        line
+        |> String.split("#")
+        |> List.first()
+      end)
+      |> Enum.join(" ")
+      |> String.split()
+      |> Enum.map(&String.to_float/1)
+
+    case length(floats) do
+      4 -> apply(__MODULE__, :mat2, floats)
+      9 -> apply(__MODULE__, :mat3, floats)
+      16 -> apply(__MODULE__, :mat4, floats)
+      n -> raise ArgumentError, "Invalid matrix size: expected 4, 9, or 16 floats, got #{n}"
+    end
+  end
+
+  @doc ~S"""
+  A sigil to create vertex data from a string.
+
+  Returns a flat list of floats, perfect for vertex arrays, texture coordinates,
+  normals, colors, or any other vertex attribute data.
+
+  Supports comments using '#' - everything after '#' on a line is ignored.
+  Works with module attributes since sigils are evaluated at compile time.
+
+  ## Examples
+
+      # Simple triangle vertices (x, y, z)
+      ~v"0.0 0.5 0.0  -0.5 -0.5 0.0  0.5 -0.5 0.0"
+
+      # Triangle with comments
+      ~v'''
+      0.0  0.5 0.0   # top vertex
+      -0.5 -0.5 0.0  # bottom left
+      0.5  -0.5 0.0  # bottom right
+      '''
+
+      # Quad vertices with texture coordinates
+      ~v'''
+      # Position    # Texture coords
+      -1.0  1.0 0.0  0.0 1.0  # top left
+       1.0  1.0 0.0  1.0 1.0  # top right
+       1.0 -1.0 0.0  1.0 0.0  # bottom right
+      -1.0 -1.0 0.0  0.0 0.0  # bottom left
+      '''
+
+      # Color data (RGB)
+      ~v'''
+      1.0 0.0 0.0  # red
+      0.0 1.0 0.0  # green
+      0.0 0.0 1.0  # blue
+      '''
+
+  ## Module Attributes
+
+      # Define vertex data as module attributes
+      @triangle_vertices ~v'''
+      0.0  0.5 0.0   # top
+      -0.5 -0.5 0.0  # bottom left
+      0.5  -0.5 0.0  # bottom right
+      '''
+
+      @quad_indices ~v"0 1 2  2 3 0"  # triangle indices
+
+      def get_triangle_vertices, do: @triangle_vertices
+      def get_quad_indices, do: @quad_indices
+  """
+  def sigil_v(string, _opts) do
+    string
+    |> String.split("\n")
+    |> Enum.map(fn line ->
+      # Remove comments (everything after #)
+      line
+      |> String.split("#")
+      |> List.first()
+    end)
+    |> Enum.join(" ")
+    |> String.split()
+    |> Enum.map(&String.to_float/1)
+  end
+
+  @doc ~S"""
+  A sigil to create index data from a string.
+
+  Returns a flat list of integers, perfect for element array buffer indices,
+  face definitions, or any other integer-based data.
+
+  Supports comments using '#' - everything after '#' on a line is ignored.
+  Works with module attributes since sigils are evaluated at compile time.
+
+  ## Examples
+
+      # Simple triangle indices
+      ~i"0 1 2"
+
+      # Quad indices (two triangles)
+      ~i"0 1 2  2 3 0"
+
+      # Cube indices with comments
+      ~i'''
+      # Front face
+      0 1 2  2 3 0
+      # Back face
+      4 5 6  6 7 4
+      # Left face
+      7 3 0  0 4 7
+      # Right face
+      1 5 6  6 2 1
+      # Top face
+      3 2 6  6 7 3
+      # Bottom face
+      0 1 5  5 4 0
+      '''
+
+      # Triangle strip indices
+      ~i'''
+      0 1 2   # first triangle
+      1 3 2   # second triangle (shares edge 1-2)
+      2 3 4   # third triangle (shares edge 2-3)
+      '''
+
+  ## Module Attributes
+
+      # Define index data as module attributes
+      @quad_indices ~i'''
+      0 1 2  # first triangle
+      2 3 0  # second triangle
+      '''
+
+      @cube_indices ~i'''
+      # All 12 triangles for a cube
+      0 1 2  2 3 0    # front
+      4 5 6  6 7 4    # back
+      7 3 0  0 4 7    # left
+      1 5 6  6 2 1    # right
+      3 2 6  6 7 3    # top
+      0 1 5  5 4 0    # bottom
+      '''
+
+      def get_quad_indices, do: @quad_indices
+      def get_cube_indices, do: @cube_indices
+  """
+  def sigil_i(string, _opts) do
+    string
+    |> String.split("\n")
+    |> Enum.map(fn line ->
+      # Remove comments (everything after #)
+      line
+      |> String.split("#")
+      |> List.first()
+    end)
+    |> Enum.join(" ")
+    |> String.split()
+    |> Enum.map(&String.to_integer/1)
   end
 
   # ============================================================================
@@ -208,12 +441,12 @@ defmodule EAGL.Math do
   """
   @spec mat4_identity() :: mat4()
   def mat4_identity do
-    [{
-      1.0, 0.0, 0.0, 0.0,  # Column 0
-      0.0, 1.0, 0.0, 0.0,  # Column 1
-      0.0, 0.0, 1.0, 0.0,  # Column 2
-      0.0, 0.0, 0.0, 1.0   # Column 3
-    }]
+    ~m"""
+    1.0 0.0 0.0 0.0  # Column 0
+    0.0 1.0 0.0 0.0  # Column 1
+    0.0 0.0 1.0 0.0  # Column 2
+    0.0 0.0 0.0 1.0  # Column 3
+    """
   end
 
   @doc """
@@ -222,11 +455,11 @@ defmodule EAGL.Math do
   """
   @spec mat3_identity() :: mat3()
   def mat3_identity do
-    [{
-      1.0, 0.0, 0.0,  # Column 0
-      0.0, 1.0, 0.0,  # Column 1
-      0.0, 0.0, 1.0   # Column 2
-    }]
+    ~m"""
+    1.0 0.0 0.0  # Column 0
+    0.0 1.0 0.0  # Column 1
+    0.0 0.0 1.0  # Column 2
+    """
   end
 
   @doc """
@@ -235,10 +468,10 @@ defmodule EAGL.Math do
   """
   @spec mat2_identity() :: mat2()
   def mat2_identity do
-    [{
-      1.0, 0.0,  # Column 0
-      0.0, 1.0   # Column 1
-    }]
+    ~m"""
+    1.0 0.0  # Column 0
+    0.0 1.0  # Column 1
+    """
   end
 
   # ============================================================================
@@ -457,7 +690,8 @@ defmodule EAGL.Math do
     k = 1.0 - eta * eta * (1.0 - n_dot_i * n_dot_i)
 
     if k < 0.0 do
-      vec3_zero()  # Total internal reflection
+      # Total internal reflection
+      vec3_zero()
     else
       scaled_incident = vec_scale(incident, eta)
       scaled_normal = vec_scale(normal, eta * n_dot_i + :math.sqrt(k))
@@ -474,12 +708,14 @@ defmodule EAGL.Math do
   """
   @spec quat_mul(quat(), quat()) :: quat()
   def quat_mul([{x1, y1, z1, w1}], [{x2, y2, z2, w2}]) do
-    [{
-      w1 * x2 + x1 * w2 + y1 * z2 - z1 * y2,
-      w1 * y2 + y1 * w2 + z1 * x2 - x1 * z2,
-      w1 * z2 + z1 * w2 + x1 * y2 - y1 * x2,
-      w1 * w2 - x1 * x2 - y1 * y2 - z1 * z2
-    }]
+    [
+      {
+        w1 * x2 + x1 * w2 + y1 * z2 - z1 * y2,
+        w1 * y2 + y1 * w2 + z1 * x2 - x1 * z2,
+        w1 * z2 + z1 * w2 + x1 * y2 - y1 * x2,
+        w1 * w2 - x1 * x2 - y1 * y2 - z1 * z2
+      }
+    ]
   end
 
   @doc """
@@ -504,16 +740,35 @@ defmodule EAGL.Math do
   """
   @spec quat_to_mat3(quat()) :: mat3()
   def quat_to_mat3([{x, y, z, w}]) do
-    x2 = x + x; y2 = y + y; z2 = z + z
-    xx = x * x2; xy = x * y2; xz = x * z2
-    yy = y * y2; yz = y * z2; zz = z * z2
-    wx = w * x2; wy = w * y2; wz = w * z2
+    x2 = x + x
+    y2 = y + y
+    z2 = z + z
+    xx = x * x2
+    xy = x * y2
+    xz = x * z2
+    yy = y * y2
+    yz = y * z2
+    zz = z * z2
+    wx = w * x2
+    wy = w * y2
+    wz = w * z2
 
-    [{
-      1.0 - (yy + zz), xy + wz, xz - wy,  # Column 0
-      xy - wz, 1.0 - (xx + zz), yz + wx,  # Column 1
-      xz + wy, yz - wx, 1.0 - (xx + yy)   # Column 2
-    }]
+    [
+      {
+        # Column 0
+        1.0 - (yy + zz),
+        xy + wz,
+        xz - wy,
+        # Column 1
+        xy - wz,
+        1.0 - (xx + zz),
+        yz + wx,
+        # Column 2
+        xz + wy,
+        yz - wx,
+        1.0 - (xx + yy)
+      }
+    ]
   end
 
   @doc """
@@ -524,12 +779,16 @@ defmodule EAGL.Math do
   def quat_to_mat4(q) do
     [{m00, m01, m02, m10, m11, m12, m20, m21, m22}] = quat_to_mat3(q)
 
-    [{
-      m00, m01, m02, 0.0,  # Column 0
-      m10, m11, m12, 0.0,  # Column 1
-      m20, m21, m22, 0.0,  # Column 2
-      0.0, 0.0, 0.0, 1.0   # Column 3
-    }]
+    # mix format: off
+    [
+      {
+        m00, m01, m02, 0.0,  # Column 0
+        m10, m11, m12, 0.0,  # Column 1
+        m20, m21, m22, 0.0,  # Column 2
+        0.0, 0.0, 0.0, 1.0   # Column 3
+      }
+    ]
+    # mix format: on
   end
 
   @doc """
@@ -568,12 +827,14 @@ defmodule EAGL.Math do
       a = :math.sin((1.0 - t) * theta) / sin_theta
       b = :math.sin(t * theta) / sin_theta
 
-      [{
-        a * x1 + b * x2,
-        a * y1 + b * y2,
-        a * z1 + b * z2,
-        a * w1 + b * w2
-      }]
+      [
+        {
+          a * x1 + b * x2,
+          a * y1 + b * y2,
+          a * z1 + b * z2,
+          a * w1 + b * w2
+        }
+      ]
     end
   end
 
@@ -606,12 +867,14 @@ defmodule EAGL.Math do
     cos_roll = :math.cos(half_roll)
     sin_roll = :math.sin(half_roll)
 
-    [{
-      sin_pitch * cos_yaw * cos_roll - cos_pitch * sin_yaw * sin_roll,
-      cos_pitch * sin_yaw * cos_roll + sin_pitch * cos_yaw * sin_roll,
-      cos_pitch * cos_yaw * sin_roll - sin_pitch * sin_yaw * cos_roll,
-      cos_pitch * cos_yaw * cos_roll + sin_pitch * sin_yaw * sin_roll
-    }]
+    [
+      {
+        sin_pitch * cos_yaw * cos_roll - cos_pitch * sin_yaw * sin_roll,
+        cos_pitch * sin_yaw * cos_roll + sin_pitch * cos_yaw * sin_roll,
+        cos_pitch * cos_yaw * sin_roll - sin_pitch * sin_yaw * cos_roll,
+        cos_pitch * cos_yaw * cos_roll + sin_pitch * sin_yaw * sin_roll
+      }
+    ]
   end
 
   @doc """
@@ -641,30 +904,19 @@ defmodule EAGL.Math do
   """
   @spec mat4_mul(mat4(), mat4()) :: mat4()
   def mat4_mul(
-    [{a00, a01, a02, a03, a10, a11, a12, a13, a20, a21, a22, a23, a30, a31, a32, a33}],
-    [{b00, b01, b02, b03, b10, b11, b12, b13, b20, b21, b22, b23, b30, b31, b32, b33}]
-  ) do
-    [{
-      a00*b00 + a01*b10 + a02*b20 + a03*b30,
-      a00*b01 + a01*b11 + a02*b21 + a03*b31,
-      a00*b02 + a01*b12 + a02*b22 + a03*b32,
-      a00*b03 + a01*b13 + a02*b23 + a03*b33,
-
-      a10*b00 + a11*b10 + a12*b20 + a13*b30,
-      a10*b01 + a11*b11 + a12*b21 + a13*b31,
-      a10*b02 + a11*b12 + a12*b22 + a13*b32,
-      a10*b03 + a11*b13 + a12*b23 + a13*b33,
-
-      a20*b00 + a21*b10 + a22*b20 + a23*b30,
-      a20*b01 + a21*b11 + a22*b21 + a23*b31,
-      a20*b02 + a21*b12 + a22*b22 + a23*b32,
-      a20*b03 + a21*b13 + a22*b23 + a23*b33,
-
-      a30*b00 + a31*b10 + a32*b20 + a33*b30,
-      a30*b01 + a31*b11 + a32*b21 + a33*b31,
-      a30*b02 + a31*b12 + a32*b22 + a33*b32,
-      a30*b03 + a31*b13 + a32*b23 + a33*b33
-    }]
+        [{a00, a01, a02, a03, a10, a11, a12, a13, a20, a21, a22, a23, a30, a31, a32, a33}],
+        [{b00, b01, b02, b03, b10, b11, b12, b13, b20, b21, b22, b23, b30, b31, b32, b33}]
+      ) do
+    # mix format: off
+    [
+      {
+        a00 * b00 + a01 * b10 + a02 * b20 + a03 * b30, a00 * b01 + a01 * b11 + a02 * b21 + a03 * b31, a00 * b02 + a01 * b12 + a02 * b22 + a03 * b32, a00 * b03 + a01 * b13 + a02 * b23 + a03 * b33,  # Column 0
+        a10 * b00 + a11 * b10 + a12 * b20 + a13 * b30, a10 * b01 + a11 * b11 + a12 * b21 + a13 * b31, a10 * b02 + a11 * b12 + a12 * b22 + a13 * b32, a10 * b03 + a11 * b13 + a12 * b23 + a13 * b33,  # Column 1
+        a20 * b00 + a21 * b10 + a22 * b20 + a23 * b30, a20 * b01 + a21 * b11 + a22 * b21 + a23 * b31, a20 * b02 + a21 * b12 + a22 * b22 + a23 * b32, a20 * b03 + a21 * b13 + a22 * b23 + a23 * b33,  # Column 2
+        a30 * b00 + a31 * b10 + a32 * b20 + a33 * b30, a30 * b01 + a31 * b11 + a32 * b21 + a33 * b31, a30 * b02 + a31 * b12 + a32 * b22 + a33 * b32, a30 * b03 + a31 * b13 + a32 * b23 + a33 * b33   # Column 3
+      }
+    ]
+    # mix format: on
   end
 
   @doc """
@@ -673,22 +925,22 @@ defmodule EAGL.Math do
   """
   @spec mat3_mul(mat3(), mat3()) :: mat3()
   def mat3_mul(
-    [{a00, a01, a02, a10, a11, a12, a20, a21, a22}],
-    [{b00, b01, b02, b10, b11, b12, b20, b21, b22}]
-  ) do
-    [{
-      a00*b00 + a01*b10 + a02*b20,
-      a00*b01 + a01*b11 + a02*b21,
-      a00*b02 + a01*b12 + a02*b22,
-
-      a10*b00 + a11*b10 + a12*b20,
-      a10*b01 + a11*b11 + a12*b21,
-      a10*b02 + a11*b12 + a12*b22,
-
-      a20*b00 + a21*b10 + a22*b20,
-      a20*b01 + a21*b11 + a22*b21,
-      a20*b02 + a21*b12 + a22*b22
-    }]
+        [{a00, a01, a02, a10, a11, a12, a20, a21, a22}],
+        [{b00, b01, b02, b10, b11, b12, b20, b21, b22}]
+      ) do
+    [
+      {
+        a00 * b00 + a01 * b10 + a02 * b20,
+        a00 * b01 + a01 * b11 + a02 * b21,
+        a00 * b02 + a01 * b12 + a02 * b22,
+        a10 * b00 + a11 * b10 + a12 * b20,
+        a10 * b01 + a11 * b11 + a12 * b21,
+        a10 * b02 + a11 * b12 + a12 * b22,
+        a20 * b00 + a21 * b10 + a22 * b20,
+        a20 * b01 + a21 * b11 + a22 * b21,
+        a20 * b02 + a21 * b12 + a22 * b22
+      }
+    ]
   end
 
   @doc """
@@ -696,7 +948,9 @@ defmodule EAGL.Math do
   Input and output matrices are in column-major order for OpenGL compatibility.
   """
   @spec mat4_transpose(mat4()) :: mat4()
-  def mat4_transpose([{m00, m01, m02, m03, m10, m11, m12, m13, m20, m21, m22, m23, m30, m31, m32, m33}]) do
+  def mat4_transpose([
+        {m00, m01, m02, m03, m10, m11, m12, m13, m20, m21, m22, m23, m30, m31, m32, m33}
+      ]) do
     [{m00, m10, m20, m30, m01, m11, m21, m31, m02, m12, m22, m32, m03, m13, m23, m33}]
   end
 
@@ -716,12 +970,17 @@ defmodule EAGL.Math do
   @spec mat4_translate(vec3()) :: mat4()
   def mat4_translate(v) do
     [{x, y, z}] = v
-    [{
-      1.0, 0.0, 0.0, 0.0,  # Column 0
-      0.0, 1.0, 0.0, 0.0,  # Column 1
-      0.0, 0.0, 1.0, 0.0,  # Column 2
-      x,   y,   z,   1.0   # Column 3 (translation)
-    }]
+
+    # mix format: off
+    [
+      {
+        1.0, 0.0, 0.0, 0.0,  # Column 0
+        0.0, 1.0, 0.0, 0.0,  # Column 1
+        0.0, 0.0, 1.0, 0.0,  # Column 2
+        x,   y,   z,   1.0   # Column 3 (translation)
+      }
+    ]
+    # mix format: on
   end
 
   @doc """
@@ -731,12 +990,17 @@ defmodule EAGL.Math do
   @spec mat4_scale(vec3()) :: mat4()
   def mat4_scale(v) do
     [{x, y, z}] = v
-    [{
-      x,   0.0, 0.0, 0.0,  # Column 0 (X scale)
-      0.0, y,   0.0, 0.0,  # Column 1 (Y scale)
-      0.0, 0.0, z,   0.0,  # Column 2 (Z scale)
-      0.0, 0.0, 0.0, 1.0   # Column 3
-    }]
+
+    # mix format: off
+    [
+      {
+        x,   0.0, 0.0, 0.0,  # Column 0 (X scale)
+        0.0, y,   0.0, 0.0,  # Column 1 (Y scale)
+        0.0, 0.0, z,   0.0,  # Column 2 (Z scale)
+        0.0, 0.0, 0.0, 1.0   # Column 3
+      }
+    ]
+    # mix format: on
   end
 
   @doc """
@@ -748,12 +1012,16 @@ defmodule EAGL.Math do
     c = :math.cos(angle)
     s = :math.sin(angle)
 
-    [{
-      1.0, 0.0, 0.0, 0.0,  # Column 0
-      0.0, c,   s,   0.0,  # Column 1 (swapped s and -s for column-major)
-      0.0, -s,  c,   0.0,  # Column 2
-      0.0, 0.0, 0.0, 1.0   # Column 3
-    }]
+    # mix format: off
+    [
+      {
+        1.0, 0.0, 0.0, 0.0,  # Column 0
+        0.0, c,   s,   0.0,  # Column 1 (swapped s and -s for column-major)
+        0.0, -s,  c,   0.0,  # Column 2
+        0.0, 0.0, 0.0, 1.0   # Column 3
+      }
+    ]
+    # mix format: on
   end
 
   @doc """
@@ -765,12 +1033,16 @@ defmodule EAGL.Math do
     c = :math.cos(angle)
     s = :math.sin(angle)
 
-    [{
-      c,   0.0, -s,  0.0,  # Column 0 (swapped s and -s for column-major)
-      0.0, 1.0, 0.0, 0.0,  # Column 1
-      s,   0.0, c,   0.0,  # Column 2
-      0.0, 0.0, 0.0, 1.0   # Column 3
-    }]
+    # mix format: off
+    [
+      {
+        c,   0.0, -s,  0.0,  # Column 0 (swapped s and -s for column-major)
+        0.0, 1.0, 0.0, 0.0,  # Column 1
+        s,   0.0, c,   0.0,  # Column 2
+        0.0, 0.0, 0.0, 1.0   # Column 3
+      }
+    ]
+    # mix format: on
   end
 
   @doc """
@@ -782,12 +1054,16 @@ defmodule EAGL.Math do
     c = :math.cos(angle)
     s = :math.sin(angle)
 
-    [{
-      c,   s,   0.0, 0.0,  # Column 0 (swapped s and -s for column-major)
-      -s,  c,   0.0, 0.0,  # Column 1
-      0.0, 0.0, 1.0, 0.0,  # Column 2
-      0.0, 0.0, 0.0, 1.0   # Column 3
-    }]
+    # mix format: off
+    [
+      {
+        c,   s,   0.0, 0.0,  # Column 0 (swapped s and -s for column-major)
+        -s,  c,   0.0, 0.0,  # Column 1
+        0.0, 0.0, 1.0, 0.0,  # Column 2
+        0.0, 0.0, 0.0, 1.0   # Column 3
+      }
+    ]
+    # mix format: on
   end
 
   @doc """
@@ -805,7 +1081,9 @@ defmodule EAGL.Math do
   Note this is the only function not from the original OpenGl GLM library.
   """
   @spec mat4_inverse(mat4()) :: mat4()
-  def mat4_inverse([{m00, m01, m02, m03, m10, m11, m12, m13, m20, m21, m22, m23, m30, m31, m32, m33}]) do
+  def mat4_inverse([
+        {m00, m01, m02, m03, m10, m11, m12, m13, m20, m21, m22, m23, m30, m31, m32, m33}
+      ]) do
     # Calculate the 2x2 determinants for the first two rows
     s0 = m00 * m11 - m10 * m01
     s1 = m00 * m12 - m10 * m02
@@ -853,7 +1131,16 @@ defmodule EAGL.Math do
       inv32 = (-m30 * s3 + m31 * s1 - m32 * s0) * invdet
       inv33 = (m20 * s3 - m21 * s1 + m22 * s0) * invdet
 
-      [{inv00, inv01, inv02, inv03, inv10, inv11, inv12, inv13, inv20, inv21, inv22, inv23, inv30, inv31, inv32, inv33}]
+      # mix format: off
+      [
+        {
+          inv00, inv01, inv02, inv03,  # Column 0
+          inv10, inv11, inv12, inv13,  # Column 1
+          inv20, inv21, inv22, inv23,  # Column 2
+          inv30, inv31, inv32, inv33   # Column 3
+        }
+      ]
+      # mix format: on
     end
   end
 
@@ -869,12 +1156,16 @@ defmodule EAGL.Math do
   def mat4_perspective(fov_y, aspect_ratio, z_near, z_far) do
     tan_half_fov = :math.tan(fov_y * 0.5)
 
-    [{
-      1.0 / (aspect_ratio * tan_half_fov), 0.0, 0.0, 0.0,  # Column 0
-      0.0, 1.0 / tan_half_fov, 0.0, 0.0,                   # Column 1
-      0.0, 0.0, -(z_far + z_near) / (z_far - z_near), -1.0,  # Column 2
-      0.0, 0.0, -(2.0 * z_far * z_near) / (z_far - z_near), 0.0  # Column 3
-    }]
+    # mix format: off
+    [
+      {
+        1.0 / (aspect_ratio * tan_half_fov), 0.0,                    0.0,                                     0.0,  # Column 0
+        0.0,                                 1.0 / tan_half_fov,     0.0,                                     0.0,  # Column 1
+        0.0,                                 0.0,                    -(z_far + z_near) / (z_far - z_near),    -1.0, # Column 2
+        0.0,                                 0.0,                    -(2.0 * z_far * z_near) / (z_far - z_near), 0.0  # Column 3
+      }
+    ]
+    # mix format: on
   end
 
   @doc """
@@ -883,12 +1174,16 @@ defmodule EAGL.Math do
   """
   @spec mat4_ortho(float(), float(), float(), float(), float(), float()) :: mat4()
   def mat4_ortho(left, right, bottom, top, z_near, z_far) do
-    [{
-      2.0 / (right - left), 0.0, 0.0, 0.0,  # Column 0
-      0.0, 2.0 / (top - bottom), 0.0, 0.0,  # Column 1
-      0.0, 0.0, -2.0 / (z_far - z_near), 0.0,  # Column 2
-      -(right + left) / (right - left), -(top + bottom) / (top - bottom), -(z_far + z_near) / (z_far - z_near), 1.0  # Column 3
-    }]
+    # mix format: off
+    [
+      {
+        2.0 / (right - left),                  0.0,                               0.0,                                    0.0,  # Column 0
+        0.0,                                   2.0 / (top - bottom),              0.0,                                    0.0,  # Column 1
+        0.0,                                   0.0,                               -2.0 / (z_far - z_near),               0.0,  # Column 2
+        -(right + left) / (right - left),      -(top + bottom) / (top - bottom),  -(z_far + z_near) / (z_far - z_near),  1.0   # Column 3
+      }
+    ]
+    # mix format: on
   end
 
   @doc """
@@ -905,12 +1200,16 @@ defmodule EAGL.Math do
     [{sx, sy, sz}] = s
     [{ux, uy, uz}] = u
 
-    [{
-       sx,           sy,           sz,          0.0,          # Column 0 (right vector)
-       ux,           uy,           uz,          0.0,          # Column 1 (up vector)
-       -fx,          -fy,          -fz,          0.0,          # Column 2 (forward vector, negated)
-      -dot(s, eye), -dot(u, eye),  dot(f, eye), 1.0           # Column 3 (translation)
-    }]
+    # mix format: off
+    [
+      {
+        sx,           sy,           sz,          0.0,  # Column 0 (right vector)
+        ux,           uy,           uz,          0.0,  # Column 1 (up vector)
+        -fx,          -fy,          -fz,         0.0,  # Column 2 (forward vector, negated)
+        -dot(s, eye), -dot(u, eye), dot(f, eye), 1.0   # Column 3 (translation)
+      }
+    ]
+    # mix format: on
   end
 
   # ============================================================================
@@ -922,7 +1221,10 @@ defmodule EAGL.Math do
   Returns a 3D vector with the w component divided out.
   """
   @spec mat4_transform_point(mat4(), vec3()) :: vec3()
-  def mat4_transform_point([{m00, m01, m02, m03, m10, m11, m12, m13, m20, m21, m22, m23, m30, m31, m32, m33}], [{x, y, z}]) do
+  def mat4_transform_point(
+        [{m00, m01, m02, m03, m10, m11, m12, m13, m20, m21, m22, m23, m30, m31, m32, m33}],
+        [{x, y, z}]
+      ) do
     # Multiply as if the vector has w=1
     new_x = m00 * x + m10 * y + m20 * z + m30
     new_y = m01 * x + m11 * y + m21 * z + m31
@@ -942,7 +1244,10 @@ defmodule EAGL.Math do
   Used for transforming direction vectors (normals, etc.) where translation should be ignored.
   """
   @spec mat4_transform_vector(mat4(), vec3()) :: vec3()
-  def mat4_transform_vector([{m00, m01, m02, _m03, m10, m11, m12, _m13, m20, m21, m22, _m23, _m30, _m31, _m32, _m33}], [{x, y, z}]) do
+  def mat4_transform_vector(
+        [{m00, m01, m02, _m03, m10, m11, m12, _m13, m20, m21, m22, _m23, _m30, _m31, _m32, _m33}],
+        [{x, y, z}]
+      ) do
     # Multiply as if the vector has w=0 (ignore translation)
     new_x = m00 * x + m10 * y + m20 * z
     new_y = m01 * x + m11 * y + m21 * z
@@ -954,7 +1259,10 @@ defmodule EAGL.Math do
   Multiply a 4D vector by a 4x4 matrix.
   """
   @spec mat4_transform_vec4(mat4(), vec4()) :: vec4()
-  def mat4_transform_vec4([{m00, m01, m02, m03, m10, m11, m12, m13, m20, m21, m22, m23, m30, m31, m32, m33}], [{x, y, z, w}]) do
+  def mat4_transform_vec4(
+        [{m00, m01, m02, m03, m10, m11, m12, m13, m20, m21, m22, m23, m30, m31, m32, m33}],
+        [{x, y, z, w}]
+      ) do
     new_x = m00 * x + m10 * y + m20 * z + m30 * w
     new_y = m01 * x + m11 * y + m21 * z + m31 * w
     new_z = m02 * x + m12 * y + m22 * z + m32 * w
