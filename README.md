@@ -194,7 +194,7 @@ import EAGL.Model
 
 ### Buffer Management
 
-EAGL provides type-safe, Wings3D-inspired buffer management with automatic stride/offset calculation and standard attribute helpers.
+EAGL provides type-safe, buffer management with automatic stride/offset calculation and standard attribute helpers.
 
 ```elixir
 import EAGL.Buffer
@@ -294,6 +294,7 @@ EAGL provides flexible window creation with a clean, options-based API:
 - **2D Rendering** (default): No depth buffer, suitable for triangles, sprites, UI elements
 - **3D Rendering**: Enables depth testing and depth buffer for proper 3D scene rendering
 - **Automatic ENTER Handling**: Optional ENTER key handling for simple examples and tutorials
+- **Tick Events**: Automatic 60 FPS tick events for animations and updates (optional `handle_event/2` callback)
 
 ```elixir
 defmodule MyApp do
@@ -340,6 +341,13 @@ defmodule MyApp do
   def cleanup(state) do
     # Clean up resources
     :ok
+  end
+
+  # Optional: Handle tick events for animations (60 FPS)
+  @impl true
+  def handle_event(:tick, state) do
+    # Update animations, physics, etc.
+    {:ok, updated_state}
   end
 end
 ```
@@ -434,15 +442,15 @@ priv/
 ## Features
 
 - ✅ **Shader Management**: Automatic compilation, linking, and error reporting
-- ✅ **Texture Management**: Comprehensive texture creation, configuration, and loading with Wings3D-inspired helpers
+- ✅ **Texture Management**: Comprehensive texture creation, configuration, and loading
 - ✅ **3D Model Loading**: Wavefront OBJ format with normals and texture coordinates
 - ✅ **Math Library**: GLM-compatible vectors, matrices, quaternions with full OpenGL integration
 - ✅ **Buffer Helpers**: Wings3D-inspired VAO/VBO management functions
 - ✅ **Error Handling**: Comprehensive OpenGL error checking and reporting
 - ✅ **Window Management**: Cross-platform window creation with wxWidgets
-- ✅ **Event Handling**: Resize, close, and paint events
+- ✅ **Event Handling**: Resize, close, paint, and 60 FPS tick events
 - ✅ **Resource Cleanup**: Automatic cleanup of OpenGL resources
-- ✅ **LearnOpenGL Examples**: Partial "Getting Started" series (19/22 examples completed) - direct ports of popular OpenGL tutorials
+- ✅ **LearnOpenGL Examples**: Partial "Getting Started" series - direct ports of OpenGL tutorials
 - ✅ **Testing**: Full test suite with OpenGL context mocking
 
 ## Roadmap
