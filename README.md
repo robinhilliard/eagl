@@ -89,10 +89,10 @@ identity_4x4 = ~m"""
 """
 
 transform_matrix = ~m"""
-1.0  0.0  0.0  10.0  # Translation X
-0.0  1.0  0.0  20.0  # Translation Y
-0.0  0.0  1.0  30.0  # Translation Z
-0.0  0.0  0.0   1.0
+1.0  0.0  0.0  0.0
+0.0  1.0  0.0  0.0
+0.0  0.0  1.0  0.0
+10.0 20.0 30.0 1.0  # Translation X, Y, Z (column-major: translation is in last column)
 """
 
 # Vertex sigil (~v) - for raw vertex buffer data
