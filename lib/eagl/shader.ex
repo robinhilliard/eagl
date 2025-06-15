@@ -2,17 +2,17 @@ defmodule EAGL.Shader do
   @moduledoc """
   OpenGL shader compilation and program management.
 
-  Handles the process of shader compilation, linking,
-  and uniform management.
+  Handles the complex multi-step process of shader compilation, linking,
+  and uniform management with Wings3D-inspired error handling.
 
   ## Usage
 
       import EAGL.Shader
       import EAGL.Math
 
-      # Compile and link shaders
-      {:ok, vertex} = create_shader(@gl_vertex_shader, "vertex.glsl")
-      {:ok, fragment} = create_shader(@gl_fragment_shader, "fragment.glsl")
+      # Compile and link shaders with typed parameters
+      {:ok, vertex} = create_shader(:vertex, "vertex.glsl")
+      {:ok, fragment} = create_shader(:fragment, "fragment.glsl")
       {:ok, program} = create_attach_link([vertex, fragment])
 
       # Set uniforms with automatic type detection
@@ -44,25 +44,27 @@ defmodule EAGL.Shader do
   @type mat4 :: EAGL.Math.mat4()
   @type quat :: EAGL.Math.quat()
 
+  @type shader_id :: non_neg_integer()
+  @type program_id :: non_neg_integer()
+  @type shader_type :: :vertex | :fragment | :geometry | :tess_control | :tess_evaluation | :compute
+
   @type uniform_value ::
     vec2() | vec3() | vec4() | mat2() | mat3() | mat4() | quat() |
     float() | integer() | boolean()
 
   @app Mix.Project.config()[:app]
 
-  # Cache shader type values for pattern matching
-  @vertex_shader_type @gl_vertex_shader
-  @fragment_shader_type @gl_fragment_shader
-
   @doc """
   Creates and compiles a shader of the specified type with the given source code.
   Returns the shader ID.
   """
-  @spec create_shader(non_neg_integer(), String.t()) :: {:ok, non_neg_integer()} | {:error, String.t()}
+  @spec create_shader(shader_type(), String.t()) :: {:ok, shader_id()} | {:error, String.t()}
   def create_shader(shader_type, filename) do
+    gl_shader_type = shader_type_to_gl(shader_type)
+
     try do
       # Create shader
-      shader = :gl.createShader(shader_type)
+      shader = :gl.createShader(gl_shader_type)
 
       priv_dir = :code.priv_dir(@app)
       model_path = Path.join([priv_dir, "shaders", filename])
@@ -88,6 +90,14 @@ defmodule EAGL.Shader do
         {:error, "Shader creation failed: #{inspect(e)}"}
     end
   end
+
+  # Private helper to convert shader type atoms to GL constants
+  defp shader_type_to_gl(:vertex), do: @gl_vertex_shader
+  defp shader_type_to_gl(:fragment), do: @gl_fragment_shader
+  defp shader_type_to_gl(:geometry), do: @gl_geometry_shader
+  defp shader_type_to_gl(:tess_control), do: @gl_tess_control_shader
+  defp shader_type_to_gl(:tess_evaluation), do: @gl_tess_evaluation_shader
+  defp shader_type_to_gl(:compute), do: @gl_compute_shader
 
   @doc """
   Checks if a shader compiled successfully.
@@ -159,6 +169,7 @@ defmodule EAGL.Shader do
   @doc """
   Creates a program, attaches shaders, links, and returns the link status.
   """
+  @spec create_attach_link([shader_id()]) :: {:ok, program_id()} | {:error, String.t()}
   def create_attach_link(shaders) do
     program = :gl.createProgram()
     Enum.each(shaders, &:gl.attachShader(program, &1))
@@ -174,7 +185,7 @@ defmodule EAGL.Shader do
   Get uniform location for a program. Similar to wings_gl:uloc/2.
   Returns the uniform location or -1 if not found.
   """
-  @spec get_uniform_location(non_neg_integer(), String.t() | charlist()) :: integer()
+  @spec get_uniform_location(program_id(), String.t() | charlist()) :: integer()
   def get_uniform_location(program, uniform_name) when is_binary(uniform_name) do
     :gl.getUniformLocation(program, String.to_charlist(uniform_name))
   end
@@ -187,7 +198,7 @@ defmodule EAGL.Shader do
   Set uniform value with automatic type detection. Similar to wings_gl:set_uloc/3.
   Supports various EAGL.Math types and basic values.
   """
-  @spec set_uniform(non_neg_integer(), String.t() | charlist(), uniform_value()) :: :ok
+  @spec set_uniform(program_id(), String.t() | charlist(), uniform_value()) :: :ok
   def set_uniform(program, uniform_name, value) do
     location = get_uniform_location(program, uniform_name)
     set_uniform_at_location(location, value)
@@ -260,7 +271,7 @@ defmodule EAGL.Shader do
   Convenience function to set multiple uniforms at once.
   Takes a program and a keyword list of uniform_name -> value pairs.
   """
-  @spec set_uniforms(non_neg_integer(), [{atom(), uniform_value()}]) :: :ok
+  @spec set_uniforms(program_id(), [{atom(), uniform_value()}]) :: :ok
   def set_uniforms(program, uniforms) when is_list(uniforms) do
     Enum.each(uniforms, fn {name, value} ->
       set_uniform(program, Atom.to_string(name), value)
@@ -271,7 +282,7 @@ defmodule EAGL.Shader do
   Convenience function to cache uniform locations for repeated use.
   Returns a map of uniform names to their locations.
   """
-  @spec cache_uniform_locations(non_neg_integer(), [String.t() | atom()]) :: %{String.t() => integer()}
+  @spec cache_uniform_locations(program_id(), [String.t() | atom()]) :: %{String.t() => integer()}
   def cache_uniform_locations(program, uniform_names) do
     Enum.into(uniform_names, %{}, fn name ->
       uniform_name = if is_atom(name), do: Atom.to_string(name), else: name

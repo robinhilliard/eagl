@@ -176,12 +176,12 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.Textures do
     # Compile and link shaders
     with {:ok, vertex_shader} <-
            create_shader(
-             @gl_vertex_shader,
+             :vertex,
              "learnopengl/1_getting_started/4_1_textures/vertex_shader.glsl"
            ),
          {:ok, fragment_shader} <-
            create_shader(
-             @gl_fragment_shader,
+             :fragment,
              "learnopengl/1_getting_started/4_1_textures/fragment_shader.glsl"
            ),
          {:ok, program} <- create_attach_link([vertex_shader, fragment_shader]) do
@@ -189,9 +189,11 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.Textures do
 
       # Create VAO, VBO, and EBO for rectangle with texture coordinates
       # Demonstrates indexed rendering with texture mapping
+      stride = 8 * 4  # 8 floats per vertex * 4 bytes per float
       {vao, vbo, ebo} = create_indexed_array(@vertices, @indices, [
-        {0, 3, @gl_float, @gl_false, 5 * 4, 0},      # position
-        {1, 2, @gl_float, @gl_false, 5 * 4, 3 * 4}   # texture coords
+        {0, 3, @gl_float, @gl_false, stride, 0},         # position at location 0, offset 0
+        {1, 3, @gl_float, @gl_false, stride, 3 * 4},     # color at location 1, offset 12
+        {2, 2, @gl_float, @gl_false, stride, 6 * 4}      # texture coords at location 2, offset 24
       ])
 
       IO.puts("Created VAO, VBO, and EBO (rectangle with texture coordinates)")

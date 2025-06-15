@@ -126,17 +126,17 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.HelloTriangleExercise3 do
     # Compile and link shaders - using a single with statement for educational clarity
     with {:ok, vertex_shader} <-
            create_shader(
-             @gl_vertex_shader,
+             :vertex,
              "learnopengl/1_getting_started/2_5_hello_triangle_exercise_3/vertex_shader.glsl"
            ),
          {:ok, orange_fragment} <-
            create_shader(
-             @gl_fragment_shader,
+             :fragment,
              "learnopengl/1_getting_started/2_5_hello_triangle_exercise_3/orange_fragment_shader.glsl"
            ),
          {:ok, yellow_fragment} <-
            create_shader(
-             @gl_fragment_shader,
+             :fragment,
              "learnopengl/1_getting_started/2_5_hello_triangle_exercise_3/yellow_fragment_shader.glsl"
            ),
          {:ok, orange_program} <- create_attach_link([vertex_shader, orange_fragment]),

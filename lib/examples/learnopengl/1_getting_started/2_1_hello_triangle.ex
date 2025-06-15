@@ -109,12 +109,12 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.HelloTriangle do
     # Compile and link shaders
     with {:ok, vertex_shader} <-
            create_shader(
-             @gl_vertex_shader,
+             :vertex,
              "learnopengl/1_getting_started/2_1_hello_triangle/vertex_shader.glsl"
            ),
          {:ok, fragment_shader} <-
            create_shader(
-             @gl_fragment_shader,
+             :fragment,
              "learnopengl/1_getting_started/2_1_hello_triangle/fragment_shader.glsl"
            ),
          {:ok, program} <- create_attach_link([vertex_shader, fragment_shader]) do
