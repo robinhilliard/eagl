@@ -412,85 +412,134 @@ And in future:
 
 ## Troubleshooting
 
-### Development Issues
-Most of these are obvious, but it helps AI assistants remember how to get around the project.
+### Common Issues
 
-#### Interactive Examples Hanging
-Examples require user interaction (ENTER key to exit). When running tests:
+#### Interactive Examples Not Responding
+Examples require user interaction (ENTER key to exit). This can cause issues during testing:
+
 ```bash
-# Run only unit tests, exclude interactive examples
+# Run only unit tests, excluding interactive examples
 mix test test/eagl/ --exclude interactive
 
-# Or set a timeout for interactive tests
+# Set a timeout for interactive tests
 mix test --timeout 10000
 ```
 
+#### IEx Break Prompt
+If you encounter an unexpected error in IEx and see a `BREAK: (a)bort` prompt, this indicates a crash in the BEAM VM. Enter 'a' to abort and return to the shell, then investigate the error that caused the crash.
 
-#### BREAK Prompt in IEx
-If you encounter an unexpected error in IEx and see a `BREAK: (a)bort` prompt
-enter 'a' to abort and return to the shell. You can then run other shell commands.
+#### Test Timeouts in CI
+Interactive examples wait for user input and will timeout in continuous integration:
+- Examples are tagged with `@tag :interactive`
+- CI environments automatically exclude these tests
+- Run interactive tests individually during local development
 
-#### Test Timeouts
-Interactive examples wait for ENTER key presses and will timeout in CI:
-- Use `@tag :interactive` for examples that require user input
-- CI automatically excludes these tests
-- Local development can run them individually
+#### Examples Runner Automation
+The examples runner requires user interaction and cannot be easily automated:
 
-#### Examples Runner Interactive Input
-The examples runner script requires user input and cannot be automated:
 ```bash
-# This will hang waiting for user input:
-./priv/scripts/run_examples
-
-# Piping input incorrectly will also hang:
-echo "16" | ./priv/scripts/run_examples  # WRONG - hangs waiting for ENTER
-
-# To test examples programmatically, run them directly:
+# Run examples directly for automation
 mix run -e "EAGL.Examples.Math.run_example()"
-timeout 5s mix run -e "EAGL.Examples.Teapot.run_example()"
 
-# If you need to script the examples runner, use proper input format:
-printf "16\nq\n" | timeout 10s ./priv/scripts/run_examples
+# Use timeout for examples that wait for input
+timeout 5s mix run -e "EAGL.Examples.Teapot.run_example()"
 ```
+
+### Platform-Specific Issues
+
+#### OpenGL Context Creation Failures
+If you encounter context creation errors:
+- **Linux**: Ensure mesa development packages are installed
+- **macOS**: Update to a supported macOS version (10.9+)
+- **Windows**: Update graphics drivers
+
+#### Missing Dependencies
+If optional dependencies are missing, EAGL will show warnings but continue with fallback behaviour:
+- Image loading falls back to procedural textures
+- Missing models show error messages but don't crash
 
 ## Contributing
 
+We welcome contributions! Please read through these guidelines before submitting changes.
+
+### Development Setup
+
+1. Fork and clone the repository
+2. Install dependencies: `mix deps.get`
+3. Run tests to ensure everything works: `mix test`
+4. Try the examples: `./priv/scripts/run_examples`
+
+### Code Standards
+
+#### Style Guidelines
+- Follow standard Elixir formatting (`mix format`) except keep matricies in tabular format
+- Use descriptive variable names, especially for OpenGL state
+- Include typespecs for public functions
+- Document complex algorithms and OpenGL-specific concepts
+
+#### Testing Requirements  
+- Add tests for new functionality
+- Ensure existing tests pass: `mix test`
+- Tag interactive tests with `@tag :interactive`
+- Mock OpenGL calls in unit tests where possible
+
+#### Documentation Standards
+- Update README.md for new features
+- Add docstrings for public functions
+- Include code examples in documentation
+- Write in Australian English for documentation, US English for code
+
 ### Design Philosophy
 
-EAGL focuses on **meaningful abstractions** rather than wrappers around OpenGL calls:
+EAGL focuses on **meaningful abstractions** rather than thin wrappers around OpenGL calls:
 
-#### ✅ **Provide When Valuable**
-- **Error handling patterns**: `{:ok, result}` tuples and comprehensive error checking
-- **Type conversions/safety**: Atoms to OpenGL constants (`set_texture_parameters(wrap_s: :repeat)`)
+#### ✅ **Provide Value**
+- **Error handling**: `{:ok, result}` tuples and comprehensive error checking
+- **Type safety**: Atoms to OpenGL constants (`wrap_s: :repeat`)
 - **Sensible defaults**: Reduce boilerplate with common parameter combinations
-- **Complex operations**: Repeated Multi-step procedures like shader compilation and linking
-- **Data transformations**: Converting Elixir data structures to OpenGL formats
-- **Procedural generation**: Built-in patterns like checkerboard textures for testing
-- **Dependencies**: Libraries available to C++ programmers that need to be sourced in Elixir
+- **Complex operations**: Multi-step procedures like shader compilation and linking
+- **Data transformations**: Converting Elixir structures to OpenGL formats
+- **Testing utilities**: Procedural textures and geometry for development
 
 #### ❌ **Avoid Thin Wrappers**
 - **Simple OpenGL calls**: Use `:gl.bindTexture()`, `:gl.generateMipmap()` directly
 - **One-line functions**: Don't wrap functions that only add `check()` calls
 - **State management**: Let users manage OpenGL state explicitly when appropriate
 
-#### 🎯 **User Experience**
-- **Import what you need**: `import EAGL.Error` for explicit error checking
-- **Call OpenGL directly**: When EAGL doesn't add substantial value
-- **Mix and match**: Use EAGL helpers alongside direct OpenGL calls seamlessly
+#### 🎯 **User Experience Goals**
+- **Selective imports**: `import EAGL.Error` for explicit error checking
+- **Direct OpenGL access**: When EAGL doesn't add substantial value
+- **Seamless integration**: Mix EAGL helpers with direct OpenGL calls
 
-This philosophy keeps the API clean, focused, and educational while helping where it matters most.
+### Submitting Changes
 
-### Written Language
+1. **Create a feature branch**: `git checkout -b feature/descriptive-name`
+2. **Make your changes** following the style guidelines above
+3. **Add or update tests** for your changes
+4. **Run the full test suite**: `mix test`
+5. **Update documentation** if you've added new features
+6. **Commit with clear messages**: Use present tense, describe what the commit does
+7. **Push your branch**: `git push origin feature/descriptive-name`
+8. **Open a Pull Request** with:
+   - Clear description of the changes
+   - Reference to any related issues
+   - Screenshots for visual changes
+   - Test results if applicable
 
-Documentation is written in Australian English while function, variable and module names use US English for useability. Limit use of exclamation marks to warnings and avoid sales language - readers are already interested in using OpenGL with Elixir. Keep explanations and observations concise.
+### Types of Contributions Welcome
 
-### Source Control Instructions
+- **LearnOpenGL tutorial ports**: Help complete the tutorial series
+- **Documentation improvements**: Examples, tutorials, API documentation
+- **Platform-specific optimizations**: Performance or compatibility improvements
+- **Example applications**: Links to demo projects showcasing EAGL capabilities
+- **Bug fixes**: Issues with existing functionality
+- **Testing improvements**: Better mocks, integration tests, or test utilities
 
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+### Questions and Support
+
+- **Issues**: Use GitHub issues for bugs and feature requests
+- **Discussions**: Use GitHub discussions for questions and design discussions
+- **Examples**: Look at existing code in `lib/examples/` for patterns
 
 ## License
 
