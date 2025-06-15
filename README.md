@@ -455,10 +455,12 @@ If optional dependencies are missing, EAGL will show warnings but continue with 
 ## Contributing
 
 We welcome contributions! Suggested contributions include:
-- Documentation improvements
-- Additional LearnOpenGL tutorial ports
-- Platform-specific optimizations
-- Links to example applications and demos
+- **LearnOpenGL tutorial ports**: Help complete the tutorial series
+- **Documentation improvements**: Examples, tutorials, API documentation
+- **Platform-specific optimizations**: Performance or compatibility improvements
+- **Example applications**: Links to demo projects showcasing EAGL capabilities
+- **Bug fixes**: Issues with existing functionality
+- **Testing improvements**: Better mocks, integration tests, or test utilities
 
 Please read through these guidelines before submitting changes.
 
@@ -525,15 +527,6 @@ EAGL focuses on **meaningful abstractions** rather than thin wrappers around Ope
    - Reference to any related issues
    - Screenshots for visual changes
    - Test results if applicable
-
-### Types of Contributions Welcome
-
-- **LearnOpenGL tutorial ports**: Help complete the tutorial series
-- **Documentation improvements**: Examples, tutorials, API documentation
-- **Platform-specific optimizations**: Performance or compatibility improvements
-- **Example applications**: Links to demo projects showcasing EAGL capabilities
-- **Bug fixes**: Issues with existing functionality
-- **Testing improvements**: Better mocks, integration tests, or test utilities
 
 ### Questions and Support
 
