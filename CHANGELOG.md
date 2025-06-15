@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### TODO for Next Release
+- **Missing LearnOpenGL Examples**: Need to port remaining "Getting Started" examples:
+  - 151 (5.1 Transformations) - Matrix transformations (scaling, rotation, translation)
+  - 161 (6.1 Coordinate Systems) - Model/View/Projection matrices and 3D rendering
+  - 171 (7.1 Camera) - Camera controls and view matrix manipulation
+- These examples complete the foundational "Getting Started" series before moving to "Lighting"
+
 ## [0.4.0] - 2024-12-21
 
 ### Breaking Changes
@@ -18,12 +25,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **Rationale**: Provides type safety and consistency with `EAGL.Texture` parameter style
 
 ### Added
+- **Complete LearnOpenGL Texture Examples Series**: Added all remaining texture examples (4.2-4.6)
+  - **4.2 Textures Combined**: Multiple texture units - mixing two textures with GLSL blend factors
+  - **4.3 Textures Exercise 1**: Texture coordinate manipulation - center cropping with scaled coordinates
+  - **4.4 Textures Exercise 2**: Texture wrapping modes - demonstrating repeat, clamp, and mirror wrapping
+  - **4.5 Textures Exercise 3**: Texture coordinate flipping - horizontal mirroring with inverted S coordinates
+  - **4.6 Textures Exercise 4**: Dynamic texture mixing - time-based animation using sine wave interpolation
 - New typed shader system with `shader_type`, `shader_id`, and `program_id` types
 - Internal `shader_type_to_gl/1` helper function for GL constant conversion
+- **Enhanced EAGL.Buffer Module**: Type-safe vertex attribute helpers with improved specifications
+- **Enhanced EAGL.Shader Module**: Improved error handling and comprehensive type specifications
+- **Enhanced EAGL.Window Module**: Better key handling for examples and applications
 - Wings3D attribution added to core modules (`buffer.ex`, `texture.ex`, `error.ex`, `shader.ex`, `window.ex`)
 - "Original Source" documentation sections crediting Wings3D's `wings_gl.erl` patterns
 
 ### Changed
+- **Examples Runner Numbering System**: Redesigned intuitive numbering aligned with LearnOpenGL structure
+  - Non-LearnOpenGL examples: `01` (Math), `02` (Teapot)
+  - LearnOpenGL examples: `[chapter][section][example]` format (e.g., `125` = 1.Getting Started 2.5 Hello Triangle Exercise 3)
+  - Future-proof design accommodates multiple LearnOpenGL chapters without ambiguity
+  - Missing examples clearly marked with their future codes: `151`, `161`, `171`
+- **Vertex Attribute Setup Refactored**: All LearnOpenGL examples now use consistent vertex attribute patterns
+- **Animation Time Handling**: Improved time handling for animation in ShadersUniform example
 - All LearnOpenGL examples updated to use new typed shader parameters
 - Teapot example updated to use new typed shader parameters  
 - Test files updated to use new typed shader parameters
@@ -40,6 +63,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **FunctionClauseError**: Fixed remaining GL constants in multiline shader creation calls across examples
 
 ### Removed
+- **EAGL.Examples.Test Module**: Removed duplicate test module to clean up codebase
 - Removed verbose console output and status symbols (✓ ✗) from examples and core modules
 - Eliminated excessive logging that didn't align with "meaningful abstractions" philosophy
 
@@ -106,9 +130,9 @@ All other APIs remain backwards compatible. The new typed system provides better
 
 ### Changed
 - **Examples Runner**: Updated to include all new examples
-  - Total examples now: 17 (was 10)
+  - Total examples now: 21 (was 10)
   - Complete shader tutorial series from basic uniforms to advanced exercises
-  - First texture mapping example with real image loading
+  - Complete texture mapping series from basic textures to advanced mixing
   - Comprehensive coverage of vertex attributes, uniforms, interpolation, transformations, and textures
 
 ### Fixed

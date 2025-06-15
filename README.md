@@ -32,38 +32,31 @@ EAGL includes several examples to demonstrate its capabilities. Use the unified 
 
 ```
 ./priv/scripts/run_examples
-═══════════════════════════════════════════════════════════════
-                    EAGL Examples Menu
-═══════════════════════════════════════════════════════════════
+════════════════════════════════════════════════════════════════
+                         EAGL Examples Menu
+════════════════════════════════════════════════════════════════
 
- 1) Math Example
-    Comprehensive example demonstrating all EAGL.Math functionality
+Non-LearnOpenGL Examples:
+  01) Math Example - Comprehensive EAGL.Math functionality demo
+  02) Teapot Example - 3D teapot with Phong shading
 
- 2) Teapot Example
-    Draw a 3D teapot with Phong shading
+LearnOpenGL Getting Started Examples:
 
-LearnOpenGL Examples:
+  Hello Window:     111) 1.1 Window    112) 1.2 Clear Colors
 
-  1. Getting Started:
-     3) 1.1 Hello Window
-        Basic window creation - Foundation of all OpenGL applications
+  Hello Triangle:   121) 2.1 Triangle  122) 2.2 Indexed    123) 2.3 Exercise1
+                    124) 2.4 Exercise2 125) 2.5 Exercise3
 
-     4) 1.2 Hello Window Clear
-        Custom clear colors - Understanding OpenGL's state machine
+  Shaders:          131) 3.1 Uniform   132) 3.2 Interpolation 133) 3.3 Class
+                    134) 3.4 Exercise1 135) 3.5 Exercise2     136) 3.6 Exercise3
 
-     5) 2.1 Hello Triangle
-        Your first triangle - Basic VAO/VBO and shader fundamentals
+  Textures:         141) 4.1 Basic     142) 4.2 Combined      143) 4.3 Exercise1
+                    144) 4.4 Exercise2 145) 4.5 Exercise3     146) 4.6 Exercise4
 
-     6) 2.2 Hello Triangle Indexed
-        Element Buffer Objects (EBO) - Basic indexed rectangle rendering
+  Missing:          151) 5.1 Transformations  161) 6.1 Coordinate Systems  171) 7.1 Camera
 
-     7) 2.3 Hello Triangle Exercise 1
-        Two Triangles Side by Side - Using glDrawArrays with 6 vertices
-
-     ... further examples skipped ...
-
-═══════════════════════════════════════════════════════════════
-Enter example number (1-17), 'q' to quit, or 'r' to refresh:
+════════════════════════════════════════════════════════════════
+Enter code (01, 02, 111-146), 'q' to quit, 'r' to refresh:
 >
 ```
 
@@ -132,6 +125,16 @@ The uniform helpers (from Wings3D) automatically detect the type of EAGL.Math va
 
 ### Texture Management
 
+EAGL provides meaningful texture abstractions:
+- **Image Loading**: `load_texture_from_file()` with automatic fallback to checkerboard patterns
+- **Texture Creation**: `create_texture()` returns `{:ok, id}` tuples for error handling
+- **Parameter Setting**: `set_texture_parameters()` converts atoms to OpenGL constants
+- **Data Loading**: `load_texture_data()` handles format/type conversion with defaults
+- **Procedural Textures**: `create_checkerboard_texture()` generates test patterns
+- **Graceful Degradation**: Helpful warnings when optional dependencies aren't available
+- **Direct OpenGL**: Use `:gl` functions directly for binding, mipmaps, and cleanup
+
+
 ```elixir
 import EAGL.Texture
 import EAGL.Error
@@ -175,17 +178,8 @@ check("After generating mipmaps")
 :gl.deleteTextures([texture_id])
 ```
 
-EAGL provides meaningful texture abstractions:
-
-- **Image Loading**: `load_texture_from_file()` with automatic fallback to checkerboard patterns
-- **Texture Creation**: `create_texture()` returns `{:ok, id}` tuples for error handling
-- **Parameter Setting**: `set_texture_parameters()` converts atoms to OpenGL constants
-- **Data Loading**: `load_texture_data()` handles format/type conversion with defaults
-- **Procedural Textures**: `create_checkerboard_texture()` generates test patterns
-- **Graceful Degradation**: Helpful warnings when optional dependencies aren't available
-- **Direct OpenGL**: Use `:gl` functions directly for binding, mipmaps, and cleanup
-
 ### Model Loading
+Currently we only support the .obj format.
 
 ```elixir
 import EAGL.Model
@@ -387,14 +381,22 @@ priv/
 - ✅ **Window Management**: Cross-platform window creation with wxWidgets
 - ✅ **Event Handling**: Resize, close, and paint events
 - ✅ **Resource Cleanup**: Automatic cleanup of OpenGL resources
-- ✅ **LearnOpenGL Examples**: Direct ports of popular OpenGL tutorials
+- ✅ **LearnOpenGL Examples**: Partial "Getting Started" series (19/22 examples completed) - direct ports of popular OpenGL tutorials
 - ✅ **Testing**: Full test suite with OpenGL context mocking
 
 ## Roadmap
 
 The current focus is to:
 
-- [ ] Port all the Learning OpenGL examples, adding helper functions when necessary
+- [ ] **In Progress**: Complete the "Getting Started" LearnOpenGL examples series
+  - ✅ Hello Window (1.1-1.2): 2 examples
+  - ✅ Hello Triangle (2.1-2.5): 5 examples  
+  - ✅ Shaders (3.1-3.6): 6 examples
+  - ✅ Textures (4.1-4.6): 6 examples
+  - [ ] **Missing**: Transformations (5.1): 1 example needed
+  - [ ] **Missing**: Coordinate Systems (6.1): 1 example needed  
+  - [ ] **Missing**: Camera (7.1): 1 example needed
+- [ ] Continue with "Lighting" chapter examples
 - [ ] Load common model types like GLTF
 
 And in future:
@@ -433,10 +435,13 @@ The examples runner requires user interaction and cannot be easily automated:
 
 ```bash
 # Run examples directly for automation
-mix run -e "EAGL.Examples.Math.run_example()"
+mix run -e "EAGL.Examples.Math.run_example()"              # (01)
 
 # Use timeout for examples that wait for input
-timeout 5s mix run -e "EAGL.Examples.Teapot.run_example()"
+timeout 5s mix run -e "EAGL.Examples.Teapot.run_example()" # (02)
+
+# LearnOpenGL examples: (111), (112), (121-125), (131-136), (141-146)
+# Future examples: (151), (161), (171)
 ```
 
 ### Platform-Specific Issues
