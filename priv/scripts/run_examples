@@ -25,14 +25,14 @@ show_menu() {
     echo -e "${PURPLE}════════════════════════════════════════════════════════════════${NC}"
     echo
     
-    # Non-LearnOpenGL examples
-    echo -e "${BLUE}Non-LearnOpenGL Examples:${NC}"
+    # Non-Learn OpenGL examples
+    echo -e "${BLUE}0. Non-Learn OpenGL Examples:${NC}"
     echo -e "  ${CYAN}01)${NC} ${GREEN}Math Example${NC} - Comprehensive EAGL.Math functionality demo"
     echo -e "  ${CYAN}02)${NC} ${GREEN}Teapot Example${NC} - 3D teapot with Phong shading"
     echo
     
-    # LearnOpenGL examples in compact format
-    echo -e "${BLUE}LearnOpenGL Getting Started Examples:${NC}"
+    # Learn OpenGL examples in compact format
+    echo -e "${BLUE}1. Learn OpenGL Getting Started Examples:${NC}"
     echo
     echo -e "  ${YELLOW}Hello Window:${NC}     ${CYAN}111)${NC} 1.1 Window    ${CYAN}112)${NC} 1.2 Clear Colors"
     echo
@@ -121,7 +121,7 @@ run_example() {
             ;;
         151|161|171)
             echo -e "${YELLOW}Example $choice is not yet implemented.${NC}"
-            echo -e "${YELLOW}Missing LearnOpenGL examples to be ported in future releases:${NC}"
+            echo -e "${YELLOW}Missing Learn OpenGL examples to be ported in future releases:${NC}"
             echo -e "${YELLOW}- 151: 5.1 Transformations${NC}"
             echo -e "${YELLOW}- 161: 6.1 Coordinate Systems${NC}"
             echo -e "${YELLOW}- 171: 7.1 Camera${NC}"
@@ -130,8 +130,8 @@ run_example() {
         *)
             echo -e "${RED}Invalid choice: $choice${NC}"
             echo -e "${YELLOW}Available examples:${NC}"
-            echo -e "${YELLOW}- Non-LearnOpenGL: 01, 02${NC}"
-            echo -e "${YELLOW}- LearnOpenGL Getting Started: 111, 112, 121-125, 131-136, 141-146${NC}"
+            echo -e "${YELLOW}- Non-Learn OpenGL: 01, 02${NC}"
+            echo -e "${YELLOW}- Learn OpenGL Getting Started: 111, 112, 121-125, 131-136, 141-146${NC}"
             echo -e "${YELLOW}- Future: 151, 161, 171 (not yet implemented)${NC}"
             return 1
             ;;

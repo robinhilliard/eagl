@@ -36,11 +36,11 @@ EAGL includes several examples to demonstrate its capabilities. Use the unified 
                          EAGL Examples Menu
 ════════════════════════════════════════════════════════════════
 
-Non-LearnOpenGL Examples:
+0. Non-Learn OpenGL Examples:
   01) Math Example - Comprehensive EAGL.Math functionality demo
   02) Teapot Example - 3D teapot with Phong shading
 
-LearnOpenGL Getting Started Examples:
+1. Learn OpenGL Getting Started Examples:
 
   Hello Window:     111) 1.1 Window    112) 1.2 Clear Colors
 
