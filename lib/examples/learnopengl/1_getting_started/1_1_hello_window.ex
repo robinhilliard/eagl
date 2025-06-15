@@ -68,7 +68,7 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.HelloWindow do
     IO.puts("""
     === LearnOpenGL 1.1 - Hello Window ===
     This example demonstrates basic window creation.
-    You should see a black window - this is correct!
+    You should see a black window - this is correct.
 
     Framework Notes:
     - EAGL automatically handles OpenGL context setup

@@ -90,7 +90,7 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.ShadersClass do
   def setup do
     IO.puts("""
     === LearnOpenGL 3.3 - Shaders Class ===
-    This example demonstrates shader abstraction and organization!
+    This example demonstrates shader abstraction and organization
 
     Key Concepts:
     - Shader class/module abstraction for clean code organization

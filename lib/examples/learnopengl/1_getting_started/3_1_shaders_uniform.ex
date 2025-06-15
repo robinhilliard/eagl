@@ -103,7 +103,7 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.ShadersUniform do
   def setup do
     IO.puts("""
     === LearnOpenGL 3.1 - Shaders Uniform ===
-    This example demonstrates uniform variables in shaders!
+    This example demonstrates uniform variables in shaders
 
     Key Concepts:
     - Uniform variables are global to the shader program

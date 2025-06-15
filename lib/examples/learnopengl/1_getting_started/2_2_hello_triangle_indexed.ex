@@ -99,7 +99,7 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.HelloTriangleIndexed do
   def setup do
     IO.puts("""
     === LearnOpenGL 2.2 - Hello Triangle Indexed ===
-    This example demonstrates Element Buffer Objects (EBO) for efficient rendering!
+    This example demonstrates Element Buffer Objects (EBO) for efficient rendering
 
     Key Concepts:
     - Element Buffer Objects (EBO) store vertex indices

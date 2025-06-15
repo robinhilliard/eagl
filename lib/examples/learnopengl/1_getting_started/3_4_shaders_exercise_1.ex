@@ -96,7 +96,7 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.ShadersExercise1 do
   def setup do
     IO.puts("""
     === LearnOpenGL 3.4 - Shaders Exercise 1 ===
-    This example demonstrates vertex transformation in shaders!
+    This example demonstrates vertex transformation in shaders
 
     Exercise: "Adjust the vertex shader so that the triangle is upside down"
 

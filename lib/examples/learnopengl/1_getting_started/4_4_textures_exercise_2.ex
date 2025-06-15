@@ -99,7 +99,7 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.TexturesExercise2 do
   def setup do
     IO.puts("""
     === LearnOpenGL 4.4 - Textures Exercise 2 ===
-    This exercise demonstrates texture wrapping modes!
+    This exercise demonstrates texture wrapping modes
 
     Exercise Focus:
     - Texture coordinates from 0.0 to 2.0 (beyond normal range)

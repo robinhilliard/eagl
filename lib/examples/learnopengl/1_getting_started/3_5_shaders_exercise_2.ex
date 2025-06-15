@@ -100,7 +100,7 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.ShadersExercise2 do
   def setup do
     IO.puts("""
     === LearnOpenGL 3.5 - Shaders Exercise 2 ===
-    This example demonstrates uniform-controlled transformations!
+    This example demonstrates uniform-controlled transformations
 
     Exercise: "Specify a horizontal offset via a uniform and move the triangle
     to the right side of the screen in the vertex shader using this offset value"

@@ -103,7 +103,7 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.HelloTriangleExercise2 do
   def setup do
     IO.puts("""
     === LearnOpenGL 2.4 - Hello Triangle Exercise 2 ===
-    This example demonstrates creating 2 triangles using an EBO!
+    This example demonstrates creating 2 triangles using an EBO
 
     Exercise Goal:
     - Create the same 2 triangles using an EBO

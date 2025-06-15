@@ -159,7 +159,7 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.Textures do
   def setup do
     IO.puts("""
     === LearnOpenGL 4.1 - Textures ===
-    This example demonstrates basic texture mapping!
+    This example demonstrates basic texture mapping
 
     Key Concepts:
     - Texture objects store 2D image data on the GPU

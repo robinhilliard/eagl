@@ -95,7 +95,7 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.TexturesExercise1 do
   def setup do
     IO.puts("""
     === LearnOpenGL 4.3 - Textures Exercise 1 ===
-    This exercise demonstrates texture coordinate manipulation!
+    This exercise demonstrates texture coordinate manipulation
 
     Exercise Focus:
     - Center Cropping: Show only the center portion of textures

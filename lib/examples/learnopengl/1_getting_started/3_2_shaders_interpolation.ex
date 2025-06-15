@@ -88,7 +88,7 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.ShadersInterpolation do
   def setup do
     IO.puts("""
     === LearnOpenGL 3.2 - Shaders Interpolation ===
-    This example demonstrates vertex colour interpolation.
+    This example demonstrates vertex colour interpolation
 
     Key Concepts:
     - Multiple vertex attributes: position AND colour per vertex

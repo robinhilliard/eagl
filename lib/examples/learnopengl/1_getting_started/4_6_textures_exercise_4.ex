@@ -24,7 +24,7 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.TexturesExercise4 do
   This implementation uses time-based animation to cycle the mix ratio between
   two textures, creating a smooth transition effect:
 
-  ```elixir
+  ```glsl
   # In the fragment shader:
   mix_factor = sin(time * 2.0) * 0.5 + 0.5  # Oscillates between 0.0 and 1.0
   FragColor = mix(texture1, texture2, mix_factor)
@@ -87,7 +87,7 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.TexturesExercise4 do
   def setup do
     IO.puts("""
     === LearnOpenGL 4.6 - Textures Exercise 4 ===
-    This exercise demonstrates animated texture mixing!
+    This exercise demonstrates animated texture mixing
 
     Exercise Focus:
     - Dynamic texture mixing with time-based animation

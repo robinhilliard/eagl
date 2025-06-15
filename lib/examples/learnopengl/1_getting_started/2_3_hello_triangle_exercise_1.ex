@@ -99,7 +99,7 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.HelloTriangleExercise1 do
   def setup do
     IO.puts("""
     === LearnOpenGL 2.3 - Hello Triangle Exercise 1 ===
-    This example demonstrates drawing 2 triangles side by side!
+    This example demonstrates drawing 2 triangles side by side
 
     Exercise Goal:
     - Draw 2 triangles next to each other using glDrawArrays

@@ -89,7 +89,7 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.HelloTriangle do
   def setup do
     IO.puts("""
     === LearnOpenGL 2.1 - Hello Triangle ===
-    This example demonstrates your first triangle in OpenGL!
+    This example demonstrates your first triangle in OpenGL
 
     Key Concepts:
     - Vertex Buffer Objects (VBO) store vertex data in GPU memory

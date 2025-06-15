@@ -114,7 +114,7 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.ShadersExercise3 do
   def setup do
     IO.puts("""
     === LearnOpenGL 3.6 - Shaders Exercise 3 ===
-    This example demonstrates position-to-colour mapping and interpolation.
+    This example demonstrates position-to-colour mapping and interpolation
 
     Exercise: "Output the vertex position to the fragment shader using the `out`
     keyword and set the fragment's color equal to this vertex position. Why is

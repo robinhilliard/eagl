@@ -61,7 +61,7 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.HelloWindowClear do
     IO.puts("""
     === LearnOpenGL 1.2 - Hello Window Clear ===
     This example demonstrates setting a custom clear color.
-    You should see a dark green-blue window!
+    You should see a dark green-blue window.
 
     Key Concepts:
     - glClearColor() is a STATE-SETTING function

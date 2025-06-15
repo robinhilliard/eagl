@@ -86,7 +86,7 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.TexturesExercise3 do
   def setup do
     IO.puts("""
     === LearnOpenGL 4.5 - Textures Exercise 3 ===
-    This exercise demonstrates texture coordinate flipping!
+    This exercise demonstrates texture coordinate flipping
 
     Exercise Focus:
     - Horizontal Flipping: S coordinates reversed (1.0 <-> 0.0)

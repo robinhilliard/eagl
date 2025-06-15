@@ -113,7 +113,7 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.TexturesCombined do
   def setup do
     IO.puts("""
     === LearnOpenGL 4.2 - Textures Combined ===
-    This example demonstrates multiple texture units and texture mixing!
+    This example demonstrates multiple texture units and texture mixing
 
     Key Concepts:
     - Multiple texture units allow binding different textures

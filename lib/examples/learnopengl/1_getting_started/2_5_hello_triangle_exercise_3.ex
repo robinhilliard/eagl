@@ -103,7 +103,7 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.HelloTriangleExercise3 do
   def setup do
     IO.puts("""
     === LearnOpenGL 2.5 - Hello Triangle Exercise 3 ===
-    This example demonstrates multiple shader programs with different colors!
+    This example demonstrates multiple shader programs with different colors
 
     Exercise Goal:
     - Create two shader programs with different fragment shaders
