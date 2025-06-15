@@ -14,6 +14,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - 171 (7.1 Camera) - Camera controls and view matrix manipulation
 - These examples complete the foundational "Getting Started" series before moving to "Lighting"
 
+## [0.5.0] - 2024-12-22
+
+### Added
+- **Sigil System for Clean Data Literals**: New compile-time sigils for OpenGL data with tabular formatting
+  - **Matrix Sigil (`~m`)**: Clean matrix creation with automatic size detection and comment support
+    - Supports 2x2, 3x3, and 4x4 matrices with compile-time validation
+    - Automatic whitespace handling and comment stripping
+    - Preserves tabular formatting for readability while working with `mix format`
+  - **Vertex Sigil (`~v`)**: Raw vertex buffer data with structured formatting
+    - Multi-column data layout with inline comments for attribute documentation
+    - Automatic float conversion and validation
+    - Clean tabular format for position, color, texture coordinate data
+  - **Index Sigil (`~i`)**: Element indices with integer validation
+    - Triangle and quad index definitions with comment support  
+    - Compile-time integer validation
+    - Clean formatting for complex geometry definitions
+- **Mix Format Compatibility**: All sigils work seamlessly with Elixir's formatter
+  - Preserves intentional tabular formatting within sigil strings
+  - No need for `# credo:disable-for-next-line` or manual formatting exclusions
+  - Maintains code readability while following Elixir formatting standards
+
+### Enhanced
+- **EAGL.Math Module**: Extended with comprehensive sigil support and documentation
+  - Added extensive examples showing sigil usage patterns
+  - Improved compile-time validation with clear error messages
+  - Enhanced documentation with practical usage examples
+- **Code Formatting Integration**: Updated `.formatter.exs` configuration
+  - Better handling of mixed formatting requirements
+  - Preservation of matrix and vertex data readability
+  - Consistent formatting across the entire codebase
+
+### Technical Benefits
+- **Compile-Time Safety**: All sigils validate data structure and types at compile time
+- **Performance**: No runtime parsing overhead - all conversions happen at compile time
+- **Maintainability**: Clean, readable data definitions that don't conflict with code formatting
+- **Consistency**: Unified approach to OpenGL data creation across the library
+
 ## [0.4.0] - 2024-12-21
 
 ### Breaking Changes
