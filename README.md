@@ -429,7 +429,6 @@ mix test --timeout 10000
 #### BREAK Prompt in IEx
 If you encounter an unexpected error in IEx and see a `BREAK: (a)bort` prompt
 enter 'a' to abort and return to the shell. You can then run other shell commands.
-```
 
 #### Test Timeouts
 Interactive examples wait for ENTER key presses and will timeout in CI:
@@ -453,7 +452,6 @@ timeout 5s mix run -e "EAGL.Examples.Teapot.run_example()"
 # If you need to script the examples runner, use proper input format:
 printf "16\nq\n" | timeout 10s ./priv/scripts/run_examples
 ```
-
 
 ## Contributing
 
