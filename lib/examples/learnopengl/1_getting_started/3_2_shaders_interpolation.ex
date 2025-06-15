@@ -2,7 +2,7 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.ShadersInterpolation do
   @moduledoc """
   LearnOpenGL 3.2 - Shaders Interpolation
 
-  This example demonstrates vertex color interpolation in shaders - how colors assigned to vertices
+  This example demonstrates vertex colour interpolation in shaders - how colours assigned to vertices
   are automatically interpolated across the triangle surface by the rasterizer.
   It corresponds to the Shaders Interpolation tutorial in the LearnOpenGL series.
 
@@ -13,8 +13,8 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.ShadersInterpolation do
 
   ## Framework Adaptation Notes
 
-  In the original LearnOpenGL C++ tutorial, this example introduces vertex attributes for colors:
-  - How to pass color data as vertex attributes alongside position data
+  In the original LearnOpenGL C++ tutorial, this example introduces vertex attributes for colours:
+  - How to pass colour data as vertex attributes alongside position data
   - How to declare multiple vertex attributes in shaders
   - How the rasterizer automatically interpolates values between vertices
   - Understanding the difference between per-vertex and per-fragment data
@@ -26,32 +26,32 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.ShadersInterpolation do
   ## Key Concept: Fragment Interpolation
 
   **What happens during rasterization:**
-  - Triangle has 3 vertices with different colors (red, green, blue)
+  - Triangle has 3 vertices with different colours (red, green, blue)
   - Rasterizer determines which pixels are inside the triangle
   - For each pixel, it calculates interpolated values based on distance from vertices
   - A pixel 70% of the way from red to blue vertex gets 30% red + 70% blue
-  - This creates smooth color gradients across the triangle surface
+  - This creates smooth colour gradients across the triangle surface
 
   **Original Tutorial Concepts Demonstrated:**
 
-  1. **Multiple Vertex Attributes**: Position (location 0) and Color (location 1)
-  2. **Vertex Attribute Stride**: 6 floats per vertex (3 position + 3 color)
-  3. **Vertex Attribute Offsets**: Position at offset 0, Color at offset 3
-  4. **Shader Input/Output**: Vertex shader outputs color, fragment shader receives interpolated color
+  1. **Multiple Vertex Attributes**: Position (location 0) and Colour (location 1)
+  2. **Vertex Attribute Stride**: 6 floats per vertex (3 position + 3 colour)
+  3. **Vertex Attribute Offsets**: Position at offset 0, Colour at offset 3
+  4. **Shader Input/Output**: Vertex shader outputs colour, fragment shader receives interpolated colour
   5. **Automatic Interpolation**: GPU automatically interpolates all vertex shader outputs
 
   ## Visual Result
 
-  The triangle displays a beautiful color gradient:
+  The triangle displays a colour gradient:
   - Bottom-right corner: Red (1.0, 0.0, 0.0)
   - Bottom-left corner: Green (0.0, 1.0, 0.0)
   - Top center: Blue (0.0, 0.0, 1.0)
-  - Interior pixels: Smooth interpolation between these colors
+      - Interior pixels: Smooth interpolation between these colours
 
   ## Difference from Previous Examples
 
-  - **3.1 Shaders Uniform**: Single color for entire triangle, changed via uniform
-  - **3.2 Shaders Interpolation**: Different color per vertex, interpolated across surface
+  - **3.1 Shaders Uniform**: Single colour for entire triangle, changed via uniform
+  - **3.2 Shaders Interpolation**: Different colour per vertex, interpolated across surface
 
   ## Usage
 
@@ -88,15 +88,15 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.ShadersInterpolation do
   def setup do
     IO.puts("""
     === LearnOpenGL 3.2 - Shaders Interpolation ===
-    This example demonstrates vertex color interpolation!
+    This example demonstrates vertex colour interpolation.
 
     Key Concepts:
-    - Multiple vertex attributes: position AND color per vertex
-    - Vertex attribute stride: 6 floats per vertex (3 pos + 3 color)
-    - Automatic interpolation: GPU interpolates colors across triangle surface
+    - Multiple vertex attributes: position AND colour per vertex
+    - Vertex attribute stride: 6 floats per vertex (3 pos + 3 colour)
+    - Automatic interpolation: GPU interpolates colours across triangle surface
     - Fragment shader receives interpolated values, not original vertex values
 
-    Triangle Colors:
+    Triangle Colours:
     - Bottom-right corner: Red (1.0, 0.0, 0.0)
     - Bottom-left corner: Green (0.0, 1.0, 0.0)
     - Top center: Blue (0.0, 0.0, 1.0)
@@ -105,8 +105,8 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.ShadersInterpolation do
     Rasterization Process:
     - GPU determines which pixels are inside the triangle
     - For each pixel, calculates distance from each vertex
-    - Interpolates color based on these distances
-    - Creates smooth color transitions across the surface
+    - Interpolates colour based on these distances
+    - Creates smooth colour transitions across the surface
 
     EAGL Framework:
     - Uses create_vertex_array() with custom attribute specification
@@ -135,11 +135,11 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.ShadersInterpolation do
       attributes = vertex_attributes(:position, :color)
       {vao, vbo} = create_vertex_array(@vertices, attributes)
 
-      IO.puts("Created VAO and VBO with position and color attributes")
+      IO.puts("Created VAO and VBO with position and colour attributes")
       IO.puts("Using vertex_attributes(:position, :color) helper - automatically calculates stride and offsets")
       IO.puts("Position: location 0, 3 floats, stride 24 bytes, offset 0")
-      IO.puts("Color: location 1, 3 floats, stride 24 bytes, offset 12")
-      IO.puts("Ready to render - You should see a triangle with interpolated colors.")
+      IO.puts("Colour: location 1, 3 floats, stride 24 bytes, offset 12")
+      IO.puts("Ready to render - You should see a triangle with interpolated colours.")
 
       # State: {program, vao, vbo}
       {:ok, {program, vao, vbo}}
@@ -162,8 +162,8 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.ShadersInterpolation do
     # Use the shader program
     :gl.useProgram(program)
 
-    # Draw the triangle with interpolated colors
-    # No uniforms needed - colors come from vertex attributes
+    # Draw the triangle with interpolated colours
+    # No uniforms needed - colours come from vertex attributes
     :gl.bindVertexArray(vao)
     :gl.drawArrays(@gl_triangles, 0, 3)
 

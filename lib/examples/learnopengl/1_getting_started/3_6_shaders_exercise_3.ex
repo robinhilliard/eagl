@@ -114,7 +114,7 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.ShadersExercise3 do
   def setup do
     IO.puts("""
     === LearnOpenGL 3.6 - Shaders Exercise 3 ===
-    This example demonstrates position-to-color mapping and interpolation!
+    This example demonstrates position-to-colour mapping and interpolation.
 
     Exercise: "Output the vertex position to the fragment shader using the `out`
     keyword and set the fragment's color equal to this vertex position. Why is
@@ -164,7 +164,7 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.ShadersExercise3 do
          {:ok, program} <- create_attach_link([vertex_shader, fragment_shader]) do
       IO.puts("Shaders compiled successfully with position-to-color mapping")
 
-      # Create VAO/VBO with only position data (no color attributes needed)
+      # Create VAO/VBO with only position data (no colour attributes needed)
       {vao, vbo} = create_position_array(@vertices)
 
       IO.puts("Only position data needed - colors generated from positions")

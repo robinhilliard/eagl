@@ -134,7 +134,7 @@ defmodule EAGL.Buffer do
   end
 
   @doc """
-  Creates a standard color attribute configuration (location 1, vec3, float).
+  Creates a standard colour attribute configuration (location 1, vec3, float).
   """
   @spec color_attribute(keyword()) :: vertex_attribute()
   def color_attribute(opts \\ []) do

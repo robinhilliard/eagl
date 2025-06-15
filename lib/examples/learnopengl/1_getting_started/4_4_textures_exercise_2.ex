@@ -109,7 +109,7 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.TexturesExercise2 do
 
     Expected Result:
     - Texture repeated 4 times in a 2x2 grid pattern
-    - Demonstrates seamless texture tiling
+    - Demonstrates texture tiling
     - Same texture appears 4 times with GL_REPEAT mode
     - Color mixing still applied from vertex colors
 

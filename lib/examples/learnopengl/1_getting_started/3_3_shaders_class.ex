@@ -2,8 +2,8 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.ShadersClass do
   @moduledoc """
   LearnOpenGL 3.3 - Shaders Class
 
-  This example demonstrates the same vertex color interpolation as 3.2, but emphasizes
-  the importance of shader abstraction and organization. It shows how to structure
+  This example demonstrates the same vertex colour interpolation as 3.2, but emphasises
+  the importance of shader abstraction and organisation. It shows how to structure
   shader management in a clean, reusable way.
   It corresponds to the Shaders Class tutorial in the LearnOpenGL series.
 
@@ -113,8 +113,8 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.ShadersClass do
     - Enables rapid prototyping and experimentation
 
     Visual Result:
-    - Same beautiful color interpolation as 3.2 Shaders Interpolation
-    - Focus is on clean code organization, not visual differences
+    - Same colour interpolation as 3.2 Shaders Interpolation
+          - Focus is on clean code organisation, not visual differences
     - Demonstrates how good abstraction doesn't change functionality
 
     Press ENTER to exit.

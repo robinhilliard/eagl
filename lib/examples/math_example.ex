@@ -386,7 +386,7 @@ defmodule EAGL.Examples.Math do
     vertices = [
       vec3(-1.0, -1.0, 0.0),  # Bottom left
       vec3(1.0, -1.0, 0.0),   # Bottom right
-      vec3(0.0, 1.0, 0.0)     # Top center
+              vec3(0.0, 1.0, 0.0)     # Top center
     ]
     IO.puts("Triangle vertices: #{inspect(vertices)}")
 

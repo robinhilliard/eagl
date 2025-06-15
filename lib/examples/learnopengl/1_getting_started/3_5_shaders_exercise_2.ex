@@ -51,7 +51,7 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.ShadersExercise2 do
   ## Visual Result
 
   Triangle with interpolated colors moved to the right side of screen:
-  - Same color interpolation as 3.2/3.3
+      - Same colour interpolation as 3.2/3.3
   - Horizontally offset by uniform value (0.5 units to the right)
   - Demonstrates uniform-controlled positioning
 
@@ -127,7 +127,7 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.ShadersExercise2 do
     - Same vertex data, transformation via uniform
 
     Visual Result:
-    - Same color interpolation as previous examples
+    - Same colour interpolation as previous examples
     - Triangle moved #{@x_offset} units to the right
     - Demonstrates uniform-controlled positioning
 
@@ -148,7 +148,7 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.ShadersExercise2 do
          {:ok, program} <- create_attach_link([vertex_shader, fragment_shader]) do
       IO.puts("Shaders compiled successfully with uniform offset")
 
-      # Create buffer objects with position and color attributes
+      # Create buffer objects with position and colour attributes
       # Each vertex has 6 floats: 3 for position, 3 for color
       attributes = vertex_attributes(:position, :color)
 

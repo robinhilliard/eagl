@@ -80,7 +80,7 @@ defmodule EAGL.Window do
     end
 
     # Add macOS-specific forward compatibility (equivalent to GLFW_OPENGL_FORWARD_COMPAT)
-    # This is required for OpenGL 3.0+ contexts on macOS and matches the behavior of:
+    # This is required for OpenGL 3.0+ contexts on macOS and matches the behaviour of:
     # #ifdef __APPLE__
     #     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
     # #endif
@@ -169,7 +169,7 @@ defmodule EAGL.Window do
       after
         1000 ->
           # If no show event after 1 second, continue anyway
-          # This is more robust than waiting indefinitely
+          # This is more reliable than waiting indefinitely
           :ok
       end
 

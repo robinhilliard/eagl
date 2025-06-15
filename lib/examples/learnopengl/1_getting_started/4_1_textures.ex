@@ -37,7 +37,7 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.Textures do
   stbi_image_free(data);
   ```
 
-  **EAGL approach:** Enhanced image loading with robust error handling:
+  **EAGL approach:** Enhanced image loading with comprehensive error handling:
   ```elixir
   {:ok, texture_id, width, height} = load_texture_from_file("priv/images/eagl_logo_black_on_white.png")
   ```

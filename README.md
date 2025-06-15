@@ -64,6 +64,14 @@ Enter code (01, 02, 111-146), 'q' to quit, 'r' to refresh:
 
 ### Math Operations
 
+EAGL provides a comprehensive 3D math library based on GLM supporting:
+
+- **Vectors**: 2D, 3D, 4D vector operations with constructor macros
+- **Matrices**: 2x2, 3x3, 4x4 matrix operations with transformation functions
+- **Quaternions**: Rotation representation, SLERP, and conversion functions
+- **Utilities**: Trigonometry, interpolation, clamping, and geometric functions
+- **OpenGL Integration**: All functions work with the tuple-in-list format required by Erlang's OpenGL bindings
+
 ```elixir
 import EAGL.Math
 
@@ -83,15 +91,14 @@ view = mat4_look_at(
 projection = mat4_perspective(radians(45.0), 16.0/9.0, 0.1, 100.0)
 ```
 
-EAGL provides a comprehensive 3D math library based on GLM supporting:
-
-- **Vectors**: 2D, 3D, 4D vector operations with constructor macros
-- **Matrices**: 2x2, 3x3, 4x4 matrix operations with transformation functions
-- **Quaternions**: Rotation representation, SLERP, and conversion functions
-- **Utilities**: Trigonometry, interpolation, clamping, and geometric functions
-- **OpenGL Integration**: All functions work with the tuple-in-list format required by Erlang's OpenGL bindings
-
 ### Shader Management
+
+The uniform helpers (from Wings3D) automatically detect the type of EAGL.Math values, eliminating the need to manually unpack vectors or handle different uniform types:
+
+- `vec2/3/4` → `glUniform2f/3f/4f`
+- `mat2/3/4` → `glUniformMatrix2fv/3fv/4fv` 
+- Numbers → `glUniform1f/1i`
+- Booleans → `glUniform1i` (0 or 1)
 
 ```elixir
 import EAGL.Shader
@@ -115,13 +122,6 @@ set_uniforms(program, [
   light_color: vec3(1.0, 1.0, 1.0)
 ])
 ```
-
-The uniform helpers (from Wings3D) automatically detect the type of EAGL.Math values, eliminating the need to manually unpack vectors or handle different uniform types:
-
-- `vec2/3/4` → `glUniform2f/3f/4f`
-- `mat2/3/4` → `glUniformMatrix2fv/3fv/4fv` 
-- Numbers → `glUniform1f/1i`
-- Booleans → `glUniform1i` (0 or 1)
 
 ### Texture Management
 
@@ -194,21 +194,82 @@ import EAGL.Model
 
 ### Buffer Management
 
+EAGL provides type-safe, Wings3D-inspired buffer management with automatic stride/offset calculation and standard attribute helpers.
+
 ```elixir
 import EAGL.Buffer
 
-# Create simple position-only VAO/VBO (convenience function)
+# Simple position-only VAO/VBO (most common case)
 vertices = [-0.5, -0.5, 0.0, 0.5, -0.5, 0.0, 0.0, 0.5, 0.0]
 {vao, vbo} = create_position_array(vertices)
 
-# Or create with custom attributes (general function)
-{vao, vbo} = create_vertex_array(vertices, [
-  {0, 3, @gl_float, @gl_false, 0, 0}  # position at location 0
-])
+# Multiple attribute configuration - choose your approach:
+# Position + color vertices (6 floats per vertex: x,y,z,r,g,b)
+position_color_vertices = [
+  -0.5, -0.5, 0.0,  1.0, 0.0, 0.0,  # vertex 1: position + red
+   0.5, -0.5, 0.0,  0.0, 1.0, 0.0,  # vertex 2: position + green  
+   0.0,  0.5, 0.0,  0.0, 0.0, 1.0   # vertex 3: position + blue
+]
 
-# Clean up
+# APPROACH 1: Automatic calculation (recommended for standard layouts)
+# Automatically calculates stride/offset - no manual math required.
+attributes = vertex_attributes(:position, :color)
+{vao, vbo} = create_vertex_array(position_color_vertices, attributes)
+
+# APPROACH 2: Manual configuration (for fine control or non-standard layouts)  
+# Specify exactly what you want - useful for custom stride, non-sequential locations, etc.
+attributes = [
+  position_attribute(),                           # location: 0, size: 3, stride: 24, offset: 0
+  color_attribute(stride: 24, offset: 12)         # location: 1, size: 3, stride: 24, offset: 12
+]
+{vao, vbo} = create_vertex_array(position_color_vertices, attributes)
+
+# Use automatic approach when:  - Standard position/color/texture/normal layouts
+#                               - Sequential attribute locations (0, 1, 2, 3...)
+#                               - Tightly packed (no padding between attributes)
+#
+# Use manual approach when:     - Custom attribute locations or sizes
+#                               - Non-standard data types or normalization 
+#                               - Attribute padding or unusual stride patterns
+
+# Indexed geometry (rectangles, quads, models)
+quad_vertices = [
+   0.5,  0.5, 0.0,  # top right
+   0.5, -0.5, 0.0,  # bottom right
+  -0.5, -0.5, 0.0,  # bottom left
+  -0.5,  0.5, 0.0   # top left
+]
+indices = [0, 1, 3, 1, 2, 3]  # Two triangles forming a rectangle
+{vao, vbo, ebo} = create_indexed_position_array(quad_vertices, indices)
+
+# Complex interleaved vertex data with multiple attributes
+# Format: position(3) + color(3) + texture_coord(2) = 8 floats per vertex
+interleaved_vertices = [
+  # x,    y,    z,    r,    g,    b,    s,    t
+  -0.5, -0.5,  0.0,  1.0,  0.0,  0.0,  0.0,  0.0,  # bottom left
+   0.5, -0.5,  0.0,  0.0,  1.0,  0.0,  1.0,  0.0,  # bottom right
+   0.0,  0.5,  0.0,  0.0,  0.0,  1.0,  0.5,  1.0   # top centre
+]
+
+# Three standard attributes with automatic calculation
+{vao, vbo} = create_vertex_array(interleaved_vertices, vertex_attributes(:position, :color, :texture_coordinate))
+
+# Clean up resources
 delete_vertex_array(vao, vbo)
+delete_indexed_array(vao, vbo, ebo)  # For indexed arrays
 ```
+
+**Standard Attribute Helpers:**
+- `position_attribute()` - 3 floats (x, y, z) at location 0
+- `color_attribute()` - 3 floats (r, g, b) at location 1  
+- `texture_coordinate_attribute()` - 2 floats (s, t) at location 2
+- `normal_attribute()` - 3 floats (nx, ny, nz) at location 3
+
+**Key Benefits:**
+- **Automatic calculation**: `vertex_attributes()` eliminates manual stride/offset math
+- **Type safety**: Compile-time checks for attribute configuration  
+- **Standard patterns**: Common attribute layouts are pre-defined
+- **Flexible**: Mix automatic and manual configuration as needed
 
 ### Error Handling
 
@@ -307,7 +368,7 @@ sudo dnf install mesa-libGL-devel mesa-libGLU-devel
 #### macOS
 OpenGL is included with macOS. No additional setup required.
 
-**Note**: EAGL automatically detects macOS and enables forward compatibility for OpenGL 3.0+ contexts, which is required by Apple's OpenGL implementation. This matches the behavior of the `#ifdef __APPLE__` code commonly found in OpenGL tutorials.
+**Note**: EAGL automatically detects macOS and enables forward compatibility for OpenGL 3.0+ contexts, which is required by Apple's OpenGL implementation. This matches the behaviour of the `#ifdef __APPLE__` code commonly found in OpenGL tutorials.
 
 #### Windows  
 OpenGL is typically available through graphics drivers. If you encounter issues, ensure your graphics drivers are up to date.
@@ -459,10 +520,10 @@ If optional dependencies are missing, EAGL will show warnings but continue with 
 
 ## Contributing
 
-We welcome contributions! Suggested contributions include:
+We welcome contributions. Suggested contributions include:
 - **LearnOpenGL tutorial ports**: Help complete the tutorial series
 - **Documentation improvements**: Examples, tutorials, API documentation
-- **Platform-specific optimizations**: Performance or compatibility improvements
+- **Platform-specific optimisations**: Performance or compatibility improvements
 - **Example applications**: Links to demo projects showcasing EAGL capabilities
 - **Bug fixes**: Issues with existing functionality
 - **Testing improvements**: Better mocks, integration tests, or test utilities
@@ -494,7 +555,8 @@ Please read through these guidelines before submitting changes.
 - Update README.md for new features
 - Add docstrings for public functions
 - Include code examples in documentation
-- Write in Australian English for documentation, US English for code
+- Our tone is calm, concise and factual e.g. avoid 'sales' language and over-use of '!'
+- Write in Australian/British English for documentation, US English for code
 
 ### Design Philosophy
 
@@ -516,7 +578,7 @@ EAGL focuses on **meaningful abstractions** rather than thin wrappers around Ope
 #### 🎯 **User Experience Goals**
 - **Selective imports**: `import EAGL.Error` for explicit error checking
 - **Direct OpenGL access**: When EAGL doesn't add substantial value
-- **Seamless integration**: Mix EAGL helpers with direct OpenGL calls
+- **Direct OpenGL integration**: Mix EAGL helpers with direct OpenGL calls
 
 ### Submitting Changes
 

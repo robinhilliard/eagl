@@ -52,7 +52,7 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.ShadersExercise1 do
   Triangle with interpolated colors but flipped upside-down:
   - Top corners: Red (right) and Green (left) - now at bottom
   - Bottom center: Blue - now at top
-  - Same color interpolation as 3.2/3.3, just flipped
+      - Same colour interpolation as 3.2/3.3, just flipped
 
   ## Learning Objectives
 
@@ -119,7 +119,7 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.ShadersExercise1 do
     - This is a fundamental transformation concept
 
     Visual Result:
-    - Same color interpolation as previous examples
+    - Same colour interpolation as previous examples
     - Triangle is now upside-down (blue at top, red/green at bottom)
     - Demonstrates shader-based geometry manipulation
 
@@ -140,7 +140,7 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.ShadersExercise1 do
          {:ok, program} <- create_attach_link([vertex_shader, fragment_shader]) do
       IO.puts("Shaders compiled successfully with vertex transformation")
 
-      # Create buffer objects with color attribute
+      # Create buffer objects with colour attribute
       # Position and color data interleaved: [x, y, z, r, g, b] per vertex
       attributes = vertex_attributes(:position, :color)
 
