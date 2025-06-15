@@ -20,101 +20,34 @@ fi
 # Simple function to show menu and get examples
 show_menu() {
     clear
-    echo -e "${PURPLE}═══════════════════════════════════════════════════════════════${NC}"
-    echo -e "${PURPLE}                    EAGL Examples Menu                        ${NC}"
-    echo -e "${PURPLE}═══════════════════════════════════════════════════════════════${NC}"
+    echo -e "${PURPLE}════════════════════════════════════════════════════════════════${NC}"
+    echo -e "${PURPLE}                         EAGL Examples Menu                        ${NC}"
+    echo -e "${PURPLE}════════════════════════════════════════════════════════════════${NC}"
     echo
     
-    # Hardcoded examples for reliability
-    echo -e "${CYAN} 1)${NC} ${GREEN}Math Example${NC}"
-    echo -e "    ${YELLOW}Comprehensive example demonstrating all EAGL.Math functionality${NC}"
+    # Non-LearnOpenGL examples
+    echo -e "${BLUE}Non-LearnOpenGL Examples:${NC}"
+    echo -e "  ${CYAN}01)${NC} ${GREEN}Math Example${NC} - Comprehensive EAGL.Math functionality demo"
+    echo -e "  ${CYAN}02)${NC} ${GREEN}Teapot Example${NC} - 3D teapot with Phong shading"
     echo
     
-    echo -e "${CYAN} 2)${NC} ${GREEN}Teapot Example${NC}"
-    echo -e "    ${YELLOW}Draw a 3D teapot with Phong shading${NC}"
+    # LearnOpenGL examples in compact format
+    echo -e "${BLUE}LearnOpenGL Getting Started Examples:${NC}"
     echo
-    
-    echo -e "${BLUE}LearnOpenGL Examples:${NC}"
+    echo -e "  ${YELLOW}Hello Window:${NC}     ${CYAN}111)${NC} 1.1 Window    ${CYAN}112)${NC} 1.2 Clear Colors"
     echo
-    echo -e "  ${BLUE}1. Getting Started:${NC}"
-    
-    echo -e "    ${CYAN} 3)${NC} ${GREEN}1.1 Hello Window${NC}"
-    echo -e "        ${YELLOW}Basic window creation - Foundation of all OpenGL applications${NC}"
+    echo -e "  ${YELLOW}Hello Triangle:${NC}   ${CYAN}121)${NC} 2.1 Triangle  ${CYAN}122)${NC} 2.2 Indexed    ${CYAN}123)${NC} 2.3 Exercise1"
+    echo -e "                    ${CYAN}124)${NC} 2.4 Exercise2 ${CYAN}125)${NC} 2.5 Exercise3"
     echo
-    
-    echo -e "    ${CYAN} 4)${NC} ${GREEN}1.2 Hello Window Clear${NC}"
-    echo -e "        ${YELLOW}Custom clear colors - Understanding OpenGL's state machine${NC}"
+    echo -e "  ${YELLOW}Shaders:${NC}          ${CYAN}131)${NC} 3.1 Uniform   ${CYAN}132)${NC} 3.2 Interpolation ${CYAN}133)${NC} 3.3 Class"
+    echo -e "                    ${CYAN}134)${NC} 3.4 Exercise1 ${CYAN}135)${NC} 3.5 Exercise2     ${CYAN}136)${NC} 3.6 Exercise3"
     echo
-    
-    echo -e "    ${CYAN} 5)${NC} ${GREEN}2.1 Hello Triangle${NC}"
-    echo -e "        ${YELLOW}Your first triangle - Basic VAO/VBO and shader fundamentals${NC}"
+    echo -e "  ${YELLOW}Textures:${NC}         ${CYAN}141)${NC} 4.1 Basic     ${CYAN}142)${NC} 4.2 Combined      ${CYAN}143)${NC} 4.3 Exercise1"
+    echo -e "                    ${CYAN}144)${NC} 4.4 Exercise2 ${CYAN}145)${NC} 4.5 Exercise3     ${CYAN}146)${NC} 4.6 Exercise4"
     echo
-    
-    echo -e "    ${CYAN} 6)${NC} ${GREEN}2.2 Hello Triangle Indexed${NC}"
-    echo -e "        ${YELLOW}Element Buffer Objects (EBO) - Basic indexed rectangle rendering${NC}"
+    echo -e "  ${RED}Missing:${NC}          ${CYAN}151)${NC} 5.1 Transformations  ${CYAN}161)${NC} 6.1 Coordinate Systems  ${CYAN}171)${NC} 7.1 Camera"
     echo
-    
-    echo -e "    ${CYAN} 7)${NC} ${GREEN}2.3 Hello Triangle Exercise 1${NC}"
-    echo -e "        ${YELLOW}Two Triangles Side by Side - Using glDrawArrays with 6 vertices${NC}"
-    echo
-    
-    echo -e "    ${CYAN} 8)${NC} ${GREEN}2.4 Hello Triangle Exercise 2${NC}"
-    echo -e "        ${YELLOW}Element Buffer Objects (EBO) - Rectangle using shared vertices${NC}"
-    echo
-    
-    echo -e "    ${CYAN} 9)${NC} ${GREEN}2.5 Hello Triangle Exercise 3${NC}"
-    echo -e "        ${YELLOW}Multiple Shader Programs - Two triangles with different colors${NC}"
-    echo
-    
-    echo -e "    ${CYAN}10)${NC} ${GREEN}3.1 Shaders Uniform${NC}"
-    echo -e "        ${YELLOW}Uniform Variables - Animated triangle with time-based color changes${NC}"
-    echo
-    
-    echo -e "    ${CYAN}11)${NC} ${GREEN}3.2 Shaders Interpolation${NC}"
-    echo -e "        ${YELLOW}Vertex Color Interpolation - Triangle with red, green, blue corners${NC}"
-    echo
-    
-    echo -e "    ${CYAN}12)${NC} ${GREEN}3.3 Shaders Class${NC}"
-    echo -e "        ${YELLOW}Shader Abstraction - Same as 3.2 but emphasizes clean code organization${NC}"
-    echo
-    
-    echo -e "    ${CYAN}13)${NC} ${GREEN}3.4 Shaders Exercise 1${NC}"
-    echo -e "        ${YELLOW}Upside-Down Triangle - Vertex transformation in shader${NC}"
-    echo
-    
-    echo -e "    ${CYAN}14)${NC} ${GREEN}3.5 Shaders Exercise 2${NC}"
-    echo -e "        ${YELLOW}Horizontal Offset - Uniform-controlled triangle positioning${NC}"
-    echo
-    
-    echo -e "    ${CYAN}15)${NC} ${GREEN}3.6 Shaders Exercise 3${NC}"
-    echo -e "        ${YELLOW}Position as Color - Visualizing coordinates as RGB values${NC}"
-    echo
-    
-    echo -e "    ${CYAN}16)${NC} ${GREEN}4.1 Textures${NC}"
-    echo -e "        ${YELLOW}Basic Texture Mapping - Applying 2D images to geometry${NC}"
-    echo
-    
-    echo -e "    ${CYAN}17)${NC} ${GREEN}4.2 Textures Combined${NC}"
-    echo -e "        ${YELLOW}Multiple Texture Units - Mixing two textures with GLSL${NC}"
-    echo
-    
-    echo -e "    ${CYAN}18)${NC} ${GREEN}4.3 Textures Exercise 1${NC}"
-    echo -e "        ${YELLOW}Texture Coordinate Manipulation - Center cropping effect${NC}"
-    echo
-    
-    echo -e "    ${CYAN}19)${NC} ${GREEN}4.4 Textures Exercise 2${NC}"
-    echo -e "        ${YELLOW}Texture Wrapping Modes - Creating tiling patterns${NC}"
-    echo
-    
-    echo -e "    ${CYAN}20)${NC} ${GREEN}4.5 Textures Exercise 3${NC}"
-    echo -e "        ${YELLOW}Texture Coordinate Flipping - Horizontal mirroring effects${NC}"
-    echo
-    
-    echo -e "    ${CYAN}21)${NC} ${GREEN}4.6 Textures Exercise 4${NC}"
-    echo -e "        ${YELLOW}Dynamic Texture Mixing - Time-based animation with sine waves${NC}"
-    echo
-    
-    echo -e "${PURPLE}═══════════════════════════════════════════════════════════════${NC}"
+    echo -e "${PURPLE}════════════════════════════════════════════════════════════════${NC}"
 }
 
 # Function to run an example
@@ -123,71 +56,83 @@ run_example() {
     local module=""
     
     case $choice in
-        1)
+        01)
             module="EAGL.Examples.Math"
             ;;
-        2)
+        02)
             module="EAGL.Examples.Teapot"
             ;;
-        3)
+        111)
             module="EAGL.Examples.LearnOpenGL.GettingStarted.HelloWindow"
             ;;
-        4)
+        112)
             module="EAGL.Examples.LearnOpenGL.GettingStarted.HelloWindowClear"
             ;;
-        5)
+        121)
             module="EAGL.Examples.LearnOpenGL.GettingStarted.HelloTriangle"
             ;;
-        6)
+        122)
             module="EAGL.Examples.LearnOpenGL.GettingStarted.HelloTriangleIndexed"
             ;;
-        7)
+        123)
             module="EAGL.Examples.LearnOpenGL.GettingStarted.HelloTriangleExercise1"
             ;;
-        8)
+        124)
             module="EAGL.Examples.LearnOpenGL.GettingStarted.HelloTriangleExercise2"
             ;;
-        9)
+        125)
             module="EAGL.Examples.LearnOpenGL.GettingStarted.HelloTriangleExercise3"
             ;;
-        10)
+        131)
             module="EAGL.Examples.LearnOpenGL.GettingStarted.ShadersUniform"
             ;;
-        11)
+        132)
             module="EAGL.Examples.LearnOpenGL.GettingStarted.ShadersInterpolation"
             ;;
-        12)
+        133)
             module="EAGL.Examples.LearnOpenGL.GettingStarted.ShadersClass"
             ;;
-        13)
+        134)
             module="EAGL.Examples.LearnOpenGL.GettingStarted.ShadersExercise1"
             ;;
-        14)
+        135)
             module="EAGL.Examples.LearnOpenGL.GettingStarted.ShadersExercise2"
             ;;
-        15)
+        136)
             module="EAGL.Examples.LearnOpenGL.GettingStarted.ShadersExercise3"
             ;;
-        16)
+        141)
             module="EAGL.Examples.LearnOpenGL.GettingStarted.Textures"
             ;;
-        17)
+        142)
             module="EAGL.Examples.LearnOpenGL.GettingStarted.TexturesCombined"
             ;;
-        18)
+        143)
             module="EAGL.Examples.LearnOpenGL.GettingStarted.TexturesExercise1"
             ;;
-        19)
+        144)
             module="EAGL.Examples.LearnOpenGL.GettingStarted.TexturesExercise2"
             ;;
-        20)
+        145)
             module="EAGL.Examples.LearnOpenGL.GettingStarted.TexturesExercise3"
             ;;
-        21)
+        146)
             module="EAGL.Examples.LearnOpenGL.GettingStarted.TexturesExercise4"
+            ;;
+        151|161|171)
+            echo -e "${YELLOW}Example $choice is not yet implemented.${NC}"
+            echo -e "${YELLOW}Missing LearnOpenGL examples to be ported in future releases:${NC}"
+            echo -e "${YELLOW}- 151: 5.1 Transformations${NC}"
+            echo -e "${YELLOW}- 161: 6.1 Coordinate Systems${NC}"
+            echo -e "${YELLOW}- 171: 7.1 Camera${NC}"
+            return 1
             ;;
         *)
             echo -e "${RED}Invalid choice: $choice${NC}"
+            echo -e "${YELLOW}Available examples:${NC}"
+            echo -e "${YELLOW}- Non-LearnOpenGL: 01, 02${NC}"
+            echo -e "${YELLOW}- LearnOpenGL Getting Started: 111, 112, 121-125, 131-136, 141-146${NC}"
+            echo -e "${YELLOW}- Future: 151, 161, 171 (not yet implemented)${NC}"
             return 1
             ;;
     esac
@@ -205,7 +150,7 @@ run_example() {
 # Main loop
 while true; do
     show_menu
-    echo -e "Enter example number (1-21), 'q' to quit, or 'r' to refresh:"
+    echo -e "Enter code (01, 02, 111-146), 'q' to quit, 'r' to refresh:"
     echo -n "> "
     
     read -r choice
@@ -218,7 +163,7 @@ while true; do
         r|R|refresh)
             continue
             ;;
-        1|2|3|4|5|6|7|8|9|10|11|12|13|14|15|16|17|18|19|20|21)
+        01|02|111|112|121|122|123|124|125|131|132|133|134|135|136|141|142|143|144|145|146|151|161|171)
             clear
             if run_example "$choice"; then
                 echo
@@ -230,7 +175,9 @@ while true; do
             fi
             ;;
         *)
-            echo -e "${RED}Invalid input. Please enter 1-21, 'q', or 'r'.${NC}"
+            echo -e "${RED}Invalid input.${NC}"
+            echo -e "${YELLOW}Valid codes: 01, 02, 111, 112, 121-125, 131-136, 141-146${NC}"
+            echo -e "${YELLOW}Future codes: 151, 161, 171 (not yet implemented)${NC}"
             echo -n "Press ENTER to continue..."
             read -r
             ;;
