@@ -11,8 +11,8 @@
 
 Most examples of working with OpenGL are written in C++ or C# (Unity). The purpose of the EAGL library is to:
 - Make it easier to translate OpenGL tutorials and examples from resources like [Learn OpenGL](https://learnopengl.com) into Elixir. 
-- Provide basic helper functions to bridge the gap between idiomatic Elixir and OpenGL's state machine, using the Wings 3D Erlang source as a guide.
-- Enable other libraries and apps to build on this one - e.g. there should be Unity-like tool for the BEAM.
+- Provide basic helper functions to bridge the gap between idiomatic Elixir and OpenGL's state machine, using the Wings 3D Erlang source as a guide to prescriptive vs helpful additions
+- Enable other libraries and apps to build on this one
 
 The following are non-goals:
 - Wrapping of the Erlang wx library
@@ -59,34 +59,7 @@ LearnOpenGL Examples:
      7) 2.3 Hello Triangle Exercise 1
         Two Triangles Side by Side - Using glDrawArrays with 6 vertices
 
-     8) 2.4 Hello Triangle Exercise 2
-        Element Buffer Objects (EBO) - Rectangle using shared vertices
-
-     9) 2.5 Hello Triangle Exercise 3
-        Multiple Shader Programs - Two triangles with different colors
-
-    10) 3.1 Shaders Uniform
-        Uniform Variables - Animated triangle with time-based color changes
-
-    11) 3.2 Shaders Interpolation
-        Vertex Color Interpolation - Triangle with red, green, blue corners
-
-    12) 3.3 Shaders Class
-        Shader Abstraction - Clean code organization and reusable patterns
-
-    13) 3.4 Shaders Exercise 1
-        Upside-Down Triangle - Vertex transformation in shader
-
-    14) 3.5 Shaders Exercise 2
-        Horizontal Offset - Uniform-controlled triangle positioning
-
-    15) 3.6 Shaders Exercise 3
-        Position as Color - Visualizing coordinates as RGB values
-
-    16) 4.1 Textures
-        Basic Texture Mapping - Applying 2D images to geometry
-
-     ...
+     ... further examples skipped ...
 
 ═══════════════════════════════════════════════════════════════
 Enter example number (1-17), 'q' to quit, or 'r' to refresh:
@@ -201,7 +174,7 @@ check("After generating mipmaps")
 :gl.deleteTextures([texture_id])
 ```
 
-EAGL provides meaningful texture abstractions rather than thin wrappers:
+EAGL provides meaningful texture abstractions:
 
 - **Image Loading**: `load_texture_from_file()` with automatic fallback to checkerboard patterns
 - **Texture Creation**: `create_texture()` returns `{:ok, id}` tuples for error handling
@@ -442,7 +415,7 @@ And in future:
 Most of these are obvious, but it helps AI assistants remember how to get around the project.
 
 #### Interactive Examples Hanging
-Examples require user interaction (ESC key to exit). When running tests:
+Examples require user interaction (ENTER key to exit). When running tests:
 ```bash
 # Run only unit tests, exclude interactive examples
 mix test test/eagl/ --exclude interactive
@@ -451,24 +424,14 @@ mix test test/eagl/ --exclude interactive
 mix test --timeout 10000
 ```
 
-#### IEx Session Conflicts
-If stuck in an IEx session when trying to run mix commands:
-```bash
-# Press 'a' to abort the IEx session, then run your command
-# Example: after getting stuck, press 'a' then run:
-mix compile
-```
 
 #### BREAK Prompt in IEx
-If you encounter an unexpected error in IEx and see a `BREAK: (a)bort` prompt:
-```bash
-# Press 'a' to abort and exit the IEx session
-# This commonly happens when OpenGL context errors occur
-# After pressing 'a', you can run your mix commands normally
+If you encounter an unexpected error in IEx and see a `BREAK: (a)bort` prompt
+enter 'a' to abort and return to the shell. You can then run other shell commands.
 ```
 
 #### Test Timeouts
-Interactive examples wait for ESC key presses and will timeout in CI:
+Interactive examples wait for ENTER key presses and will timeout in CI:
 - Use `@tag :interactive` for examples that require user input
 - CI automatically excludes these tests
 - Local development can run them individually
@@ -490,31 +453,39 @@ timeout 5s mix run -e "EAGL.Examples.Teapot.run_example()"
 printf "16\nq\n" | timeout 10s ./priv/scripts/run_examples
 ```
 
-## Design Philosophy
 
-EAGL focuses on **meaningful abstractions** rather than thin wrappers around OpenGL calls:
+## Contributing
 
-### ✅ **Provide When Valuable**
+### Design Philosophy
+
+EAGL focuses on **meaningful abstractions** rather than wrappers around OpenGL calls:
+
+#### ✅ **Provide When Valuable**
 - **Error handling patterns**: `{:ok, result}` tuples and comprehensive error checking
-- **Type conversions**: Atoms to OpenGL constants (`set_texture_parameters(wrap_s: :repeat)`)
+- **Type conversions/safety**: Atoms to OpenGL constants (`set_texture_parameters(wrap_s: :repeat)`)
 - **Sensible defaults**: Reduce boilerplate with common parameter combinations
-- **Complex operations**: Multi-step procedures like shader compilation and linking
+- **Complex operations**: Repeated Multi-step procedures like shader compilation and linking
 - **Data transformations**: Converting Elixir data structures to OpenGL formats
 - **Procedural generation**: Built-in patterns like checkerboard textures for testing
+- **Dependencies**: Libraries available to C++ programmers that need to be sourced in Elixir
 
-### ❌ **Avoid Thin Wrappers**
+#### ❌ **Avoid Thin Wrappers**
 - **Simple OpenGL calls**: Use `:gl.bindTexture()`, `:gl.generateMipmap()` directly
 - **One-line functions**: Don't wrap functions that only add `check()` calls
 - **State management**: Let users manage OpenGL state explicitly when appropriate
 
-### 🎯 **User Experience**
+#### 🎯 **User Experience**
 - **Import what you need**: `import EAGL.Error` for explicit error checking
 - **Call OpenGL directly**: When EAGL doesn't add substantial value
 - **Mix and match**: Use EAGL helpers alongside direct OpenGL calls seamlessly
 
-This philosophy keeps the API clean, focused, and educational while providing real value where it matters most.
+This philosophy keeps the API clean, focused, and educational while helping where it matters most.
 
-## Contributing
+### Written Language
+
+Documentation is written in Australian English while function, variable and module names use US English for useability. Limit use of exclamation marks to warnings and avoid sales language - readers are already interested in using OpenGL with Elixir. Keep explanations and observations concise.
+
+### Source Control Instructions
 
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/amazing-feature`)
