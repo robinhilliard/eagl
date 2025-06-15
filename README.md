@@ -499,20 +499,6 @@ Interactive examples wait for user input and will timeout in continuous integrat
 - CI environments automatically exclude these tests
 - Run interactive tests individually during local development
 
-#### Examples Runner Automation
-The examples runner requires user interaction and cannot be easily automated:
-
-```bash
-# Run examples directly for automation
-mix run -e "EAGL.Examples.Math.run_example()"              # (01)
-
-# Use timeout for examples that wait for input
-timeout 5s mix run -e "EAGL.Examples.Teapot.run_example()" # (02)
-
-# LearnOpenGL examples: (111), (112), (121-125), (131-136), (141-146)
-# Future examples: (151), (161), (171)
-```
-
 ### Platform-Specific Issues
 
 #### OpenGL Context Creation Failures
