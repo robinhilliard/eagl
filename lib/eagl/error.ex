@@ -5,6 +5,11 @@ defmodule EAGL.Error do
   Provides Wings3D-inspired error handling patterns with meaningful
   abstractions for development and debugging.
 
+  ## Original Source
+
+  Error handling patterns are inspired by Wings3D's `wings_gl.erl` module:
+  <https://github.com/dgud/wings/blob/master/src/wings_gl.erl>
+
   ## Usage
 
       import EAGL.Error

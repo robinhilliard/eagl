@@ -499,7 +499,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Acknowledgments
 
-- [Learn OpenGL](https://learnopengl.com) for excellent OpenGL tutorials
+- [Learn OpenGL](https://learnopengl.com) for excellent OpenGL book and tutorial code. If the examples helped you understand OpenGL better please consider a [donation to the author](https://www.paypal.me/learnopengl/), Joey De Vries.
 - [Wings3D](https://wings3d.com) for inspiration and helper function patterns - the name EAGL(e) is a tip of the hat to this project
 - The Erlang/OTP team for wxWidgets bindings
 - The Elixir community for inspiration and support, particularly the [Elixir Sydney/Australia User Group](https://https://elixir.sydney)

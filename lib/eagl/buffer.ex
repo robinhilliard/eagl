@@ -5,6 +5,12 @@ defmodule EAGL.Buffer do
   Provides Wings3D-inspired helper functions for common VAO/VBO/EBO operations
   with meaningful abstractions for vertex attribute setup.
 
+  ## Original Source
+
+  Buffer management patterns and helper functions are inspired by Wings3D's
+  `wings_gl.erl` module:
+  <https://github.com/dgud/wings/blob/master/src/wings_gl.erl>
+
   ## Usage
 
       import EAGL.Buffer

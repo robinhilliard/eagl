@@ -1,10 +1,16 @@
 defmodule EAGL.Texture do
   @moduledoc """
-  Module for OpenGL texture management.
-  Handles texture creation, loading, and parameter configuration.
+  OpenGL texture management utilities.
 
-  This module provides Wings3D-inspired helper functions for texture operations,
-  focusing on meaningful abstractions rather than thin wrappers around OpenGL calls.
+  Handles texture creation, loading, and parameter configuration with
+  Wings3D-inspired helper functions, focusing on meaningful abstractions
+  rather than thin wrappers around OpenGL calls.
+
+  ## Original Source
+
+  Texture management patterns and helper functions are inspired by Wings3D's
+  `wings_gl.erl` module:
+  <https://github.com/dgud/wings/blob/master/src/wings_gl.erl>
 
   ## Basic Usage
 

@@ -5,6 +5,12 @@ defmodule EAGL.Shader do
   Handles the complex multi-step process of shader compilation, linking,
   and uniform management with Wings3D-inspired error handling.
 
+  ## Original Source
+
+  Uniform helper functions (`uloc/2`, `set_uloc/3`) are inspired by Wings3D's
+  `wings_gl.erl` module:
+  <https://github.com/dgud/wings/blob/master/src/wings_gl.erl>
+
   ## Usage
 
       import EAGL.Shader

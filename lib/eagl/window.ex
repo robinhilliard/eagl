@@ -5,6 +5,12 @@ defmodule EAGL.Window do
   Correct window creation with cross-platform OpenGL context setup
   and automated event handling based on wings_gl.erl patterns.
 
+  ## Original Source
+
+  Window creation timing, context setup, and event handling patterns are
+  based on Wings3D's `wings_gl.erl` module:
+  <https://github.com/dgud/wings/blob/master/src/wings_gl.erl>
+
   ## Usage
 
       defmodule MyApp do
