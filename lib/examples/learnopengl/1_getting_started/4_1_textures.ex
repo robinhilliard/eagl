@@ -86,6 +86,15 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.Textures do
   - **Pixel alignment considerations** for arbitrary image dimensions
   - **Coordinate system differences** between image formats and OpenGL
 
+  ## State Management Evolution
+
+  This example marks change in the LearnOpenGL series implementation.
+  Starting with textures, our OpenGL state becomes more complex as we need to track
+  multiple resources: shader programs, vertex arrays, buffers, and now texture objects.
+
+  **From 4.1 forward**, we transition to map-based state management for better
+  maintainability and readability as examples grow in complexity.
+
   ## Vertex Data Structure
 
   The rectangle uses interleaved vertex data:
@@ -204,8 +213,17 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.Textures do
 
       IO.puts("Ready to render - you should see an eagle attacking a teapot.")
 
-      # State: {program, vao, vbo, ebo, texture_id}
-      {:ok, {program, vao, vbo, ebo, texture_id}}
+      # Note: Starting with textures, our state becomes more complex with multiple
+      # OpenGL resources to track. From this example forward, we'll use maps for
+      # state management instead of tuples to make the code more readable and
+      # maintainable as examples grow in complexity.
+      {:ok, %{
+        program: program,
+        vao: vao,
+        vbo: vbo,
+        ebo: ebo,
+        texture_id: texture_id
+      }}
     else
       {:error, reason} ->
         IO.puts("Failed to create shader program or texture: #{reason}")
@@ -214,7 +232,7 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.Textures do
   end
 
   @impl true
-  def render(viewport_width, viewport_height, {program, vao, _vbo, _ebo, texture_id}) do
+  def render(viewport_width, viewport_height, state) do
     # Set viewport
     :gl.viewport(0, 0, trunc(viewport_width), trunc(viewport_height))
 
@@ -223,24 +241,24 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.Textures do
     :gl.clear(@gl_color_buffer_bit)
 
     # Bind texture
-    :gl.bindTexture(@gl_texture_2d, texture_id)
+    :gl.bindTexture(@gl_texture_2d, state.texture_id)
 
     # Use the shader program
-    :gl.useProgram(program)
+    :gl.useProgram(state.program)
 
     # Draw the rectangle
-    :gl.bindVertexArray(vao)
+    :gl.bindVertexArray(state.vao)
     :gl.drawElements(@gl_triangles, 6, @gl_unsigned_int, 0)
 
     :ok
   end
 
   @impl true
-  def cleanup({program, vao, vbo, ebo, texture_id}) do
+  def cleanup(state) do
     # Clean up OpenGL resources
-    :gl.deleteTextures([texture_id])
-    delete_vertex_array(vao, [vbo, ebo])
-    cleanup_program(program)
+    :gl.deleteTextures([state.texture_id])
+    delete_vertex_array(state.vao, [state.vbo, state.ebo])
+    cleanup_program(state.program)
     IO.puts("Cleaned up all OpenGL resources")
     :ok
   end

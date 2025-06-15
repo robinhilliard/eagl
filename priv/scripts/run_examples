@@ -94,6 +94,26 @@ show_menu() {
     echo -e "        ${YELLOW}Basic Texture Mapping - Applying 2D images to geometry${NC}"
     echo
     
+    echo -e "    ${CYAN}17)${NC} ${GREEN}4.2 Textures Combined${NC}"
+    echo -e "        ${YELLOW}Multiple Texture Units - Mixing two textures with GLSL${NC}"
+    echo
+    
+    echo -e "    ${CYAN}18)${NC} ${GREEN}4.3 Textures Exercise 1${NC}"
+    echo -e "        ${YELLOW}Texture Coordinate Manipulation - Center cropping effect${NC}"
+    echo
+    
+    echo -e "    ${CYAN}19)${NC} ${GREEN}4.4 Textures Exercise 2${NC}"
+    echo -e "        ${YELLOW}Texture Wrapping Modes - Creating tiling patterns${NC}"
+    echo
+    
+    echo -e "    ${CYAN}20)${NC} ${GREEN}4.5 Textures Exercise 3${NC}"
+    echo -e "        ${YELLOW}Texture Coordinate Flipping - Horizontal mirroring effects${NC}"
+    echo
+    
+    echo -e "    ${CYAN}21)${NC} ${GREEN}4.6 Textures Exercise 4${NC}"
+    echo -e "        ${YELLOW}Dynamic Texture Mixing - Time-based animation with sine waves${NC}"
+    echo
+    
     echo -e "${PURPLE}═══════════════════════════════════════════════════════════════${NC}"
 }
 
@@ -151,6 +171,21 @@ run_example() {
         16)
             module="EAGL.Examples.LearnOpenGL.GettingStarted.Textures"
             ;;
+        17)
+            module="EAGL.Examples.LearnOpenGL.GettingStarted.TexturesCombined"
+            ;;
+        18)
+            module="EAGL.Examples.LearnOpenGL.GettingStarted.TexturesExercise1"
+            ;;
+        19)
+            module="EAGL.Examples.LearnOpenGL.GettingStarted.TexturesExercise2"
+            ;;
+        20)
+            module="EAGL.Examples.LearnOpenGL.GettingStarted.TexturesExercise3"
+            ;;
+        21)
+            module="EAGL.Examples.LearnOpenGL.GettingStarted.TexturesExercise4"
+            ;;
         *)
             echo -e "${RED}Invalid choice: $choice${NC}"
             return 1
@@ -170,7 +205,7 @@ run_example() {
 # Main loop
 while true; do
     show_menu
-    echo -e "Enter example number (1-17), 'q' to quit, or 'r' to refresh:"
+    echo -e "Enter example number (1-21), 'q' to quit, or 'r' to refresh:"
     echo -n "> "
     
     read -r choice
@@ -183,7 +218,7 @@ while true; do
         r|R|refresh)
             continue
             ;;
-        1|2|3|4|5|6|7|8|9|10|11|12|13|14|15|16)
+        1|2|3|4|5|6|7|8|9|10|11|12|13|14|15|16|17|18|19|20|21)
             clear
             if run_example "$choice"; then
                 echo
@@ -195,7 +230,7 @@ while true; do
             fi
             ;;
         *)
-            echo -e "${RED}Invalid input. Please enter 1-16, 'q', or 'r'.${NC}"
+            echo -e "${RED}Invalid input. Please enter 1-21, 'q', or 'r'.${NC}"
             echo -n "Press ENTER to continue..."
             read -r
             ;;
