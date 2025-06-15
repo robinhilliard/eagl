@@ -404,12 +404,6 @@ And in future:
 - [ ] Access to a physics engine
 - [ ] Built-in GPU profiling tools
 
-### Community Contributions Welcome
-- Documentation improvements and tutorials
-- Additional LearnOpenGL tutorial ports
-- Platform-specific optimizations
-- Example applications and demos
-
 ## Troubleshooting
 
 ### Common Issues
@@ -460,7 +454,13 @@ If optional dependencies are missing, EAGL will show warnings but continue with 
 
 ## Contributing
 
-We welcome contributions! Please read through these guidelines before submitting changes.
+We welcome contributions! Suggested contributions include:
+- Documentation improvements
+- Additional LearnOpenGL tutorial ports
+- Platform-specific optimizations
+- Links to example applications and demos
+
+Please read through these guidelines before submitting changes.
 
 ### Development Setup
 
