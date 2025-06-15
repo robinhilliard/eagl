@@ -752,9 +752,278 @@ defmodule EAGL.ShaderTest do
 
   describe "error handling" do
     test "set_uniform_at_location with invalid location" do
-      # Should not error, just silently ignore
-      assert :ok = set_uniform_at_location(-1, vec3(1.0, 2.0, 3.0))
-      assert :ok = set_uniform_at_location(-5, 42.0)
+      # Should return error for invalid locations
+      assert {:error, _} = set_uniform_at_location(-1, vec3(1.0, 2.0, 3.0))
+      assert {:error, _} = set_uniform_at_location(-5, 42.0)
+    end
+  end
+
+  describe "comprehensive uniform testing" do
+    test "set_uniform with EAGL.Math vectors", %{gl_available: gl_available} do
+      if gl_available do
+        # Create a test program with various uniform types
+        vertex_content = """
+        #version 330 core
+        layout (location = 0) in vec3 aPos;
+        uniform vec2 test_vec2;
+        uniform vec3 test_vec3;
+        uniform vec4 test_vec4;
+        uniform mat3 test_mat3;
+        uniform mat4 test_mat4;
+        uniform float test_float;
+        uniform int test_int;
+        uniform bool test_bool;
+        void main() {
+            vec4 pos = vec4(aPos, 1.0);
+            pos.xy += test_vec2 * 0.001;
+            pos.xyz += test_vec3 * 0.001;
+            pos += test_vec4 * 0.001;
+            pos = test_mat4 * pos;
+            pos.xyz = test_mat3 * pos.xyz;
+            pos.x += test_float * 0.001;
+            pos.y += float(test_int) * 0.001;
+            pos.z += float(test_bool) * 0.001;
+            gl_Position = pos;
+        }
+        """
+
+        fragment_content = """
+        #version 330 core
+        out vec4 FragColor;
+        void main() {
+            FragColor = vec4(1.0, 0.5, 0.2, 1.0);
+        }
+        """
+
+        priv_dir = :code.priv_dir(:eagl)
+        shader_dir = Path.join([priv_dir, "shaders"])
+        File.mkdir_p!(shader_dir)
+        vertex_path = Path.join(shader_dir, "test_uniform_vertex.glsl")
+        fragment_path = Path.join(shader_dir, "test_uniform_fragment.glsl")
+
+        File.write!(vertex_path, vertex_content)
+        File.write!(fragment_path, fragment_content)
+
+        try do
+          {:ok, vertex_shader} = create_shader(:vertex, "test_uniform_vertex.glsl")
+          {:ok, fragment_shader} = create_shader(:fragment, "test_uniform_fragment.glsl")
+          {:ok, program} = create_attach_link([vertex_shader, fragment_shader])
+
+          :gl.useProgram(program)
+
+          # Test vec2
+          assert :ok = set_uniform(program, "test_vec2", vec2(1.0, 2.0))
+
+          # Test vec3
+          assert :ok = set_uniform(program, "test_vec3", vec3(1.0, 2.0, 3.0))
+
+          # Test vec4
+          assert :ok = set_uniform(program, "test_vec4", vec4(1.0, 2.0, 3.0, 4.0))
+
+          # Test float
+          assert :ok = set_uniform(program, "test_float", 42.0)
+
+          # Test int
+          assert :ok = set_uniform(program, "test_int", 42)
+
+          # Test bool
+          assert :ok = set_uniform(program, "test_bool", true)
+          assert :ok = set_uniform(program, "test_bool", false)
+
+          # Test matrix types
+          identity_mat3 = mat3_identity()
+          assert :ok = set_uniform(program, "test_mat3", identity_mat3)
+
+          identity_mat4 = mat4_identity()
+          assert :ok = set_uniform(program, "test_mat4", identity_mat4)
+
+          cleanup_program(program)
+        after
+          File.rm(vertex_path)
+          File.rm(fragment_path)
+        end
+      else
+        assert true
+      end
+    end
+
+    test "set_uniforms batch setting", %{gl_available: gl_available} do
+      if gl_available do
+        vertex_content = """
+        #version 330 core
+        layout (location = 0) in vec3 aPos;
+        uniform vec3 position;
+        uniform vec3 color;
+        uniform float scale;
+        void main() {
+            gl_Position = vec4(aPos * scale + position, 1.0);
+        }
+        """
+
+        fragment_content = """
+        #version 330 core
+        uniform vec3 color;
+        out vec4 FragColor;
+        void main() {
+            FragColor = vec4(color, 1.0);
+        }
+        """
+
+        priv_dir = :code.priv_dir(:eagl)
+        shader_dir = Path.join([priv_dir, "shaders"])
+        File.mkdir_p!(shader_dir)
+        vertex_path = Path.join(shader_dir, "test_batch_vertex.glsl")
+        fragment_path = Path.join(shader_dir, "test_batch_fragment.glsl")
+
+        File.write!(vertex_path, vertex_content)
+        File.write!(fragment_path, fragment_content)
+
+        try do
+          {:ok, vs} = create_shader(:vertex, "test_batch_vertex.glsl")
+          {:ok, fs} = create_shader(:fragment, "test_batch_fragment.glsl")
+          {:ok, program} = create_attach_link([vs, fs])
+
+          :gl.useProgram(program)
+
+          # Test batch uniform setting
+          uniforms = [
+            {"position", vec3(1.0, 2.0, 3.0)},
+            {"color", vec3(1.0, 0.5, 0.2)},
+            {"scale", 2.0}
+          ]
+
+          assert :ok = set_uniforms(program, uniforms)
+
+          cleanup_program(program)
+        after
+          File.rm(vertex_path)
+          File.rm(fragment_path)
+        end
+      else
+        assert true
+      end
+    end
+
+    test "get_uniform_location and error handling", %{gl_available: gl_available} do
+      if gl_available do
+        vertex_content = """
+        #version 330 core
+        layout (location = 0) in vec3 aPos;
+        uniform vec3 valid_uniform;
+        void main() {
+            gl_Position = vec4(aPos + valid_uniform, 1.0);
+        }
+        """
+
+        fragment_content = """
+        #version 330 core
+        out vec4 FragColor;
+        void main() {
+            FragColor = vec4(1.0, 0.5, 0.2, 1.0);
+        }
+        """
+
+        priv_dir = :code.priv_dir(:eagl)
+        shader_dir = Path.join([priv_dir, "shaders"])
+        File.mkdir_p!(shader_dir)
+        vertex_path = Path.join(shader_dir, "test_location_vertex.glsl")
+        fragment_path = Path.join(shader_dir, "test_location_fragment.glsl")
+
+        File.write!(vertex_path, vertex_content)
+        File.write!(fragment_path, fragment_content)
+
+        try do
+          {:ok, vs} = create_shader(:vertex, "test_location_vertex.glsl")
+          {:ok, fs} = create_shader(:fragment, "test_location_fragment.glsl")
+          {:ok, program} = create_attach_link([vs, fs])
+
+          # Test valid uniform location
+          location = get_uniform_location(program, "valid_uniform")
+          assert is_integer(location)
+          assert location >= 0
+
+          # Test invalid uniform location
+          invalid_location = get_uniform_location(program, "invalid_uniform")
+          assert invalid_location == -1
+
+          # Test setting uniform at valid location
+          assert :ok = set_uniform_at_location(location, vec3(1.0, 2.0, 3.0))
+
+          # Test setting uniform at invalid location (should return error)
+          assert {:error, _} = set_uniform_at_location(-1, vec3(1.0, 2.0, 3.0))
+
+          cleanup_program(program)
+        after
+          File.rm(vertex_path)
+          File.rm(fragment_path)
+        end
+      else
+        assert true
+      end
+    end
+
+    test "cache_uniform_locations helper", %{gl_available: gl_available} do
+      if gl_available do
+        vertex_content = """
+        #version 330 core
+        layout (location = 0) in vec3 aPos;
+        uniform vec3 position;
+        uniform vec3 color;
+        uniform float scale;
+        void main() {
+            gl_Position = vec4(aPos * scale + position, 1.0);
+        }
+        """
+
+        fragment_content = """
+        #version 330 core
+        uniform vec3 color;
+        out vec4 FragColor;
+        void main() {
+            FragColor = vec4(color, 1.0);
+        }
+        """
+
+        priv_dir = :code.priv_dir(:eagl)
+        shader_dir = Path.join([priv_dir, "shaders"])
+        File.mkdir_p!(shader_dir)
+        vertex_path = Path.join(shader_dir, "test_cache_vertex.glsl")
+        fragment_path = Path.join(shader_dir, "test_cache_fragment.glsl")
+
+        File.write!(vertex_path, vertex_content)
+        File.write!(fragment_path, fragment_content)
+
+        try do
+          {:ok, vs} = create_shader(:vertex, "test_cache_vertex.glsl")
+          {:ok, fs} = create_shader(:fragment, "test_cache_fragment.glsl")
+          {:ok, program} = create_attach_link([vs, fs])
+
+          # Test caching uniform locations
+          uniform_names = ["position", "color", "scale", "invalid_uniform"]
+          locations = cache_uniform_locations(program, uniform_names)
+
+          assert is_map(locations)
+          assert Map.has_key?(locations, "position")
+          assert Map.has_key?(locations, "color")
+          assert Map.has_key?(locations, "scale")
+          assert Map.has_key?(locations, "invalid_uniform")
+
+          # Valid uniforms should have non-negative locations
+          assert locations["position"] >= 0
+          assert locations["color"] >= 0
+          assert locations["scale"] >= 0
+
+          # Invalid uniform should have -1
+          assert locations["invalid_uniform"] == -1
+
+          cleanup_program(program)
+        after
+          File.rm(vertex_path)
+          File.rm(fragment_path)
+        end
+      else
+        assert true
+      end
     end
   end
 end
