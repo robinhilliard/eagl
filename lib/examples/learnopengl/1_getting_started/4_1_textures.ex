@@ -196,14 +196,11 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.Textures do
          {:ok, program} <- create_attach_link([vertex_shader, fragment_shader]) do
       IO.puts("Vertex and fragment shaders compiled and linked successfully")
 
-      # Create VAO, VBO, and EBO for rectangle with texture coordinates
-      # Demonstrates indexed rendering with texture mapping
-      stride = 8 * 4  # 8 floats per vertex * 4 bytes per float
-      {vao, vbo, ebo} = create_indexed_array(@vertices, @indices, [
-        {0, 3, @gl_float, @gl_false, stride, 0},         # position at location 0, offset 0
-        {1, 3, @gl_float, @gl_false, stride, 3 * 4},     # color at location 1, offset 12
-        {2, 2, @gl_float, @gl_false, stride, 6 * 4}      # texture coords at location 2, offset 24
-      ])
+      # Create complex vertex attribute setup with indexed rendering
+      # Each vertex: 3 position + 3 color + 2 texture = 8 floats (32 bytes)
+      attributes = vertex_attributes(:position, :color, :texture_coordinate)
+
+      {vao, vbo, ebo} = create_indexed_array(@vertices, @indices, attributes)
 
       IO.puts("Created VAO, VBO, and EBO (rectangle with texture coordinates)")
 

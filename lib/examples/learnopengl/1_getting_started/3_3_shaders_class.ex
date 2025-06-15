@@ -138,15 +138,12 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.ShadersClass do
 
       # Create buffer objects using EAGL.Buffer helpers
       # This demonstrates a clean attribute specification pattern
-      attribute_configs = [
-        {0, 3, @gl_float, @gl_false, 6 * 4, 0},      # position at location 0, offset 0
-        {1, 3, @gl_float, @gl_false, 6 * 4, 3 * 4}   # color at location 1, offset 12
-      ]
+      attributes = vertex_attributes(:position, :color)
 
-      {vao, vbo} = create_vertex_array(@vertices, attribute_configs)
+      {vao, vbo} = create_vertex_array(@vertices, attributes)
 
       IO.puts("Buffer abstraction working properly")
-      IO.puts("EAGL.Buffer handled VAO/VBO setup with multiple attributes")
+      IO.puts("EAGL.Buffer used vertex_attributes(:position, :color) helper")
       IO.puts("Clean, readable code with proper error handling")
 
       # State: {program, vao, vbo}

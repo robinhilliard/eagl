@@ -148,13 +148,11 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.ShadersExercise2 do
          {:ok, program} <- create_attach_link([vertex_shader, fragment_shader]) do
       IO.puts("Shaders compiled successfully with uniform offset")
 
-      # Same VAO/VBO setup as previous examples
-      {vao, vbo} = create_vertex_array(@vertices, [
-        # Position attribute (location 0)
-        {0, 3, @gl_float, @gl_false, 6 * 4, 0},
-        # Color attribute (location 1)
-        {1, 3, @gl_float, @gl_false, 6 * 4, 3 * 4}
-      ])
+      # Create buffer objects with position and color attributes
+      # Each vertex has 6 floats: 3 for position, 3 for color
+      attributes = vertex_attributes(:position, :color)
+
+      {vao, vbo} = create_vertex_array(@vertices, attributes)
 
       IO.puts("Same vertex data - offset applied via uniform in shader")
       IO.puts("Ready to render - Triangle should be moved to the right.")
