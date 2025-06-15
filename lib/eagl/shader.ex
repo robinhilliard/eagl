@@ -213,10 +213,10 @@ defmodule EAGL.Shader do
   @doc """
   Set uniform value at a specific location with automatic type detection.
   """
-  @spec set_uniform_at_location(integer(), uniform_value()) :: :ok
-    def set_uniform_at_location(location, _value) when location < 0 do
-    # Invalid location, uniform not found - silently ignore
-    :ok
+  @spec set_uniform_at_location(integer(), uniform_value()) :: :ok | {:error, String.t()}
+  def set_uniform_at_location(location, _value) when location < 0 do
+    # Invalid location, uniform not found - return error
+    {:error, "Invalid uniform location: #{location}"}
   end
 
   # vec3 uniform
@@ -275,12 +275,13 @@ defmodule EAGL.Shader do
 
   @doc """
   Convenience function to set multiple uniforms at once.
-  Takes a program and a keyword list of uniform_name -> value pairs.
+  Takes a program and a list of {name, value} tuples where name can be atom or string.
   """
-  @spec set_uniforms(program_id(), [{atom(), uniform_value()}]) :: :ok
+  @spec set_uniforms(program_id(), [{atom() | String.t(), uniform_value()}]) :: :ok
   def set_uniforms(program, uniforms) when is_list(uniforms) do
     Enum.each(uniforms, fn {name, value} ->
-      set_uniform(program, Atom.to_string(name), value)
+      uniform_name = if is_atom(name), do: Atom.to_string(name), else: to_string(name)
+      set_uniform(program, uniform_name, value)
     end)
   end
 
