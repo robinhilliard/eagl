@@ -57,22 +57,23 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.TexturesExercise4 do
   import EAGL.Buffer
   import EAGL.Texture
   import EAGL.Error
+  import EAGL.Math
 
   # Rectangle vertex data with standard texture coordinates
   # Format: [x, y, z, r, g, b, s, t] per vertex
-  @vertices [
-    # positions        # colors         # texture coords
-     0.5,  0.5, 0.0,   1.0, 0.0, 0.0,   1.0, 1.0,   # top right
-     0.5, -0.5, 0.0,   0.0, 1.0, 0.0,   1.0, 0.0,   # bottom right
-    -0.5, -0.5, 0.0,   0.0, 0.0, 1.0,   0.0, 0.0,   # bottom left
-    -0.5,  0.5, 0.0,   1.0, 1.0, 0.0,   0.0, 1.0    # top left
-  ]
+  @vertices ~v'''
+  # positions        # colors         # texture coords
+   0.5  0.5 0.0  1.0 0.0 0.0  1.0 1.0   # top right
+   0.5 -0.5 0.0  0.0 1.0 0.0  1.0 0.0   # bottom right
+  -0.5 -0.5 0.0  0.0 0.0 1.0  0.0 0.0   # bottom left
+  -0.5  0.5 0.0  1.0 1.0 0.0  0.0 1.0   # top left
+  '''
 
   # Indices for drawing the rectangle using two triangles
-  @indices [
-    0, 1, 3,  # first triangle
-    1, 2, 3   # second triangle
-  ]
+  @indices ~i'''
+  0 1 3  # first triangle
+  1 2 3  # second triangle
+  '''
 
   @spec run_example() :: :ok | {:error, term()}
   def run_example,
@@ -133,27 +134,31 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.TexturesExercise4 do
       IO.puts("Created VAO, VBO, and EBO (rectangle with texture coordinates)")
 
       # Load first texture
-      {:ok, texture1_id, width, height} = load_texture_from_file("priv/images/eagl_logo_black_on_white.jpg")
+      {:ok, texture1_id, width, height} =
+        load_texture_from_file("priv/images/eagl_logo_black_on_white.jpg")
+
       IO.puts("Loaded texture 1: (#{width}x#{height})")
 
       # Create second texture - gradient pattern for contrast
       {:ok, texture2_id} = create_texture()
       :gl.bindTexture(@gl_texture_2d, texture2_id)
 
-      set_texture_parameters([
+      set_texture_parameters(
         wrap_s: :repeat,
         wrap_t: :repeat,
         min_filter: :linear,
         mag_filter: :linear
-      ])
+      )
 
       # Create gradient pattern for second texture
       pattern_size = 128
+
       load_texture_data(pattern_size, pattern_size, create_gradient_pattern(pattern_size),
         internal_format: :rgb,
         format: :rgb,
         type: :unsigned_byte
       )
+
       :gl.generateMipmap(@gl_texture_2d)
 
       IO.puts("Created texture 2: gradient pattern (#{pattern_size}x#{pattern_size})")
@@ -162,10 +167,12 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.TexturesExercise4 do
       :gl.useProgram(program)
 
       # Set texture unit assignments
-      set_uniforms(program, [
-        texture1: 0,  # GL_TEXTURE0
-        texture2: 1   # GL_TEXTURE1
-      ])
+      set_uniforms(program,
+        # GL_TEXTURE0
+        texture1: 0,
+        # GL_TEXTURE1
+        texture2: 1
+      )
 
       IO.puts("Set texture uniforms and initialized animation")
 
@@ -174,15 +181,16 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.TexturesExercise4 do
       # Initialize current time for animation (following 3.1 shaders uniform pattern)
       current_time = :erlang.monotonic_time(:millisecond) / 1000.0
 
-      {:ok, %{
-        program: program,
-        vao: vao,
-        vbo: vbo,
-        ebo: ebo,
-        texture1_id: texture1_id,
-        texture2_id: texture2_id,
-        current_time: current_time
-      }}
+      {:ok,
+       %{
+         program: program,
+         vao: vao,
+         vbo: vbo,
+         ebo: ebo,
+         texture1_id: texture1_id,
+         texture2_id: texture2_id,
+         current_time: current_time
+       }}
     else
       error ->
         IO.puts("Failed to set up shaders: #{inspect(error)}")
@@ -260,7 +268,7 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.TexturesExercise4 do
   # Helper function to create gradient pattern for second texture
   # Good example of rolling your own texture data
   defp create_gradient_pattern(size) do
-    for _y <- 0..(size-1), x <- 0..(size-1) do
+    for _y <- 0..(size - 1), x <- 0..(size - 1) do
       # Create horizontal gradient from blue to yellow
       factor = x / (size - 1)
       red = trunc(factor * 255)

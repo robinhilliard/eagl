@@ -68,23 +68,24 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.TexturesExercise2 do
   import EAGL.Buffer
   import EAGL.Texture
   import EAGL.Error
+  import EAGL.Math
 
   # Rectangle vertex data with extended texture coordinates for wrapping demonstration
   # Format: [x, y, z, r, g, b, s, t] per vertex
   # Texture coordinates go from 0.0 to 2.0 to show wrapping behavior
-  @vertices [
-    # positions        # colors         # texture coords (0.0 to 2.0)
-     0.5,  0.5, 0.0,   1.0, 0.0, 0.0,   2.0, 2.0,   # top right
-     0.5, -0.5, 0.0,   0.0, 1.0, 0.0,   2.0, 0.0,   # bottom right
-    -0.5, -0.5, 0.0,   0.0, 0.0, 1.0,   0.0, 0.0,   # bottom left
-    -0.5,  0.5, 0.0,   1.0, 1.0, 0.0,   0.0, 2.0    # top left
-  ]
+  @vertices ~v'''
+  # positions        # colors         # texture coords (0.0 to 2.0)
+   0.5  0.5 0.0  1.0 0.0 0.0  2.0 2.0   # top right
+   0.5 -0.5 0.0  0.0 1.0 0.0  2.0 0.0   # bottom right
+  -0.5 -0.5 0.0  0.0 0.0 1.0  0.0 0.0   # bottom left
+  -0.5  0.5 0.0  1.0 1.0 0.0  0.0 2.0   # top left
+  '''
 
   # Indices for drawing the rectangle using two triangles
-  @indices [
-    0, 1, 3,  # first triangle
-    1, 2, 3   # second triangle
-  ]
+  @indices ~i'''
+  0 1 3  # first triangle
+  1 2 3  # second triangle
+  '''
 
   @spec run_example() :: :ok | {:error, term()}
   def run_example,
@@ -145,30 +146,38 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.TexturesExercise2 do
       IO.puts("Created VAO, VBO, and EBO (rectangle with extended texture coordinates)")
 
       # Load texture
-      {:ok, texture_id, width, height} = load_texture_from_file("priv/images/eagl_logo_black_on_white.jpg")
+      {:ok, texture_id, width, height} =
+        load_texture_from_file("priv/images/eagl_logo_black_on_white.jpg")
+
       IO.puts("Loaded texture (#{width}x#{height}) - will repeat 2x2")
 
       # Bind texture and set parameters for wrapping demonstration
       :gl.bindTexture(@gl_texture_2d, texture_id)
-      set_texture_parameters([
-        wrap_s: :repeat,        # Enable texture repetition on S axis
-        wrap_t: :repeat,        # Enable texture repetition on T axis
-        min_filter: :linear,    # Smooth filtering for better visual quality
-        mag_filter: :linear     # Smooth filtering for better visual quality
-      ])
+
+      set_texture_parameters(
+        # Enable texture repetition on S axis
+        wrap_s: :repeat,
+        # Enable texture repetition on T axis
+        wrap_t: :repeat,
+        # Smooth filtering for better visual quality
+        min_filter: :linear,
+        # Smooth filtering for better visual quality
+        mag_filter: :linear
+      )
 
       # Generate mipmaps
       :gl.generateMipmap(@gl_texture_2d)
 
       check("After texture setup")
 
-      {:ok, %{
-        program: program,
-        vao: vao,
-        vbo: vbo,
-        ebo: ebo,
-        texture_id: texture_id
-      }}
+      {:ok,
+       %{
+         program: program,
+         vao: vao,
+         vbo: vbo,
+         ebo: ebo,
+         texture_id: texture_id
+       }}
     else
       error ->
         IO.puts("Failed to set up shaders: #{inspect(error)}")
@@ -217,6 +226,4 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.TexturesExercise2 do
     check("After cleanup")
     :ok
   end
-
-
 end

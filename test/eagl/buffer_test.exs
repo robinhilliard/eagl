@@ -22,11 +22,13 @@ defmodule EAGL.BufferTest do
           rescue
             _ -> :ok
           end
+
           try do
             :wxFrame.destroy(frame)
           rescue
             _ -> :ok
           end
+
           try do
             :application.stop(:wx)
           rescue
@@ -78,11 +80,13 @@ defmodule EAGL.BufferTest do
           rescue
             _ -> :ok
           end
+
           try do
             :wxFrame.destroy(frame)
           rescue
             _ -> :ok
           end
+
           try do
             :application.stop(:wx)
           rescue
@@ -96,8 +100,8 @@ defmodule EAGL.BufferTest do
       end
     end
 
-         test "creates vertex array with position data", %{gl_available: gl_available} do
-       if gl_available do
+    test "creates vertex array with position data", %{gl_available: gl_available} do
+      if gl_available do
         vertices = [-0.5, -0.5, 0.0, 0.5, -0.5, 0.0, 0.0, 0.5, 0.0]
         {vao, vbo} = create_position_array(vertices)
 
@@ -135,21 +139,26 @@ defmodule EAGL.BufferTest do
 
       assert attr.location == 0
       assert attr.size == 3
-      assert attr.type == :float  # default
-      assert attr.normalized == false  # default
-      assert attr.stride == 0  # default
-      assert attr.offset == 0  # default
+      # default
+      assert attr.type == :float
+      # default
+      assert attr.normalized == false
+      # default
+      assert attr.stride == 0
+      # default
+      assert attr.offset == 0
     end
 
     test "creates vertex attribute struct with custom options" do
-      attr = vertex_attribute(
-        location: 1,
-        size: 2,
-        type: :unsigned_byte,
-        normalized: true,
-        stride: 20,
-        offset: 12
-      )
+      attr =
+        vertex_attribute(
+          location: 1,
+          size: 2,
+          type: :unsigned_byte,
+          normalized: true,
+          stride: 20,
+          offset: 12
+        )
 
       assert attr.location == 1
       assert attr.size == 2
@@ -219,7 +228,32 @@ defmodule EAGL.BufferTest do
 
     @tag :skip
     test "can create complex vertex layouts" do
-      vertices = [-0.5, -0.5, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.5, -0.5, 0.0, 0.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.5, 0.0, 0.0, 0.0, 1.0, 0.5, 1.0]
+      vertices = [
+        -0.5,
+        -0.5,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.5,
+        -0.5,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.5,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.5,
+        1.0
+      ]
 
       # Complex vertex format: position (3) + color (3) + texcoord (2) = 8 floats per vertex
       attributes = [
@@ -245,7 +279,8 @@ defmodule EAGL.BufferTest do
       assert attr.location == 0
       assert attr.size == 3
       assert attr.type == :float
-      assert attr.stride == 12  # 3 floats * 4 bytes
+      # 3 floats * 4 bytes
+      assert attr.stride == 12
       assert attr.offset == 0
     end
 
@@ -259,14 +294,17 @@ defmodule EAGL.BufferTest do
       # Position attribute
       assert pos_attr.location == 0
       assert pos_attr.size == 3
-      assert pos_attr.stride == 24  # 6 floats * 4 bytes total
+      # 6 floats * 4 bytes total
+      assert pos_attr.stride == 24
       assert pos_attr.offset == 0
 
       # Color attribute
       assert color_attr.location == 1
       assert color_attr.size == 3
-      assert color_attr.stride == 24  # Same stride for all
-      assert color_attr.offset == 12  # 3 floats * 4 bytes offset
+      # Same stride for all
+      assert color_attr.stride == 24
+      # 3 floats * 4 bytes offset
+      assert color_attr.offset == 12
     end
 
     test "creates complex attributes with multiple argument syntax" do
@@ -277,7 +315,8 @@ defmodule EAGL.BufferTest do
       [pos_attr, color_attr, tex_attr] = attrs
 
       # All should have same stride (total vertex size)
-      total_stride = 32  # 8 floats * 4 bytes = 32 bytes
+      # 8 floats * 4 bytes = 32 bytes
+      total_stride = 32
       assert pos_attr.stride == total_stride
       assert color_attr.stride == total_stride
       assert tex_attr.stride == total_stride
@@ -309,7 +348,8 @@ defmodule EAGL.BufferTest do
       assert pos_attr.size == 3
       assert normal_attr.size == 3
       assert normal_attr.location == 1
-      assert normal_attr.offset == 12  # After position
+      # After position
+      assert normal_attr.offset == 12
     end
 
     test "supports two-argument syntax" do
@@ -354,6 +394,7 @@ defmodule EAGL.BufferTest do
 
       # Check total stride calculation (3+3+2+3 = 11 floats = 44 bytes)
       expected_stride = 44
+
       Enum.each(attrs, fn attr ->
         assert attr.stride == expected_stride
       end)
@@ -361,14 +402,27 @@ defmodule EAGL.BufferTest do
       # Check offset calculations
       [pos, color, tex, normal] = attrs
       assert pos.offset == 0
-      assert color.offset == 12    # 3 floats * 4 bytes
-      assert tex.offset == 24      # 6 floats * 4 bytes
-      assert normal.offset == 32   # 8 floats * 4 bytes
+      # 3 floats * 4 bytes
+      assert color.offset == 12
+      # 6 floats * 4 bytes
+      assert tex.offset == 24
+      # 8 floats * 4 bytes
+      assert normal.offset == 32
     end
 
     test "vertex_attribute with all supported types" do
-      types = [:byte, :unsigned_byte, :short, :unsigned_short, :int, :unsigned_int,
-               :fixed, :float, :half_float, :double]
+      types = [
+        :byte,
+        :unsigned_byte,
+        :short,
+        :unsigned_short,
+        :int,
+        :unsigned_int,
+        :fixed,
+        :float,
+        :half_float,
+        :double
+      ]
 
       Enum.each(types, fn type ->
         attr = vertex_attribute(location: 0, size: 3, type: type)
@@ -384,12 +438,13 @@ defmodule EAGL.BufferTest do
     end
 
     test "vertex_attribute with large stride and offset values" do
-      attr = vertex_attribute(
-        location: 0,
-        size: 4,
-        stride: 1024,
-        offset: 512
-      )
+      attr =
+        vertex_attribute(
+          location: 0,
+          size: 4,
+          stride: 1024,
+          offset: 512
+        )
 
       assert attr.stride == 1024
       assert attr.offset == 512
@@ -413,7 +468,8 @@ defmodule EAGL.BufferTest do
       binary = vertices_to_binary(large_vertices)
 
       assert is_binary(binary)
-      assert byte_size(binary) == 3000 * 4  # 3000 floats * 4 bytes each
+      # 3000 floats * 4 bytes each
+      assert byte_size(binary) == 3000 * 4
     end
 
     test "indices_to_binary with large index array" do
@@ -423,7 +479,8 @@ defmodule EAGL.BufferTest do
       binary = indices_to_binary(large_indices)
 
       assert is_binary(binary)
-      assert byte_size(binary) == 3000 * 4  # 3000 ints * 4 bytes each
+      # 3000 ints * 4 bytes each
+      assert byte_size(binary) == 3000 * 4
     end
 
     test "vertex_attributes calculation performance" do
@@ -462,11 +519,13 @@ defmodule EAGL.BufferTest do
           rescue
             _ -> :ok
           end
+
           try do
             :wxFrame.destroy(frame)
           rescue
             _ -> :ok
           end
+
           try do
             :application.stop(:wx)
           rescue
@@ -487,7 +546,8 @@ defmodule EAGL.BufferTest do
 
         # Test cleanup - should not raise errors
         assert :ok = delete_vertex_array(vao, [vbo])
-        assert :ok = delete_vertex_array(vao, vbo)  # Test single VBO variant
+        # Test single VBO variant
+        assert :ok = delete_vertex_array(vao, vbo)
       else
         assert true
       end
@@ -500,7 +560,8 @@ defmodule EAGL.BufferTest do
       binary = vertices_to_binary(vertices)
 
       assert is_binary(binary)
-      assert byte_size(binary) == 12  # 3 floats * 4 bytes each
+      # 3 floats * 4 bytes each
+      assert byte_size(binary) == 12
     end
 
     test "converts indices to binary" do
@@ -508,7 +569,8 @@ defmodule EAGL.BufferTest do
       binary = indices_to_binary(indices)
 
       assert is_binary(binary)
-      assert byte_size(binary) == 12  # 3 ints * 4 bytes each
+      # 3 ints * 4 bytes each
+      assert byte_size(binary) == 12
     end
   end
 end

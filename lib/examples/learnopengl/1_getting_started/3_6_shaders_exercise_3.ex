@@ -91,15 +91,16 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.ShadersExercise3 do
 
   import EAGL.Shader
   import EAGL.Buffer
+  import EAGL.Math
 
   # Triangle vertex data - only positions needed for this exercise
   # Colors will be generated from positions in the shader
-  @vertices [
-    # positions
-     0.5, -0.5, 0.0,  # bottom right
-    -0.5, -0.5, 0.0,  # bottom left
-     0.0,  0.5, 0.0   # top center
-  ]
+  @vertices ~v'''
+  # positions
+   0.5 -0.5 0.0   # bottom right
+  -0.5 -0.5 0.0   # bottom left
+   0.0  0.5 0.0   # top center
+  '''
 
   @spec run_example() :: :ok | {:error, term()}
   def run_example,

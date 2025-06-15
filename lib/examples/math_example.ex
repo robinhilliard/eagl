@@ -21,7 +21,8 @@ defmodule EAGL.Examples.Math do
     pos_3d = vec3(1.0, 2.0, 3.0)
     IO.puts("3D position: #{inspect(pos_3d)}")
 
-    color = vec4(1.0, 0.5, 0.2, 1.0)  # RGBA color
+    # RGBA color
+    color = vec4(1.0, 0.5, 0.2, 1.0)
     IO.puts("RGBA color: #{inspect(color)}")
 
     # Zero vectors
@@ -44,7 +45,8 @@ defmodule EAGL.Examples.Math do
 
     # Quaternion constructors
     IO.puts("\nQuaternion Constructors:")
-    rot_quat = quat(0.0, 0.0, 0.707, 0.707)  # 90° rotation around Z
+    # 90° rotation around Z
+    rot_quat = quat(0.0, 0.0, 0.707, 0.707)
     IO.puts("90° Z rotation: #{inspect(rot_quat)}")
 
     identity_quat = quat_identity()
@@ -59,12 +61,13 @@ defmodule EAGL.Examples.Math do
     IO.puts("3x3 Identity: #{inspect(identity_mat3)}")
 
     # Custom matrices
-    transform = mat4(
-      1.0, 0.0, 0.0, 10.0,  # Translation of 10 in X
-      0.0, 1.0, 0.0, 20.0,  # Translation of 20 in Y
-      0.0, 0.0, 1.0, 30.0,  # Translation of 30 in Z
-      0.0, 0.0, 0.0, 1.0
-    )
+    transform = ~m"""
+    1.0  0.0  0.0  10.0  # Translation of 10 in X
+    0.0  1.0  0.0  20.0  # Translation of 20 in Y
+    0.0  0.0  1.0  30.0  # Translation of 30 in Z
+    0.0  0.0  0.0   1.0
+    """
+
     IO.puts("Transform matrix: #{inspect(transform)}")
 
     IO.puts("\n=== End Constructor Examples ===\n")
@@ -79,7 +82,8 @@ defmodule EAGL.Examples.Math do
     # Create some vectors
     v1 = vec3(1.0, 2.0, 3.0)
     v2 = vec3(4.0, 5.0, 6.0)
-    v3 = vec3(1.0, 0.0, 0.0)  # Unit X vector
+    # Unit X vector
+    v3 = vec3(1.0, 0.0, 0.0)
 
     IO.puts("Vector 1: #{inspect(v1)}")
     IO.puts("Vector 2: #{inspect(v2)}")
@@ -113,15 +117,22 @@ defmodule EAGL.Examples.Math do
     IO.puts("lerp(v1, v2, 0.5) = #{inspect(vec_lerp(v1, v2, 0.5))}")
 
     # Geometric operations
-    normal = vec3(0.0, 1.0, 0.0)  # Up normal
+    # Up normal
+    normal = vec3(0.0, 1.0, 0.0)
     incident = vec3(1.0, -1.0, 0.0)
     IO.puts("\nGeometric Operations:")
-    IO.puts("reflect(#{inspect(incident)}, #{inspect(normal)}) = #{inspect(reflect(incident, normal))}")
+
+    IO.puts(
+      "reflect(#{inspect(incident)}, #{inspect(normal)}) = #{inspect(reflect(incident, normal))}"
+    )
 
     # Angle between vectors
     IO.puts("angle_between(v1, v2) = #{degrees(angle_between(v1, v2))} degrees")
     IO.puts("parallel?(v3, vec3_unit_x()) = #{parallel?(v3, vec3_unit_x())}")
-    IO.puts("perpendicular?(vec3_unit_x(), vec3_unit_y()) = #{perpendicular?(vec3_unit_x(), vec3_unit_y())}")
+
+    IO.puts(
+      "perpendicular?(vec3_unit_x(), vec3_unit_y()) = #{perpendicular?(vec3_unit_x(), vec3_unit_y())}"
+    )
 
     IO.puts("\n=== End Vector Operations Demo ===\n")
   end
@@ -134,7 +145,8 @@ defmodule EAGL.Examples.Math do
 
     # Create quaternions
     q1 = quat_identity()
-    q2 = quat_from_axis_angle(vec3_unit_z(), radians(90.0))  # 90° rotation around Z
+    # 90° rotation around Z
+    q2 = quat_from_axis_angle(vec3_unit_z(), radians(90.0))
     q3 = quat_from_euler(radians(30.0), radians(45.0), radians(60.0))
 
     IO.puts("Identity quaternion: #{inspect(q1)}")
@@ -211,11 +223,14 @@ defmodule EAGL.Examples.Math do
     combined_transform = translation |> mat4_mul(rotation_x) |> mat4_mul(scale)
     combined_inverse = mat4_inverse(combined_transform)
     combined_check = mat4_mul(combined_transform, combined_inverse)
-    IO.puts("complex_transform * complex_transform^-1 = identity? #{is_identity_matrix?(combined_check)}")
+
+    IO.puts(
+      "complex_transform * complex_transform^-1 = identity? #{is_identity_matrix?(combined_check)}"
+    )
 
     # Projection matrices
     IO.puts("\nProjection Matrices:")
-    perspective = mat4_perspective(radians(45.0), 16.0/9.0, 0.1, 100.0)
+    perspective = mat4_perspective(radians(45.0), 16.0 / 9.0, 0.1, 100.0)
     orthographic = mat4_ortho(-10.0, 10.0, -10.0, 10.0, 0.1, 100.0)
 
     IO.puts("Perspective (45° FOV, 16:9): #{inspect(perspective)}")
@@ -285,9 +300,10 @@ defmodule EAGL.Examples.Math do
     scale_mat = mat4_scale(object_scale)
 
     # Combine transformations: T * R * S
-    model_matrix = translate_mat
-                   |> mat4_mul(rotate_mat)
-                   |> mat4_mul(scale_mat)
+    model_matrix =
+      translate_mat
+      |> mat4_mul(rotate_mat)
+      |> mat4_mul(scale_mat)
 
     IO.puts("Model Matrix (T*R*S): #{inspect(model_matrix)}")
 
@@ -309,9 +325,10 @@ defmodule EAGL.Examples.Math do
     IO.puts("Projection Matrix: #{inspect(projection_matrix)}")
 
     # Final MVP matrix
-    mvp_matrix = projection_matrix
-                 |> mat4_mul(view_matrix)
-                 |> mat4_mul(model_matrix)
+    mvp_matrix =
+      projection_matrix
+      |> mat4_mul(view_matrix)
+      |> mat4_mul(model_matrix)
 
     IO.puts("MVP Matrix: #{inspect(mvp_matrix)}")
 
@@ -321,7 +338,8 @@ defmodule EAGL.Examples.Math do
 
     # Apply model transformation (simplified - would normally use homogeneous coordinates)
     rotated_vertex = quat_rotate_vec3(object_rotation, test_vertex)
-    scaled_vertex = vec_add(vec_scale(rotated_vertex, 2.0), vec_scale(vec3_zero(), 0.0))  # Simplified scaling
+    # Simplified scaling
+    scaled_vertex = vec_add(vec_scale(rotated_vertex, 2.0), vec_scale(vec3_zero(), 0.0))
     transformed_vertex = vec_add(scaled_vertex, object_position)
 
     IO.puts("After model transform: #{inspect(transformed_vertex)}")
@@ -337,7 +355,8 @@ defmodule EAGL.Examples.Math do
 
     # Scene setup
     light_direction = normalize(vec3(-1.0, -1.0, -1.0))
-    surface_normal = vec3_unit_y()  # Flat surface pointing up
+    # Flat surface pointing up
+    surface_normal = vec3_unit_y()
     view_direction = normalize(vec3(0.0, 0.0, 1.0))
 
     IO.puts("Light direction: #{inspect(light_direction)}")
@@ -358,10 +377,14 @@ defmodule EAGL.Examples.Math do
     IO.puts("Reflection vector: #{inspect(reflection_vector)}")
 
     # Calculate lighting colors
-    _light_color = vec3(1.0, 1.0, 1.0)  # White light (unused in this simple example)
-    material_diffuse = vec3(0.8, 0.2, 0.2)  # Red material
-    material_specular = vec3(1.0, 1.0, 1.0)  # White specular
-    ambient_color = vec3(0.1, 0.1, 0.1)  # Dark ambient
+    # White light (unused in this simple example)
+    _light_color = vec3(1.0, 1.0, 1.0)
+    # Red material
+    material_diffuse = vec3(0.8, 0.2, 0.2)
+    # White specular
+    material_specular = vec3(1.0, 1.0, 1.0)
+    # Dark ambient
+    ambient_color = vec3(0.1, 0.1, 0.1)
 
     final_diffuse = vec_scale(material_diffuse, diffuse_intensity)
     final_specular = vec_scale(material_specular, specular_intensity)
@@ -384,18 +407,26 @@ defmodule EAGL.Examples.Math do
 
     # Typical usage in vertex data
     vertices = [
-      vec3(-1.0, -1.0, 0.0),  # Bottom left
-      vec3(1.0, -1.0, 0.0),   # Bottom right
-              vec3(0.0, 1.0, 0.0)     # Top center
+      # Bottom left
+      vec3(-1.0, -1.0, 0.0),
+      # Bottom right
+      vec3(1.0, -1.0, 0.0),
+      # Top center
+      vec3(0.0, 1.0, 0.0)
     ]
+
     IO.puts("Triangle vertices: #{inspect(vertices)}")
 
     # Colors for each vertex
     colors = [
-      vec3(1.0, 0.0, 0.0),  # Red
-      vec3(0.0, 1.0, 0.0),  # Green
-      vec3(0.0, 0.0, 1.0)   # Blue
+      # Red
+      vec3(1.0, 0.0, 0.0),
+      # Green
+      vec3(0.0, 1.0, 0.0),
+      # Blue
+      vec3(0.0, 0.0, 1.0)
     ]
+
     IO.puts("Vertex colors: #{inspect(colors)}")
 
     # Model transformation matrices
@@ -442,10 +473,16 @@ defmodule EAGL.Examples.Math do
   end
 
   # Helper function to check if a matrix is approximately identity
-  defp is_identity_matrix?([{a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p}], tolerance \\ 1.0e-6) do
+  defp is_identity_matrix?(
+         [{a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p}],
+         tolerance \\ 1.0e-6
+       ) do
     abs(a - 1.0) < tolerance and abs(b) < tolerance and abs(c) < tolerance and abs(d) < tolerance and
-    abs(e) < tolerance and abs(f - 1.0) < tolerance and abs(g) < tolerance and abs(h) < tolerance and
-    abs(i) < tolerance and abs(j) < tolerance and abs(k - 1.0) < tolerance and abs(l) < tolerance and
-    abs(m) < tolerance and abs(n) < tolerance and abs(o) < tolerance and abs(p - 1.0) < tolerance
+      abs(e) < tolerance and abs(f - 1.0) < tolerance and abs(g) < tolerance and
+      abs(h) < tolerance and
+      abs(i) < tolerance and abs(j) < tolerance and abs(k - 1.0) < tolerance and
+      abs(l) < tolerance and
+      abs(m) < tolerance and abs(n) < tolerance and abs(o) < tolerance and
+      abs(p - 1.0) < tolerance
   end
 end

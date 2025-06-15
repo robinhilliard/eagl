@@ -82,13 +82,14 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.ShadersUniform do
 
   import EAGL.Shader
   import EAGL.Buffer
+  import EAGL.Math
 
   # Triangle vertex data (3 vertices in normalized device coordinates)
-  @vertices [
-    -0.5, -0.5, 0.0,  # left vertex
-     0.5, -0.5, 0.0,  # right vertex
-     0.0,  0.5, 0.0   # top vertex
-  ]
+  @vertices ~v'''
+  -0.5 -0.5 0.0   # left vertex
+   0.5 -0.5 0.0   # right vertex
+   0.0  0.5 0.0   # top vertex
+  '''
 
   @spec run_example() :: :ok | {:error, term()}
   def run_example,
@@ -156,7 +157,7 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.ShadersUniform do
     end
   end
 
-      @impl true
+  @impl true
   def render(viewport_width, viewport_height, {program, vao, _vbo, current_time}) do
     # Set viewport
     :gl.viewport(0, 0, trunc(viewport_width), trunc(viewport_height))
@@ -173,7 +174,7 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.ShadersUniform do
     # EAGL approach: uses time from state updated by tick handler each frame
     # Benefits: cleaner separation of state updates from rendering logic
     # Math: sin(time) oscillates -1 to 1, we map to 0.0 to 1.0 for green intensity
-    green_value = (:math.sin(current_time) / 2.0) + 0.5
+    green_value = :math.sin(current_time) / 2.0 + 0.5
 
     # Set uniform color for animated effect
     # EAGL's set_uniform() handles glGetUniformLocation + glUniform4f pattern

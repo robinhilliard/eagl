@@ -129,22 +129,23 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.Textures do
   import EAGL.Shader
   import EAGL.Buffer
   import EAGL.Texture
+  import EAGL.Math
 
   # Rectangle vertex data with positions, colors, and texture coordinates
   # Format: [x, y, z, r, g, b, s, t] per vertex
-  @vertices [
-    # positions        # colors         # texture coords
-     0.5,  0.5, 0.0,   1.0, 0.0, 0.0,   1.0, 1.0,   # top right
-     0.5, -0.5, 0.0,   0.0, 1.0, 0.0,   1.0, 0.0,   # bottom right
-    -0.5, -0.5, 0.0,   0.0, 0.0, 1.0,   0.0, 0.0,   # bottom left
-    -0.5,  0.5, 0.0,   1.0, 1.0, 0.0,   0.0, 1.0    # top left
-  ]
+  @vertices ~v'''
+  # positions        # colors         # texture coords
+   0.5  0.5 0.0  1.0 0.0 0.0  1.0 1.0   # top right
+   0.5 -0.5 0.0  0.0 1.0 0.0  1.0 0.0   # bottom right
+  -0.5 -0.5 0.0  0.0 0.0 1.0  0.0 0.0   # bottom left
+  -0.5  0.5 0.0  1.0 1.0 0.0  0.0 1.0   # top left
+  '''
 
   # Indices for drawing the rectangle using two triangles
-  @indices [
-    0, 1, 3,  # first triangle
-    1, 2, 3   # second triangle
-  ]
+  @indices ~i'''
+  0 1 3  # first triangle
+  1 2 3  # second triangle
+  '''
 
   @spec run_example() :: :ok | {:error, term()}
   def run_example,
@@ -205,7 +206,9 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.Textures do
       IO.puts("Created VAO, VBO, and EBO (rectangle with texture coordinates)")
 
       # Load texture using EAGL.Texture abstraction
-      {:ok, texture_id, width, height} = load_texture_from_file("priv/images/eagl_logo_black_on_white.jpg")
+      {:ok, texture_id, width, height} =
+        load_texture_from_file("priv/images/eagl_logo_black_on_white.jpg")
+
       IO.puts("Created texture (#{width}x#{height})")
 
       IO.puts("Ready to render - you should see an eagle attacking a teapot.")
@@ -214,13 +217,14 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.Textures do
       # OpenGL resources to track. From this example forward, we'll use maps for
       # state management instead of tuples to make the code more readable and
       # maintainable as examples grow in complexity.
-      {:ok, %{
-        program: program,
-        vao: vao,
-        vbo: vbo,
-        ebo: ebo,
-        texture_id: texture_id
-      }}
+      {:ok,
+       %{
+         program: program,
+         vao: vao,
+         vbo: vbo,
+         ebo: ebo,
+         texture_id: texture_id
+       }}
     else
       {:error, reason} ->
         IO.puts("Failed to create shader program or texture: #{reason}")

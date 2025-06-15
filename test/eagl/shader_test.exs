@@ -23,11 +23,13 @@ defmodule EAGL.ShaderTest do
         rescue
           _ -> :ok
         end
+
         try do
           :wxFrame.destroy(frame)
         rescue
           _ -> :ok
         end
+
         try do
           :application.stop(:wx)
         rescue
@@ -282,7 +284,8 @@ defmodule EAGL.ShaderTest do
 
           :gl.useProgram(program)
 
-          location = get_uniform_location(program, ~c"color")  # charlist
+          # charlist
+          location = get_uniform_location(program, ~c"color")
           assert is_integer(location)
           assert location >= -1
 

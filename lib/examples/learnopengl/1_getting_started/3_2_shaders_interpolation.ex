@@ -65,15 +65,16 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.ShadersInterpolation do
 
   import EAGL.Shader
   import EAGL.Buffer
+  import EAGL.Math
 
   # Triangle vertex data with positions and colors interleaved
   # Format: [x, y, z, r, g, b] per vertex
-  @vertices [
-    # positions        # colors
-     0.5, -0.5, 0.0,   1.0, 0.0, 0.0,  # bottom right - red
-    -0.5, -0.5, 0.0,   0.0, 1.0, 0.0,  # bottom left - green
-     0.0,  0.5, 0.0,   0.0, 0.0, 1.0   # top center - blue
-  ]
+  @vertices ~v'''
+  # positions        # colors
+   0.5 -0.5 0.0  1.0 0.0 0.0   # bottom right - red
+  -0.5 -0.5 0.0  0.0 1.0 0.0   # bottom left - green
+   0.0  0.5 0.0  0.0 0.0 1.0   # top center - blue
+  '''
 
   @spec run_example() :: :ok | {:error, term()}
   def run_example,
@@ -136,7 +137,11 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.ShadersInterpolation do
       {vao, vbo} = create_vertex_array(@vertices, attributes)
 
       IO.puts("Created VAO and VBO with position and colour attributes")
-      IO.puts("Using vertex_attributes(:position, :color) helper - automatically calculates stride and offsets")
+
+      IO.puts(
+        "Using vertex_attributes(:position, :color) helper - automatically calculates stride and offsets"
+      )
+
       IO.puts("Position: location 0, 3 floats, stride 24 bytes, offset 0")
       IO.puts("Colour: location 1, 3 floats, stride 24 bytes, offset 12")
       IO.puts("Ready to render - You should see a triangle with interpolated colours.")

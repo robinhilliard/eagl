@@ -26,10 +26,14 @@ defmodule EAGL.ObjLoader do
     try do
       # Initial accumulator for parsing
       initial_state = %{
-        vertices: [],    # Raw vertex positions
-        tex_coords: [],  # Raw texture coordinates
-        normals: [],     # Raw normals
-        faces: [],       # Face definitions
+        # Raw vertex positions
+        vertices: [],
+        # Raw texture coordinates
+        tex_coords: [],
+        # Raw normals
+        normals: [],
+        # Face definitions
+        faces: [],
         indexed_data: %{
           vertices: [],
           tex_coords: [],
@@ -67,7 +71,8 @@ defmodule EAGL.ObjLoader do
     # Texture coordinate
     coords = String.split(rest) |> Enum.map(&String.to_float/1)
     # OBJ can have 1D, 2D, or 3D texture coords. We only use 2D
-    [u, v | _] = coords ++ [0.0, 0.0]  # Default to 0.0 if missing
+    # Default to 0.0 if missing
+    [u, v | _] = coords ++ [0.0, 0.0]
     %{state | tex_coords: state.tex_coords ++ [u, v]}
   end
 
@@ -79,18 +84,20 @@ defmodule EAGL.ObjLoader do
 
   defp parse_line(<<"f ", rest::binary>>, state) do
     # Face definition
-    faces = String.split(rest)
-    |> Enum.map(fn vertex_str ->
-      # Split on / and convert to integers, handling empty strings
-      String.split(vertex_str, "/")
-      |> Enum.map(fn index_str ->
-        case index_str do
-          "" -> nil
-          str -> String.to_integer(str)
-        end
+    faces =
+      String.split(rest)
+      |> Enum.map(fn vertex_str ->
+        # Split on / and convert to integers, handling empty strings
+        String.split(vertex_str, "/")
+        |> Enum.map(fn index_str ->
+          case index_str do
+            "" -> nil
+            str -> String.to_integer(str)
+          end
+        end)
+        |> pad_vertex_data()
       end)
-      |> pad_vertex_data()
-    end)
+
     %{state | faces: state.faces ++ [faces]}
   end
 
@@ -99,34 +106,48 @@ defmodule EAGL.ObjLoader do
   # Ensure vertex data always has 3 components [v, vt, vn]
   defp pad_vertex_data(vertex_data) do
     case vertex_data do
-      [v] -> [v, nil, nil]                    # Only vertex
-      [v, vt] -> [v, vt, nil]                 # Vertex and texture
-      [v, vt, vn] -> [v, vt, vn]             # Complete data
-      [v, nil, vn] -> [v, nil, vn]           # Vertex and normal
-      _ -> [nil, nil, nil]                    # Invalid data
+      # Only vertex
+      [v] -> [v, nil, nil]
+      # Vertex and texture
+      [v, vt] -> [v, vt, nil]
+      # Complete data
+      [v, vt, vn] -> [v, vt, vn]
+      # Vertex and normal
+      [v, nil, vn] -> [v, nil, vn]
+      # Invalid data
+      _ -> [nil, nil, nil]
     end
   end
 
   # Process faces to create indexed vertex data
   defp process_faces(data, flip_normal_direction, smooth_normals) do
     # Handle smooth normals first (they override existing normals)
-    data_with_normals = cond do
-      smooth_normals ->
-        generate_smooth_normals(data, flip_normal_direction)
-      length(data.normals) == 0 ->
-        generate_face_normals(data, flip_normal_direction)
-      flip_normal_direction ->
-        flipped_normals = flip_existing_normals(data.normals)
-        %{data | normals: flipped_normals}
-      true ->
-        data
-    end
+    data_with_normals =
+      cond do
+        smooth_normals ->
+          generate_smooth_normals(data, flip_normal_direction)
+
+        length(data.normals) == 0 ->
+          generate_face_normals(data, flip_normal_direction)
+
+        flip_normal_direction ->
+          flipped_normals = flip_existing_normals(data.normals)
+          %{data | normals: flipped_normals}
+
+        true ->
+          data
+      end
 
     # Create a map to store unique vertex combinations
-    {indexed_data, _} = Enum.reduce(data_with_normals.faces, {%{vertices: [], tex_coords: [], normals: [], indices: []}, %{}}, fn face, {acc, vertex_map} ->
-      # Convert face (usually a triangle or quad) to triangles
-      process_face(face, data_with_normals, acc, vertex_map)
-    end)
+    {indexed_data, _} =
+      Enum.reduce(
+        data_with_normals.faces,
+        {%{vertices: [], tex_coords: [], normals: [], indices: []}, %{}},
+        fn face, {acc, vertex_map} ->
+          # Convert face (usually a triangle or quad) to triangles
+          process_face(face, data_with_normals, acc, vertex_map)
+        end
+      )
 
     indexed_data
   end
@@ -143,18 +164,25 @@ defmodule EAGL.ObjLoader do
 
   defp triangulate_face(face_vertices) do
     case length(face_vertices) do
-      3 -> [face_vertices]
+      3 ->
+        [face_vertices]
+
       n when n > 3 ->
         # Fan triangulation - works for convex polygons
         v1 = Enum.at(face_vertices, 0)
-        Enum.chunk_every(Enum.slice(face_vertices, 1, n-1), 2, 1, :discard)
+
+        Enum.chunk_every(Enum.slice(face_vertices, 1, n - 1), 2, 1, :discard)
         |> Enum.map(fn [v2, v3] -> [v1, v2, v3] end)
-      _ -> []  # Handle invalid faces
+
+      # Handle invalid faces
+      _ ->
+        []
     end
   end
 
   defp process_triangle(triangle, data, acc, vertex_map) do
-    Enum.reduce(triangle, {acc, vertex_map}, fn [v_idx, t_idx, n_idx], {current_acc, current_map} ->
+    Enum.reduce(triangle, {acc, vertex_map}, fn [v_idx, t_idx, n_idx],
+                                                {current_acc, current_map} ->
       # Create a unique key for this vertex combination
       vertex_key = {v_idx, t_idx, n_idx}
 
@@ -164,28 +192,32 @@ defmodule EAGL.ObjLoader do
           new_index = map_size(current_map)
 
           # Get the actual vertex data (adjust indices because OBJ is 1-based)
-          vertices = if v_idx do
-            v_offset = (v_idx - 1) * 3
-            Enum.slice(data.vertices, v_offset, 3)
-          else
-            [0.0, 0.0, 0.0]
-          end
+          vertices =
+            if v_idx do
+              v_offset = (v_idx - 1) * 3
+              Enum.slice(data.vertices, v_offset, 3)
+            else
+              [0.0, 0.0, 0.0]
+            end
 
           # Get texture coordinates if they exist
-          tex_coords = if t_idx do
-            t_offset = (t_idx - 1) * 2
-            Enum.slice(data.tex_coords, t_offset, 2)
-          else
-            [0.0, 0.0]
-          end
+          tex_coords =
+            if t_idx do
+              t_offset = (t_idx - 1) * 2
+              Enum.slice(data.tex_coords, t_offset, 2)
+            else
+              [0.0, 0.0]
+            end
 
           # Get normals if they exist
-          normals = if n_idx do
-            n_offset = (n_idx - 1) * 3
-            Enum.slice(data.normals, n_offset, 3)
-          else
-            [0.0, 1.0, 0.0]  # Default normal pointing up
-          end
+          normals =
+            if n_idx do
+              n_offset = (n_idx - 1) * 3
+              Enum.slice(data.normals, n_offset, 3)
+            else
+              # Default normal pointing up
+              [0.0, 1.0, 0.0]
+            end
 
           {
             %{
@@ -207,14 +239,15 @@ defmodule EAGL.ObjLoader do
     end)
   end
 
-    # Generate face normals when none exist in the OBJ file
+  # Generate face normals when none exist in the OBJ file
   defp generate_face_normals(data, flip_normal_direction) do
     # Calculate normals for each face
-    face_normals = Enum.map(data.faces, fn face ->
-      # Get the first triangle of the face (if it has more than 3 vertices, we use the first triangle)
-      triangle = Enum.take(face, 3)
-      calculate_face_normal(triangle, data.vertices, flip_normal_direction)
-    end)
+    face_normals =
+      Enum.map(data.faces, fn face ->
+        # Get the first triangle of the face (if it has more than 3 vertices, we use the first triangle)
+        triangle = Enum.take(face, 3)
+        calculate_face_normal(triangle, data.vertices, flip_normal_direction)
+      end)
 
     # Create a normal for each vertex in each face
     # This creates flat shading where all vertices of a face share the same normal
@@ -226,20 +259,24 @@ defmodule EAGL.ObjLoader do
 
         # Create normal entries for each vertex in this face
         face_vertex_count = length(face)
-        face_normal_indices = Enum.map(1..face_vertex_count, fn i ->
-          length(acc_normals) + i  # 1-based indexing for OBJ
-        end)
+
+        face_normal_indices =
+          Enum.map(1..face_vertex_count, fn i ->
+            # 1-based indexing for OBJ
+            length(acc_normals) + i
+          end)
 
         # Add the face normal for each vertex
         new_normals = acc_normals ++ List.duplicate(face_normal, face_vertex_count)
 
         # Update face to reference the new normals
-        updated_face = face
-        |> Enum.with_index()
-        |> Enum.map(fn {[v_idx, t_idx, _n_idx], vertex_idx} ->
-          normal_idx = Enum.at(face_normal_indices, vertex_idx)
-          [v_idx, t_idx, normal_idx]
-        end)
+        updated_face =
+          face
+          |> Enum.with_index()
+          |> Enum.map(fn {[v_idx, t_idx, _n_idx], vertex_idx} ->
+            normal_idx = Enum.at(face_normal_indices, vertex_idx)
+            [v_idx, t_idx, normal_idx]
+          end)
 
         {new_normals, acc_faces ++ [updated_face]}
       end)
@@ -260,15 +297,18 @@ defmodule EAGL.ObjLoader do
 
     # For each face, calculate its normal and add it to each vertex
     {accumulated_normals, face_counts} =
-      Enum.reduce(data.faces, {vertex_normals, vertex_face_counts}, fn face, {acc_normals, acc_counts} ->
+      Enum.reduce(data.faces, {vertex_normals, vertex_face_counts}, fn face,
+                                                                       {acc_normals, acc_counts} ->
         # Get the first triangle of the face for normal calculation
         triangle = Enum.take(face, 3)
         face_normal = calculate_face_normal(triangle, data.vertices, flip_normal_direction)
 
         # Add this face normal to each vertex in the face
         {updated_normals, updated_counts} =
-          Enum.reduce(face, {acc_normals, acc_counts}, fn [v_idx, _t_idx, _n_idx], {curr_normals, curr_counts} ->
-            list_idx = v_idx - 1  # Convert to 0-based indexing
+          Enum.reduce(face, {acc_normals, acc_counts}, fn [v_idx, _t_idx, _n_idx],
+                                                          {curr_normals, curr_counts} ->
+            # Convert to 0-based indexing
+            list_idx = v_idx - 1
 
             # Add face normal to vertex normal
             current_normal = Enum.at(curr_normals, list_idx)
@@ -291,11 +331,13 @@ defmodule EAGL.ObjLoader do
       |> Enum.with_index()
       |> Enum.map(fn {normal, idx} ->
         count = Enum.at(face_counts, idx)
+
         if count > 0 do
           averaged = divide_vector(normal, count)
           normalize_vector(averaged)
         else
-          [0.0, 1.0, 0.0]  # Default up normal
+          # Default up normal
+          [0.0, 1.0, 0.0]
         end
       end)
 
@@ -304,25 +346,28 @@ defmodule EAGL.ObjLoader do
       data.faces
       |> Enum.reduce({[], []}, fn face, {acc_normals, acc_faces} ->
         # For each vertex in the face, add its smooth normal
-        face_normal_indices = Enum.map(face, fn [v_idx, _t_idx, _n_idx] ->
-          vertex_normal = Enum.at(averaged_normals, v_idx - 1)
+        face_normal_indices =
+          Enum.map(face, fn [v_idx, _t_idx, _n_idx] ->
+            vertex_normal = Enum.at(averaged_normals, v_idx - 1)
 
-          # Add this normal to our list and get its index
-          new_normal_idx = length(acc_normals) + 1  # 1-based indexing for OBJ
-          {vertex_normal, new_normal_idx}
-        end)
+            # Add this normal to our list and get its index
+            # 1-based indexing for OBJ
+            new_normal_idx = length(acc_normals) + 1
+            {vertex_normal, new_normal_idx}
+          end)
 
         # Extract normals and indices
         {face_normals, normal_indices} = Enum.unzip(face_normal_indices)
         new_normals = acc_normals ++ face_normals
 
         # Update face to reference the new normals
-        updated_face = face
-        |> Enum.with_index()
-        |> Enum.map(fn {[v_idx, t_idx, _n_idx], vertex_idx} ->
-          normal_idx = Enum.at(normal_indices, vertex_idx)
-          [v_idx, t_idx, normal_idx]
-        end)
+        updated_face =
+          face
+          |> Enum.with_index()
+          |> Enum.map(fn {[v_idx, t_idx, _n_idx], vertex_idx} ->
+            normal_idx = Enum.at(normal_indices, vertex_idx)
+            [v_idx, t_idx, normal_idx]
+          end)
 
         {new_normals, acc_faces ++ [updated_face]}
       end)
@@ -349,11 +394,14 @@ defmodule EAGL.ObjLoader do
 
     # Calculate cross product to get normal
     # Default (false) uses edge1 × edge2 which works correctly for CCW-wound faces
-    normal = if flip_normal_direction do
-      cross_product(edge2, edge1)  # Flipped: edge2 × edge1
-    else
-      cross_product(edge1, edge2)  # Standard: edge1 × edge2 for CCW faces
-    end
+    normal =
+      if flip_normal_direction do
+        # Flipped: edge2 × edge1
+        cross_product(edge2, edge1)
+      else
+        # Standard: edge1 × edge2 for CCW faces
+        cross_product(edge1, edge2)
+      end
 
     normalize_vector(normal)
   end
@@ -361,6 +409,7 @@ defmodule EAGL.ObjLoader do
   # Helper functions for vector math
   defp get_vertex_position(vertex_idx, vertices) do
     offset = (vertex_idx - 1) * 3
+
     [
       Enum.at(vertices, offset) || 0.0,
       Enum.at(vertices, offset + 1) || 0.0,
@@ -390,10 +439,12 @@ defmodule EAGL.ObjLoader do
 
   defp normalize_vector([x, y, z]) do
     length = :math.sqrt(x * x + y * y + z * z)
-    if length > 0.0001 do  # Avoid division by zero
+    # Avoid division by zero
+    if length > 0.0001 do
       [x / length, y / length, z / length]
     else
-      [0.0, 1.0, 0.0]  # Default up normal if zero length
+      # Default up normal if zero length
+      [0.0, 1.0, 0.0]
     end
   end
 
@@ -401,6 +452,4 @@ defmodule EAGL.ObjLoader do
   defp flip_existing_normals(normals) do
     Enum.map(normals, fn component -> -component end)
   end
-
-
 end

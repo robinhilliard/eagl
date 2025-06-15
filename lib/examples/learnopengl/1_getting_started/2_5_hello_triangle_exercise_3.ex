@@ -75,20 +75,21 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.HelloTriangleExercise3 do
 
   import EAGL.Shader
   import EAGL.Buffer
+  import EAGL.Math
 
   # First triangle (left side)
-  @first_triangle [
-    -0.9, -0.5, 0.0,  # left
-    -0.0, -0.5, 0.0,  # right
-    -0.45, 0.5, 0.0   # top
-  ]
+  @first_triangle ~v'''
+  -0.9 -0.5 0.0   # left
+  -0.0 -0.5 0.0   # right
+  -0.45 0.5 0.0   # top
+  '''
 
   # Second triangle (right side)
-  @second_triangle [
-    0.0, -0.5, 0.0,   # left
-    0.9, -0.5, 0.0,   # right
-    0.45, 0.5, 0.0    # top
-  ]
+  @second_triangle ~v'''
+   0.0 -0.5 0.0   # left
+   0.9 -0.5 0.0   # right
+   0.45 0.5 0.0   # top
+  '''
 
   @spec run_example() :: :ok | {:error, term()}
   def run_example,

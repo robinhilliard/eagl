@@ -74,15 +74,16 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.ShadersExercise2 do
 
   import EAGL.Shader
   import EAGL.Buffer
+  import EAGL.Math
 
   # Same triangle vertex data as previous examples - offset applied via uniform
   # Format: [x, y, z, r, g, b] per vertex
-  @vertices [
-    # positions        # colors
-     0.5, -0.5, 0.0,   1.0, 0.0, 0.0,  # bottom right - red
-    -0.5, -0.5, 0.0,   0.0, 1.0, 0.0,  # bottom left - green
-     0.0,  0.5, 0.0,   0.0, 0.0, 1.0   # top center - blue
-  ]
+  @vertices ~v'''
+  # positions        # colors
+   0.5 -0.5 0.0  1.0 0.0 0.0   # bottom right - red
+  -0.5 -0.5 0.0  0.0 1.0 0.0   # bottom left - green
+   0.0  0.5 0.0  0.0 0.0 1.0   # top center - blue
+  '''
 
   # Horizontal offset to move triangle to the right
   @x_offset 0.5

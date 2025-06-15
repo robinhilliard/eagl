@@ -23,11 +23,13 @@ defmodule EAGL.TextureTest do
         rescue
           _ -> :ok
         end
+
         try do
           :wxFrame.destroy(frame)
         rescue
           _ -> :ok
         end
+
         try do
           :application.stop(:wx)
         rescue
@@ -91,12 +93,13 @@ defmodule EAGL.TextureTest do
         {:ok, texture_id} = create_texture()
         :gl.bindTexture(@gl_texture_2d, texture_id)
 
-        assert :ok = set_texture_parameters(
-          wrap_s: :clamp_to_edge,
-          wrap_t: :clamp_to_edge,
-          min_filter: :nearest,
-          mag_filter: :nearest
-        )
+        assert :ok =
+                 set_texture_parameters(
+                   wrap_s: :clamp_to_edge,
+                   wrap_t: :clamp_to_edge,
+                   min_filter: :nearest,
+                   mag_filter: :nearest
+                 )
 
         # Clean up
         :gl.deleteTextures([texture_id])
@@ -114,10 +117,22 @@ defmodule EAGL.TextureTest do
 
         # Create simple 2x2 RGB test data (red, green, blue, white)
         pixel_data = <<
-          255, 0, 0,    # Red
-          0, 255, 0,    # Green
-          0, 0, 255,    # Blue
-          255, 255, 255 # White
+          # Red
+          255,
+          0,
+          0,
+          # Green
+          0,
+          255,
+          0,
+          # Blue
+          0,
+          0,
+          255,
+          # White
+          255,
+          255,
+          255
         >>
 
         assert :ok = load_texture_data(2, 2, pixel_data, format: :rgb)
@@ -136,16 +151,33 @@ defmodule EAGL.TextureTest do
 
         # Create simple 2x2 RGBA test data
         pixel_data = <<
-          255, 0, 0, 255,     # Red, opaque
-          0, 255, 0, 128,     # Green, semi-transparent
-          0, 0, 255, 255,     # Blue, opaque
-          255, 255, 255, 0    # White, transparent
+          # Red, opaque
+          255,
+          0,
+          0,
+          255,
+          # Green, semi-transparent
+          0,
+          255,
+          0,
+          128,
+          # Blue, opaque
+          0,
+          0,
+          255,
+          255,
+          # White, transparent
+          255,
+          255,
+          255,
+          0
         >>
 
-        assert :ok = load_texture_data(2, 2, pixel_data,
-          internal_format: :rgba,
-          format: :rgba
-        )
+        assert :ok =
+                 load_texture_data(2, 2, pixel_data,
+                   internal_format: :rgba,
+                   format: :rgba
+                 )
 
         # Clean up
         :gl.deleteTextures([texture_id])
@@ -239,7 +271,9 @@ defmodule EAGL.TextureTest do
         png_path = "priv/images/eagl_logo_black_on_white.png"
 
         if File.exists?(png_path) do
-          assert {:ok, texture_id, width, height} = load_texture_from_file(png_path, flip_y: false)
+          assert {:ok, texture_id, width, height} =
+                   load_texture_from_file(png_path, flip_y: false)
+
           assert is_integer(texture_id)
           assert texture_id > 0
           assert width == 418
@@ -255,7 +289,9 @@ defmodule EAGL.TextureTest do
       end
     end
 
-    test "load_texture_from_file with non-existent file falls back to checkerboard", %{gl_available: gl_available} do
+    test "load_texture_from_file with non-existent file falls back to checkerboard", %{
+      gl_available: gl_available
+    } do
       if gl_available do
         # This should fall back to checkerboard texture
         assert {:ok, texture_id, width, height} = load_texture_from_file("non_existent_image.jpg")
@@ -275,11 +311,13 @@ defmodule EAGL.TextureTest do
     test "load_texture_from_file with custom fallback parameters", %{gl_available: gl_available} do
       if gl_available do
         # Test fallback with custom parameters
-        assert {:ok, texture_id, width, height} = load_texture_from_file(
-          "non_existent_image.jpg",
-          fallback_size: 128,
-          fallback_square_size: 16
-        )
+        assert {:ok, texture_id, width, height} =
+                 load_texture_from_file(
+                   "non_existent_image.jpg",
+                   fallback_size: 128,
+                   fallback_square_size: 16
+                 )
+
         assert is_integer(texture_id)
         assert texture_id > 0
         assert width == 128
@@ -383,15 +421,17 @@ defmodule EAGL.TextureTest do
         assert {:ok, texture_id} = create_texture()
         :gl.bindTexture(@gl_texture_2d, texture_id)
 
-        assert :ok = set_texture_parameters(
-          wrap_s: :repeat,
-          wrap_t: :repeat,
-          min_filter: :linear,
-          mag_filter: :linear
-        )
+        assert :ok =
+                 set_texture_parameters(
+                   wrap_s: :repeat,
+                   wrap_t: :repeat,
+                   min_filter: :linear,
+                   mag_filter: :linear
+                 )
 
         # Create simple test data
-        pixel_data = <<255, 0, 0, 0, 255, 0, 0, 0, 255>>  # 3x1 RGB strip
+        # 3x1 RGB strip
+        pixel_data = <<255, 0, 0, 0, 255, 0, 0, 0, 255>>
         assert :ok = load_texture_data(3, 1, pixel_data, format: :rgb)
 
         # Generate mipmaps

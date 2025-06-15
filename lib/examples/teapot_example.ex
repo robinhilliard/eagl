@@ -18,7 +18,12 @@ defmodule EAGL.Examples.Teapot do
   @fragment_source_file "fragment_shader_phong_porcelain.glsl"
 
   @spec run_example() :: :ok | {:error, term()}
-  def run_example, do: EAGL.Window.run(__MODULE__, "EaGL Utah Teapot Example", depth_testing: true, return_to_exit: true)
+  def run_example,
+    do:
+      EAGL.Window.run(__MODULE__, "EaGL Utah Teapot Example",
+        depth_testing: true,
+        return_to_exit: true
+      )
 
   @impl true
   def setup do
@@ -27,7 +32,6 @@ defmodule EAGL.Examples.Teapot do
          {:ok, fragment_phong} <- create_shader(:fragment, @fragment_source_file),
          {:ok, program} <- create_attach_link([vertex_phong, fragment_phong]),
          {:ok, model} <- load_model_to_vao("teapot.obj") do
-
       # State: {program, model, time}
       {:ok, {program, model, :erlang.monotonic_time(:millisecond)}}
     end
@@ -54,29 +58,38 @@ defmodule EAGL.Examples.Teapot do
     :gl.polygonMode(@gl_front_and_back, @gl_fill)
 
     # Common transformation matrices
-    model_matrix =mat4_rotate_y(time / -@teapot_360_rotation_ms)
+    model_matrix = mat4_rotate_y(time / -@teapot_360_rotation_ms)
     camera_position = vec3(0.0, 4.0, -8.0)
-    view_matrix = mat4_look_at(
-      camera_position,          # camera position
-      vec3(0.0, 1.0, 0.0),     # camera target
-      vec3(0.0, 1.0, 0.0)      # camera up vector
-    )
+
+    view_matrix =
+      mat4_look_at(
+        # camera position
+        camera_position,
+        # camera target
+        vec3(0.0, 1.0, 0.0),
+        # camera up vector
+        vec3(0.0, 1.0, 0.0)
+      )
 
     # Guard against division by zero
     aspect_ratio = if viewport_height > 0, do: viewport_width / viewport_height, else: 1.0
     projection_matrix = mat4_perspective(radians(45.0), aspect_ratio, 1.0, 20.0)
-    light_position = mat4_rotate_y(time / @light_360_rotation_ms) |> mat4_transform_point(vec3(4.0, 4.0, -4.0))
-    light_color = vec3(1.0, 1.0, 1.0)  # White light
+
+    light_position =
+      mat4_rotate_y(time / @light_360_rotation_ms) |> mat4_transform_point(vec3(4.0, 4.0, -4.0))
+
+    # White light
+    light_color = vec3(1.0, 1.0, 1.0)
 
     # Set all uniforms at once using helper function
-    set_uniforms(program, [
+    set_uniforms(program,
       model: model_matrix,
       view: view_matrix,
       projection: projection_matrix,
       light_position: light_position,
       light_color: light_color,
       camera_position: camera_position
-    ])
+    )
 
     # Render the model
     :gl.bindVertexArray(model.vao)
@@ -88,8 +101,6 @@ defmodule EAGL.Examples.Teapot do
   def handle_event(:tick, {program, model, _time}) do
     {:ok, {program, model, :erlang.monotonic_time(:millisecond)}}
   end
-
-
 
   @impl true
   def cleanup({program, model, _time}) do

@@ -57,10 +57,16 @@ defmodule EAGL.Texture do
 
   @type texture_id :: non_neg_integer()
   @type wrap_mode :: :repeat | :mirrored_repeat | :clamp_to_edge | :clamp_to_border
-  @type filter_mode :: :nearest | :linear | :nearest_mipmap_nearest | :linear_mipmap_nearest |
-                       :nearest_mipmap_linear | :linear_mipmap_linear
+  @type filter_mode ::
+          :nearest
+          | :linear
+          | :nearest_mipmap_nearest
+          | :linear_mipmap_nearest
+          | :nearest_mipmap_linear
+          | :linear_mipmap_linear
   @type texture_format :: :red | :rg | :rgb | :rgba | :depth_component | :depth_stencil
-  @type pixel_type :: :unsigned_byte | :byte | :unsigned_short | :short | :unsigned_int | :int | :float
+  @type pixel_type ::
+          :unsigned_byte | :byte | :unsigned_short | :short | :unsigned_int | :int | :float
 
   @doc """
   Creates a new texture object and returns its ID.
@@ -172,7 +178,8 @@ defmodule EAGL.Texture do
       texture_format_to_gl(internal_format),
       width,
       height,
-      0,  # border (must be 0)
+      # border (must be 0)
+      0,
       texture_format_to_gl(format),
       pixel_type_to_gl(type),
       pixel_data
@@ -207,7 +214,7 @@ defmodule EAGL.Texture do
       {:ok, texture_id, width, height} = load_texture_from_file("container.jpg", flip_y: false)
   """
   @spec load_texture_from_file(String.t(), keyword()) ::
-    {:ok, texture_id(), pos_integer(), pos_integer()} | {:error, String.t()}
+          {:ok, texture_id(), pos_integer(), pos_integer()} | {:error, String.t()}
   def load_texture_from_file(file_path, opts \\ []) do
     flip_y = Keyword.get(opts, :flip_y, true)
     fallback_size = Keyword.get(opts, :fallback_size, 256)
@@ -221,13 +228,14 @@ defmodule EAGL.Texture do
           :gl.bindTexture(@gl_texture_2d, texture_id)
 
           # Determine format based on channels
-          format = case channels do
-            1 -> :red
-            2 -> :rg
-            3 -> :rgb
-            4 -> :rgba
-            _ -> :rgb
-          end
+          format =
+            case channels do
+              1 -> :red
+              2 -> :rg
+              3 -> :rgb
+              4 -> :rgba
+              _ -> :rgb
+            end
 
           set_texture_parameters(
             wrap_s: :repeat,
@@ -243,6 +251,7 @@ defmodule EAGL.Texture do
             internal_format: format,
             format: format
           )
+
           :gl.generateMipmap(@gl_texture_2d)
 
           {:ok, texture_id, width, height}
@@ -260,6 +269,7 @@ defmodule EAGL.Texture do
         Error: #{reason}
         Falling back to checkerboard texture...
         """)
+
         create_checkerboard_texture(fallback_size, fallback_square_size)
     end
   end
@@ -279,7 +289,7 @@ defmodule EAGL.Texture do
       {:ok, texture_id, width, height} = create_checkerboard_texture(128, 16)
   """
   @spec create_checkerboard_texture(pos_integer(), pos_integer()) ::
-    {:ok, texture_id(), pos_integer(), pos_integer()} | {:error, String.t()}
+          {:ok, texture_id(), pos_integer(), pos_integer()} | {:error, String.t()}
   def create_checkerboard_texture(size \\ 256, square_size \\ 32) do
     try do
       # Generate checkerboard pattern
@@ -364,18 +374,21 @@ defmodule EAGL.Texture do
 
   # Load image using stb_image if available
   @spec load_image_with_stb(String.t(), boolean()) ::
-    {:ok, pos_integer(), pos_integer(), binary(), pos_integer()} | {:error, atom() | String.t()}
+          {:ok, pos_integer(), pos_integer(), binary(), pos_integer()}
+          | {:error, atom() | String.t()}
   defp load_image_with_stb(file_path, flip_y) do
     if Code.ensure_loaded?(StbImage) do
       try do
         case StbImage.read_file(file_path, desired_channels: 0) do
           {:ok, %StbImage{data: pixel_data, shape: {width, height, channels}}} ->
             # Flip Y if requested (OpenGL convention)
-            final_data = if flip_y do
-              flip_image_vertically(pixel_data, width, height, channels)
-            else
-              pixel_data
-            end
+            final_data =
+              if flip_y do
+                flip_image_vertically(pixel_data, width, height, channels)
+              else
+                pixel_data
+              end
+
             {:ok, width, height, final_data, channels}
 
           {:error, reason} ->
@@ -395,10 +408,11 @@ defmodule EAGL.Texture do
     bytes_per_row = width * channels
 
     # Convert binary to list of rows, reverse, then back to binary
-    rows = for row <- 0..(height - 1) do
-      start_byte = row * bytes_per_row
-      :binary.part(pixel_data, start_byte, bytes_per_row)
-    end
+    rows =
+      for row <- 0..(height - 1) do
+        start_byte = row * bytes_per_row
+        :binary.part(pixel_data, start_byte, bytes_per_row)
+      end
 
     rows
     |> Enum.reverse()

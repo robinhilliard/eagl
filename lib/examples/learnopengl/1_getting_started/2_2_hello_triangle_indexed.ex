@@ -68,23 +68,24 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.HelloTriangleIndexed do
 
   import EAGL.Shader
   import EAGL.Buffer
+  import EAGL.Math
 
   # Rectangle vertex data (4 vertices shared between 2 triangles)
-  @vertices [
-    0.5,  0.5, 0.0,   # top right    (index 0)
-    0.5, -0.5, 0.0,   # bottom right (index 1)
-   -0.5, -0.5, 0.0,   # bottom left  (index 2)
-   -0.5,  0.5, 0.0    # top left     (index 3)
-  ]
+  @vertices ~v'''
+   0.5  0.5 0.0   # top right    (index 0)
+   0.5 -0.5 0.0   # bottom right (index 1)
+  -0.5 -0.5 0.0   # bottom left  (index 2)
+  -0.5  0.5 0.0   # top left     (index 3)
+  '''
 
   # Indices for two triangles forming a rectangle
   # Note: we can reuse vertices!
   # First triangle: 0, 1, 3 (top-right, bottom-right, top-left)
   # Second triangle: 1, 2, 3 (bottom-right, bottom-left, top-left)
-  @indices [
-    0, 1, 3,  # first triangle
-    1, 2, 3   # second triangle
-  ]
+  @indices ~i'''
+  0 1 3  # first triangle
+  1 2 3  # second triangle
+  '''
 
   @spec run_example() :: :ok | {:error, term()}
   def run_example,

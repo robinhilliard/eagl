@@ -83,22 +83,23 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.TexturesCombined do
   import EAGL.Buffer
   import EAGL.Texture
   import EAGL.Error
+  import EAGL.Math
 
   # Rectangle vertex data with positions, colors, and texture coordinates
   # Format: [x, y, z, r, g, b, s, t] per vertex
-  @vertices [
-    # positions        # colors         # texture coords
-     0.5,  0.5, 0.0,   1.0, 0.0, 0.0,   1.0, 1.0,   # top right
-     0.5, -0.5, 0.0,   0.0, 1.0, 0.0,   1.0, 0.0,   # bottom right
-    -0.5, -0.5, 0.0,   0.0, 0.0, 1.0,   0.0, 0.0,   # bottom left
-    -0.5,  0.5, 0.0,   1.0, 1.0, 0.0,   0.0, 1.0    # top left
-  ]
+  @vertices ~v'''
+  # positions        # colors         # texture coords
+   0.5  0.5 0.0  1.0 0.0 0.0  1.0 1.0   # top right
+   0.5 -0.5 0.0  0.0 1.0 0.0  1.0 0.0   # bottom right
+  -0.5 -0.5 0.0  0.0 0.0 1.0  0.0 0.0   # bottom left
+  -0.5  0.5 0.0  1.0 1.0 0.0  0.0 1.0   # top left
+  '''
 
   # Indices for drawing the rectangle using two triangles
-  @indices [
-    0, 1, 3,  # first triangle
-    1, 2, 3   # second triangle
-  ]
+  @indices ~i'''
+  0 1 3  # first triangle
+  1 2 3  # second triangle
+  '''
 
   @spec run_example() :: :ok | {:error, term()}
   def run_example,
@@ -160,7 +161,9 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.TexturesCombined do
       IO.puts("Created VAO, VBO, and EBO (rectangle with texture coordinates)")
 
       # Load first texture
-      {:ok, texture1_id, width, height} = load_texture_from_file("priv/images/eagl_logo_black_on_white.jpg")
+      {:ok, texture1_id, width, height} =
+        load_texture_from_file("priv/images/eagl_logo_black_on_white.jpg")
+
       IO.puts("Loaded texture 1: (#{width}x#{height})")
 
       # Load second texture - create a different pattern for contrast
@@ -173,23 +176,26 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.TexturesCombined do
       # Set sampler uniforms to specify texture units
       # texture1 will use texture unit 0 (GL_TEXTURE0)
       # texture2 will use texture unit 1 (GL_TEXTURE1)
-      set_uniforms(program, [
-        texture1: 0,  # GL_TEXTURE0
-        texture2: 1   # GL_TEXTURE1
-      ])
+      set_uniforms(program,
+        # GL_TEXTURE0
+        texture1: 0,
+        # GL_TEXTURE1
+        texture2: 1
+      )
 
       IO.puts("Set texture uniforms: texture1=unit 0, texture2=unit 1")
 
       check("After texture setup")
 
-      {:ok, %{
-        program: program,
-        vao: vao,
-        vbo: vbo,
-        ebo: ebo,
-        texture1_id: texture1_id,
-        texture2_id: texture2_id
-      }}
+      {:ok,
+       %{
+         program: program,
+         vao: vao,
+         vbo: vbo,
+         ebo: ebo,
+         texture1_id: texture1_id,
+         texture2_id: texture2_id
+       }}
     else
       error ->
         IO.puts("Failed to set up shaders: #{inspect(error)}")

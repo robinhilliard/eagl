@@ -13,8 +13,6 @@ defmodule EAGL.MathTest do
     assert_float_equal(z1, z2, tolerance)
   end
 
-
-
   defp assert_quat_equal([{x1, y1, z1, w1}], [{x2, y2, z2, w2}], tolerance \\ 1.0e-6) do
     assert_float_equal(x1, x2, tolerance)
     assert_float_equal(y1, y2, tolerance)
@@ -97,7 +95,11 @@ defmodule EAGL.MathTest do
 
     test "mat4_identity" do
       m = mat4_identity()
-      expected = [{1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0}]
+
+      expected = [
+        {1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0}
+      ]
+
       assert m == expected
     end
   end
@@ -133,25 +135,31 @@ defmodule EAGL.MathTest do
       v1 = vec2(1.0, 2.0)
       v2 = vec2(3.0, 4.0)
       result = dot(v1, v2)
-      assert_float_equal(result, 11.0)  # 1*3 + 2*4 = 11
+      # 1*3 + 2*4 = 11
+      assert_float_equal(result, 11.0)
     end
 
     test "dot product 3D" do
       v1 = vec3(1.0, 2.0, 3.0)
       v2 = vec3(4.0, 5.0, 6.0)
       result = dot(v1, v2)
-      assert_float_equal(result, 32.0)  # 1*4 + 2*5 + 3*6 = 32
+      # 1*4 + 2*5 + 3*6 = 32
+      assert_float_equal(result, 32.0)
     end
 
     test "cross product" do
-      v1 = vec3(1.0, 0.0, 0.0)  # X axis
-      v2 = vec3(0.0, 1.0, 0.0)  # Y axis
+      # X axis
+      v1 = vec3(1.0, 0.0, 0.0)
+      # Y axis
+      v2 = vec3(0.0, 1.0, 0.0)
       result = cross(v1, v2)
-      assert_vec3_equal(result, [{0.0, 0.0, 1.0}])  # Should give Z axis
+      # Should give Z axis
+      assert_vec3_equal(result, [{0.0, 0.0, 1.0}])
     end
 
     test "vec_length" do
-      v = vec3(3.0, 4.0, 0.0)  # 3-4-5 triangle
+      # 3-4-5 triangle
+      v = vec3(3.0, 4.0, 0.0)
       result = vec_length(v)
       assert_float_equal(result, 5.0)
     end
@@ -159,7 +167,8 @@ defmodule EAGL.MathTest do
     test "length_squared" do
       v = vec3(3.0, 4.0, 0.0)
       result = length_squared(v)
-      assert_float_equal(result, 25.0)  # 3² + 4² = 25
+      # 3² + 4² = 25
+      assert_float_equal(result, 25.0)
     end
 
     test "normalize" do
@@ -192,34 +201,45 @@ defmodule EAGL.MathTest do
     end
 
     test "reflect" do
-      incident = normalize(vec3(1.0, -1.0, 0.0))  # 45° downward
-      normal = vec3(0.0, 1.0, 0.0)  # Up normal
+      # 45° downward
+      incident = normalize(vec3(1.0, -1.0, 0.0))
+      # Up normal
+      normal = vec3(0.0, 1.0, 0.0)
       result = reflect(incident, normal)
-      expected = normalize(vec3(1.0, 1.0, 0.0))  # Should reflect upward
+      # Should reflect upward
+      expected = normalize(vec3(1.0, 1.0, 0.0))
       assert_vec3_equal(result, expected)
     end
 
     test "angle_between" do
-      v1 = vec3(1.0, 0.0, 0.0)  # X axis
-      v2 = vec3(0.0, 1.0, 0.0)  # Y axis
+      # X axis
+      v1 = vec3(1.0, 0.0, 0.0)
+      # Y axis
+      v2 = vec3(0.0, 1.0, 0.0)
       result = angle_between(v1, v2)
-      expected = :math.pi() / 2  # 90 degrees in radians
+      # 90 degrees in radians
+      expected = :math.pi() / 2
       assert_float_equal(result, expected)
     end
 
     test "parallel?" do
       v1 = vec3(1.0, 0.0, 0.0)
-      v2 = vec3(2.0, 0.0, 0.0)  # Same direction, different magnitude
-      v3 = vec3(0.0, 1.0, 0.0)  # Perpendicular
+      # Same direction, different magnitude
+      v2 = vec3(2.0, 0.0, 0.0)
+      # Perpendicular
+      v3 = vec3(0.0, 1.0, 0.0)
 
       assert parallel?(v1, v2) == true
       assert parallel?(v1, v3) == false
     end
 
     test "perpendicular?" do
-      v1 = vec3(1.0, 0.0, 0.0)  # X axis
-      v2 = vec3(0.0, 1.0, 0.0)  # Y axis (perpendicular)
-      v3 = vec3(1.0, 0.0, 0.0)  # Same direction
+      # X axis
+      v1 = vec3(1.0, 0.0, 0.0)
+      # Y axis (perpendicular)
+      v2 = vec3(0.0, 1.0, 0.0)
+      # Same direction
+      v3 = vec3(1.0, 0.0, 0.0)
 
       assert perpendicular?(v1, v2) == true
       assert perpendicular?(v1, v3) == false
@@ -233,7 +253,7 @@ defmodule EAGL.MathTest do
 
       # Check that the magnitude is 1
       [{x, y, z, w}] = result
-      magnitude = :math.sqrt(x*x + y*y + z*z + w*w)
+      magnitude = :math.sqrt(x * x + y * y + z * z + w * w)
       assert_float_equal(magnitude, 1.0)
     end
 
@@ -264,7 +284,8 @@ defmodule EAGL.MathTest do
     test "quat_rotate_vec3" do
       # 90° rotation around Z axis
       q = quat_from_axis_angle(vec3_unit_z(), radians(90.0))
-      v = vec3(1.0, 0.0, 0.0)  # X axis
+      # X axis
+      v = vec3(1.0, 0.0, 0.0)
       result = quat_rotate_vec3(q, v)
 
       # Should rotate X axis to Y axis
@@ -290,31 +311,74 @@ defmodule EAGL.MathTest do
 
   describe "Matrix Operations" do
     test "mat4_mul with identity" do
-      m = mat4(
-        1.0, 2.0, 3.0, 4.0,
-        5.0, 6.0, 7.0, 8.0,
-        9.0, 10.0, 11.0, 12.0,
-        13.0, 14.0, 15.0, 16.0
-      )
+      m =
+        mat4(
+          1.0,
+          2.0,
+          3.0,
+          4.0,
+          5.0,
+          6.0,
+          7.0,
+          8.0,
+          9.0,
+          10.0,
+          11.0,
+          12.0,
+          13.0,
+          14.0,
+          15.0,
+          16.0
+        )
+
       identity = mat4_identity()
       result = mat4_mul(m, identity)
       assert result == m
     end
 
     test "mat4_transpose" do
-      m = mat4(
-        1.0, 2.0, 3.0, 4.0,
-        5.0, 6.0, 7.0, 8.0,
-        9.0, 10.0, 11.0, 12.0,
-        13.0, 14.0, 15.0, 16.0
-      )
+      m =
+        mat4(
+          1.0,
+          2.0,
+          3.0,
+          4.0,
+          5.0,
+          6.0,
+          7.0,
+          8.0,
+          9.0,
+          10.0,
+          11.0,
+          12.0,
+          13.0,
+          14.0,
+          15.0,
+          16.0
+        )
+
       result = mat4_transpose(m)
-      expected = mat4(
-        1.0, 5.0, 9.0, 13.0,
-        2.0, 6.0, 10.0, 14.0,
-        3.0, 7.0, 11.0, 15.0,
-        4.0, 8.0, 12.0, 16.0
-      )
+
+      expected =
+        mat4(
+          1.0,
+          5.0,
+          9.0,
+          13.0,
+          2.0,
+          6.0,
+          10.0,
+          14.0,
+          3.0,
+          7.0,
+          11.0,
+          15.0,
+          4.0,
+          8.0,
+          12.0,
+          16.0
+        )
+
       assert result == expected
     end
 
@@ -322,28 +386,57 @@ defmodule EAGL.MathTest do
       translation = vec3(10.0, 20.0, 30.0)
       result = mat4_translate(translation)
       # Column-major format: translation is in the 4th column (last 4 elements)
-      expected = mat4(
-        1.0, 0.0, 0.0, 0.0,
-        0.0, 1.0, 0.0, 0.0,
-        0.0, 0.0, 1.0, 0.0,
-        10.0, 20.0, 30.0, 1.0
-      )
+      expected =
+        mat4(
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          10.0,
+          20.0,
+          30.0,
+          1.0
+        )
+
       assert result == expected
     end
 
     test "mat4_scale" do
       scale_vec = vec3(2.0, 3.0, 4.0)
       result = mat4_scale(scale_vec)
-      expected = mat4(
-        2.0, 0.0, 0.0, 0.0,
-        0.0, 3.0, 0.0, 0.0,
-        0.0, 0.0, 4.0, 0.0,
-        0.0, 0.0, 0.0, 1.0
-      )
+
+      expected =
+        mat4(
+          2.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          3.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          4.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        )
+
       assert result == expected
     end
 
-        test "mat4_rotate_x for 90 degrees" do
+    test "mat4_rotate_x for 90 degrees" do
       angle = radians(90.0)
       result = mat4_rotate_x(angle)
 
@@ -351,13 +444,20 @@ defmodule EAGL.MathTest do
       # Matrix is stored in column-major order: [col0, col1, col2, col3]
       [{a, b, c, _d, _e, f, g, _h, _i, j, k, _l, _m, _n, _o, _p}] = result
 
-      assert_float_equal(a, 1.0)  # [0,0] - should be 1
-      assert_float_equal(f, 0.0, 1.0e-15)  # [1,1] = cos(90°) ≈ 0
-      assert_float_equal(g, 1.0)  # [2,1] = sin(90°) = 1 (column-major)
-      assert_float_equal(b, 0.0, 1.0e-15)  # [1,0] = 0
-      assert_float_equal(c, 0.0, 1.0e-15)  # [2,0] = 0
-      assert_float_equal(j, -1.0) # [1,2] = -sin(90°) = -1 (column-major)
-      assert_float_equal(k, 0.0, 1.0e-15)  # [2,2] = cos(90°) ≈ 0
+      # [0,0] - should be 1
+      assert_float_equal(a, 1.0)
+      # [1,1] = cos(90°) ≈ 0
+      assert_float_equal(f, 0.0, 1.0e-15)
+      # [2,1] = sin(90°) = 1 (column-major)
+      assert_float_equal(g, 1.0)
+      # [1,0] = 0
+      assert_float_equal(b, 0.0, 1.0e-15)
+      # [2,0] = 0
+      assert_float_equal(c, 0.0, 1.0e-15)
+      # [1,2] = -sin(90°) = -1 (column-major)
+      assert_float_equal(j, -1.0)
+      # [2,2] = cos(90°) ≈ 0
+      assert_float_equal(k, 0.0, 1.0e-15)
     end
 
     test "mat4_inverse of identity" do
@@ -422,12 +522,25 @@ defmodule EAGL.MathTest do
 
     test "mat4_inverse of singular matrix returns original" do
       # Create a matrix with zero determinant (all elements zero except last)
-      singular = mat4(
-        0.0, 0.0, 0.0, 0.0,
-        0.0, 0.0, 0.0, 0.0,
-        0.0, 0.0, 0.0, 0.0,
-        0.0, 0.0, 0.0, 1.0
-      )
+      singular =
+        mat4(
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        )
 
       result = mat4_inverse(singular)
       # Should return the original matrix since it's not invertible
@@ -463,10 +576,10 @@ defmodule EAGL.MathTest do
 
   # Helper function to compare matrices with floating point tolerance
   defp assert_matrices_equal(
-    [{a1, b1, c1, d1, e1, f1, g1, h1, i1, j1, k1, l1, m1, n1, o1, p1}],
-    [{a2, b2, c2, d2, e2, f2, g2, h2, i2, j2, k2, l2, m2, n2, o2, p2}],
-    tolerance \\ 1.0e-6
-  ) do
+         [{a1, b1, c1, d1, e1, f1, g1, h1, i1, j1, k1, l1, m1, n1, o1, p1}],
+         [{a2, b2, c2, d2, e2, f2, g2, h2, i2, j2, k2, l2, m2, n2, o2, p2}],
+         tolerance \\ 1.0e-6
+       ) do
     assert_float_equal(a1, a2, tolerance)
     assert_float_equal(b1, b2, tolerance)
     assert_float_equal(c1, c2, tolerance)
@@ -537,13 +650,16 @@ defmodule EAGL.MathTest do
     end
 
     test "step" do
-      assert_float_equal(step(5.0, 7.0), 1.0)  # 7.0 >= 5.0
-      assert_float_equal(step(5.0, 3.0), 0.0)  # 3.0 < 5.0
+      # 7.0 >= 5.0
+      assert_float_equal(step(5.0, 7.0), 1.0)
+      # 3.0 < 5.0
+      assert_float_equal(step(5.0, 3.0), 0.0)
     end
 
     test "smooth_step" do
       result = smooth_step(0.0, 1.0, 0.5)
-      expected = 0.5  # Should be smooth interpolation
+      # Should be smooth interpolation
+      expected = 0.5
       assert_float_equal(result, expected)
 
       # Test edge cases
@@ -559,7 +675,7 @@ defmodule EAGL.MathTest do
   end
 
   describe "Projection Matrices" do
-        test "mat4_perspective" do
+    test "mat4_perspective" do
       fov = radians(45.0)
       aspect = 16.0 / 9.0
       near = 0.1
@@ -571,14 +687,19 @@ defmodule EAGL.MathTest do
       # Matrix is stored in column-major order: [col0, col1, col2, col3]
       [{a, _b, _c, _d, _e, f, _g, _h, _i, _j, k, l, _m, _n, o, _p}] = result
 
-      assert a > 0.0  # X scaling factor
-      assert f > 0.0  # Y scaling factor
-      assert k < 0.0  # Z scaling factor (should be negative)
-      assert o < 0.0  # Z translation (should be negative) - now in column 3
-      assert_float_equal(l, -1.0)  # Perspective divide factor - now in position l
+      # X scaling factor
+      assert a > 0.0
+      # Y scaling factor
+      assert f > 0.0
+      # Z scaling factor (should be negative)
+      assert k < 0.0
+      # Z translation (should be negative) - now in column 3
+      assert o < 0.0
+      # Perspective divide factor - now in position l
+      assert_float_equal(l, -1.0)
     end
 
-        test "mat4_ortho" do
+    test "mat4_ortho" do
       left = -10.0
       right = 10.0
       bottom = -5.0
@@ -592,13 +713,17 @@ defmodule EAGL.MathTest do
       # Matrix is stored as single tuple: [a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p]
       [{a, _b, _c, _d, _e, f, _g, _h, _i, _j, k, _l, _m, _n, _o, p}] = result
 
-      assert_float_equal(a, 2.0 / (right - left))  # X scale
-      assert_float_equal(f, 2.0 / (top - bottom))  # Y scale
-      assert_float_equal(k, -2.0 / (far - near))   # Z scale
-      assert_float_equal(p, 1.0)  # Homogeneous coordinate
+      # X scale
+      assert_float_equal(a, 2.0 / (right - left))
+      # Y scale
+      assert_float_equal(f, 2.0 / (top - bottom))
+      # Z scale
+      assert_float_equal(k, -2.0 / (far - near))
+      # Homogeneous coordinate
+      assert_float_equal(p, 1.0)
     end
 
-        test "mat4_look_at" do
+    test "mat4_look_at" do
       eye = vec3(0.0, 0.0, 5.0)
       center = vec3_zero()
       up = vec3_unit_y()
@@ -642,9 +767,369 @@ defmodule EAGL.MathTest do
 
     test "cross product with parallel vectors" do
       v1 = vec3(1.0, 0.0, 0.0)
-      v2 = vec3(2.0, 0.0, 0.0)  # Parallel
+      # Parallel
+      v2 = vec3(2.0, 0.0, 0.0)
       result = cross(v1, v2)
       assert_vec3_equal(result, vec3_zero())
+    end
+  end
+
+  describe "Matrix Sigil (~m)" do
+    test "creates 2x2 matrix from string" do
+      matrix = ~m"""
+      1.0 0.0
+      0.0 1.0
+      """
+
+      expected = mat2_identity()
+      assert matrix == expected
+    end
+
+    test "creates 2x2 matrix with comments" do
+      matrix = ~m"""
+      1.0 0.0  # row 1
+      0.0 1.0  # row 2 - identity matrix
+      """
+
+      expected = mat2_identity()
+      assert matrix == expected
+    end
+
+    test "creates 3x3 matrix from string" do
+      matrix = ~m"""
+      1.0 0.0 0.0
+      0.0 1.0 0.0
+      0.0 0.0 1.0
+      """
+
+      expected = mat3_identity()
+      assert matrix == expected
+    end
+
+    test "creates 3x3 matrix with detailed comments" do
+      matrix = ~m"""
+      1.0 0.0 0.0  # X axis
+      0.0 1.0 0.0  # Y axis
+      0.0 0.0 1.0  # Z axis - 3D identity
+      """
+
+      expected = mat3_identity()
+      assert matrix == expected
+    end
+
+    test "creates 4x4 matrix from string" do
+      matrix = ~m"""
+      1.0 0.0 0.0 0.0
+      0.0 1.0 0.0 0.0
+      0.0 0.0 1.0 0.0
+      0.0 0.0 0.0 1.0
+      """
+
+      expected = mat4_identity()
+      assert matrix == expected
+    end
+
+    test "creates 4x4 transformation matrix with comments" do
+      matrix = ~m"""
+      1.0 0.0 0.0 5.0  # X axis + translation
+      0.0 1.0 0.0 2.0  # Y axis + translation
+      0.0 0.0 1.0 1.0  # Z axis + translation
+      0.0 0.0 0.0 1.0  # homogeneous coordinate
+      """
+
+      expected = [
+        {1.0, 0.0, 0.0, 5.0, 0.0, 1.0, 0.0, 2.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 1.0}
+      ]
+
+      assert matrix == expected
+    end
+
+    test "creates matrix from single line string" do
+      matrix = ~m"1.0 0.0 0.0 1.0"
+      expected = mat2_identity()
+      assert matrix == expected
+    end
+
+    test "handles mixed whitespace and comments" do
+      matrix = ~m"""
+
+      1.0 0.0  # first row with leading whitespace
+         0.0 1.0  # second row with extra spacing
+
+      """
+
+      expected = mat2_identity()
+      assert matrix == expected
+    end
+
+    test "errors with invalid number of floats (3 floats)" do
+      assert_raise ArgumentError, "Invalid matrix size: expected 4, 9, or 16 floats, got 3", fn ->
+        ~m"""
+        1.0 2.0 3.0
+        """
+      end
+    end
+
+    test "errors with invalid number of floats (5 floats)" do
+      assert_raise ArgumentError, "Invalid matrix size: expected 4, 9, or 16 floats, got 5", fn ->
+        ~m"""
+        1.0 2.0 3.0 4.0 5.0
+        """
+      end
+    end
+
+    test "errors with invalid number of floats (10 floats)" do
+      assert_raise ArgumentError,
+                   "Invalid matrix size: expected 4, 9, or 16 floats, got 10",
+                   fn ->
+                     ~m"""
+                     1.0 2.0 3.0 4.0 5.0
+                     6.0 7.0 8.0 9.0 10.0
+                     """
+                   end
+    end
+
+    test "errors with invalid number of floats (17 floats)" do
+      assert_raise ArgumentError,
+                   "Invalid matrix size: expected 4, 9, or 16 floats, got 17",
+                   fn ->
+                     ~m"""
+                     1.0 2.0 3.0 4.0
+                     5.0 6.0 7.0 8.0
+                     9.0 10.0 11.0 12.0
+                     13.0 14.0 15.0 16.0 17.0
+                     """
+                   end
+    end
+  end
+
+  describe "Vertex Sigil (~v)" do
+    test "creates simple vertex data from string" do
+      vertices = ~v"""
+      0.0 0.5 0.0
+      -0.5 -0.5 0.0
+      0.5 -0.5 0.0
+      """
+
+      expected = [0.0, 0.5, 0.0, -0.5, -0.5, 0.0, 0.5, -0.5, 0.0]
+      assert vertices == expected
+    end
+
+    test "creates vertex data with comments" do
+      vertices = ~v"""
+      0.0  0.5 0.0   # top vertex
+      -0.5 -0.5 0.0  # bottom left
+      0.5  -0.5 0.0  # bottom right - triangle complete
+      """
+
+      expected = [0.0, 0.5, 0.0, -0.5, -0.5, 0.0, 0.5, -0.5, 0.0]
+      assert vertices == expected
+    end
+
+    test "creates quad vertices with texture coordinates and comments" do
+      vertices = ~v"""
+      # Position    # Texture coords
+      -1.0  1.0 0.0  0.0 1.0  # top left
+       1.0  1.0 0.0  1.0 1.0  # top right
+       1.0 -1.0 0.0  1.0 0.0  # bottom right
+      -1.0 -1.0 0.0  0.0 0.0  # bottom left
+      """
+
+      expected = [
+        -1.0,
+        1.0,
+        0.0,
+        0.0,
+        1.0,
+        1.0,
+        1.0,
+        0.0,
+        1.0,
+        1.0,
+        1.0,
+        -1.0,
+        0.0,
+        1.0,
+        0.0,
+        -1.0,
+        -1.0,
+        0.0,
+        0.0,
+        0.0
+      ]
+
+      assert vertices == expected
+    end
+
+    test "creates color data with comments" do
+      colors = ~v"""
+      1.0 0.0 0.0  # red
+      0.0 1.0 0.0  # green
+      0.0 0.0 1.0  # blue
+      """
+
+      expected = [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]
+      assert colors == expected
+    end
+
+    test "creates vertex data from single line" do
+      vertices = ~v"0.0 0.5 0.0  -0.5 -0.5 0.0  0.5 -0.5 0.0"
+      expected = [0.0, 0.5, 0.0, -0.5, -0.5, 0.0, 0.5, -0.5, 0.0]
+      assert vertices == expected
+    end
+
+    test "handles mixed whitespace and comments" do
+      vertices = ~v"""
+
+      1.0 2.0 3.0  # first vertex with leading whitespace
+         4.0 5.0 6.0  # second vertex with extra spacing
+
+      """
+
+      expected = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0]
+      assert vertices == expected
+    end
+
+    test "handles empty lines and comment-only lines" do
+      vertices = ~v"""
+      1.0 2.0 3.0
+      # This is a comment-only line
+
+      4.0 5.0 6.0
+      # Another comment
+      """
+
+      expected = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0]
+      assert vertices == expected
+    end
+
+    test "creates empty list from empty string" do
+      vertices = ~v""
+      assert vertices == []
+    end
+
+    test "creates empty list from comments only" do
+      vertices = ~v"""
+      # Just comments here
+      # No actual vertex data
+      """
+
+      assert vertices == []
+    end
+  end
+
+  describe "Index Sigil (~i)" do
+    test "creates simple triangle indices" do
+      indices = ~i"""
+      0 1 2
+      """
+
+      expected = [0, 1, 2]
+      assert indices == expected
+    end
+
+    test "creates quad indices with comments" do
+      indices = ~i"""
+      0 1 2  # first triangle
+      2 3 0  # second triangle
+      """
+
+      expected = [0, 1, 2, 2, 3, 0]
+      assert indices == expected
+    end
+
+    test "creates cube indices with detailed comments" do
+      indices = ~i"""
+      # Front face
+      0 1 2  2 3 0
+      # Back face
+      4 5 6  6 7 4
+      # Left face
+      7 3 0  0 4 7
+      """
+
+      expected = [0, 1, 2, 2, 3, 0, 4, 5, 6, 6, 7, 4, 7, 3, 0, 0, 4, 7]
+      assert indices == expected
+    end
+
+    test "creates triangle strip indices with comments" do
+      indices = ~i"""
+      0 1 2   # first triangle
+      1 3 2   # second triangle (shares edge 1-2)
+      2 3 4   # third triangle (shares edge 2-3)
+      """
+
+      expected = [0, 1, 2, 1, 3, 2, 2, 3, 4]
+      assert indices == expected
+    end
+
+    test "creates indices from single line" do
+      indices = ~i"0 1 2  2 3 0"
+      expected = [0, 1, 2, 2, 3, 0]
+      assert indices == expected
+    end
+
+    test "handles mixed whitespace and comments" do
+      indices = ~i"""
+
+      0 1 2  # first triangle with leading whitespace
+         3 4 5  # second triangle with extra spacing
+
+      """
+
+      expected = [0, 1, 2, 3, 4, 5]
+      assert indices == expected
+    end
+
+    test "handles empty lines and comment-only lines" do
+      indices = ~i"""
+      0 1 2
+      # This is a comment-only line
+
+      3 4 5
+      # Another comment
+      """
+
+      expected = [0, 1, 2, 3, 4, 5]
+      assert indices == expected
+    end
+
+    test "creates empty list from empty string" do
+      indices = ~i""
+      assert indices == []
+    end
+
+    test "creates empty list from comments only" do
+      indices = ~i"""
+      # Just comments here
+      # No actual index data
+      """
+
+      assert indices == []
+    end
+
+    test "errors when floats are provided instead of integers" do
+      assert_raise ArgumentError, fn ->
+        ~i"""
+        0.5 1.0 2.5
+        """
+      end
+    end
+
+    test "errors when mixed integers and floats are provided" do
+      assert_raise ArgumentError, fn ->
+        ~i"""
+        0 1.5 2
+        """
+      end
+    end
+
+    test "errors when non-numeric data is provided" do
+      assert_raise ArgumentError, fn ->
+        ~i"""
+        0 abc 2
+        """
+      end
     end
   end
 end

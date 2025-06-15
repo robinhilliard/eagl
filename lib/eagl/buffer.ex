@@ -58,21 +58,37 @@ defmodule EAGL.Buffer do
   @type buffer_id :: non_neg_integer()
   @type vao_id :: non_neg_integer()
 
-  @type vertex_attribute_type :: :byte | :unsigned_byte | :short | :unsigned_short |
-                                 :int | :unsigned_int | :fixed | :float | :half_float | :double
+  @type vertex_attribute_type ::
+          :byte
+          | :unsigned_byte
+          | :short
+          | :unsigned_short
+          | :int
+          | :unsigned_int
+          | :fixed
+          | :float
+          | :half_float
+          | :double
 
-  @type buffer_usage :: :stream_draw | :stream_read | :stream_copy |
-                        :static_draw | :static_read | :static_copy |
-                        :dynamic_draw | :dynamic_read | :dynamic_copy
+  @type buffer_usage ::
+          :stream_draw
+          | :stream_read
+          | :stream_copy
+          | :static_draw
+          | :static_read
+          | :static_copy
+          | :dynamic_draw
+          | :dynamic_read
+          | :dynamic_copy
 
   @type vertex_attribute :: %{
-    location: non_neg_integer(),
-    size: 1..4,
-    type: vertex_attribute_type(),
-    normalized: boolean(),
-    stride: non_neg_integer(),
-    offset: non_neg_integer()
-  }
+          location: non_neg_integer(),
+          size: 1..4,
+          type: vertex_attribute_type(),
+          normalized: boolean(),
+          stride: non_neg_integer(),
+          offset: non_neg_integer()
+        }
 
   @type vertex_attribute_name :: :position | :color | :texture_coordinate | :normal
 
@@ -195,7 +211,8 @@ defmodule EAGL.Buffer do
       ]
       {vao, vbo} = create_vertex_array(vertices, attributes)
   """
-  @spec create_vertex_array(list(float()), list(vertex_attribute()), keyword()) :: {vao_id(), buffer_id()}
+  @spec create_vertex_array(list(float()), list(vertex_attribute()), keyword()) ::
+          {vao_id(), buffer_id()}
   def create_vertex_array(vertices, attributes, opts \\ []) do
     # Generate VAO and VBO
     [vao] = :gl.genVertexArrays(1)
@@ -240,7 +257,8 @@ defmodule EAGL.Buffer do
       attributes = [position_attribute()]
       {vao, vbo, ebo} = create_indexed_array(vertices, indices, attributes)
   """
-  @spec create_indexed_array(list(float()), list(integer()), list(vertex_attribute()), keyword()) :: {vao_id(), buffer_id(), buffer_id()}
+  @spec create_indexed_array(list(float()), list(integer()), list(vertex_attribute()), keyword()) ::
+          {vao_id(), buffer_id(), buffer_id()}
   def create_indexed_array(vertices, indices, attributes, opts \\ []) do
     # Generate VAO, VBO, and EBO
     [vao] = :gl.genVertexArrays(1)
@@ -312,18 +330,32 @@ defmodule EAGL.Buffer do
   end
 
   # Support multiple argument syntax: vertex_attributes(:position, :color)
-  @spec vertex_attributes(vertex_attribute_name(), vertex_attribute_name()) :: list(vertex_attribute())
-  def vertex_attributes(first_type, second_type) when is_atom(first_type) and is_atom(second_type) do
+  @spec vertex_attributes(vertex_attribute_name(), vertex_attribute_name()) ::
+          list(vertex_attribute())
+  def vertex_attributes(first_type, second_type)
+      when is_atom(first_type) and is_atom(second_type) do
     calculate_attributes([first_type, second_type])
   end
 
-  @spec vertex_attributes(vertex_attribute_name(), vertex_attribute_name(), vertex_attribute_name()) :: list(vertex_attribute())
-  def vertex_attributes(first_type, second_type, third_type) when is_atom(first_type) and is_atom(second_type) and is_atom(third_type) do
+  @spec vertex_attributes(
+          vertex_attribute_name(),
+          vertex_attribute_name(),
+          vertex_attribute_name()
+        ) :: list(vertex_attribute())
+  def vertex_attributes(first_type, second_type, third_type)
+      when is_atom(first_type) and is_atom(second_type) and is_atom(third_type) do
     calculate_attributes([first_type, second_type, third_type])
   end
 
-  @spec vertex_attributes(vertex_attribute_name(), vertex_attribute_name(), vertex_attribute_name(), vertex_attribute_name()) :: list(vertex_attribute())
-  def vertex_attributes(first_type, second_type, third_type, fourth_type) when is_atom(first_type) and is_atom(second_type) and is_atom(third_type) and is_atom(fourth_type) do
+  @spec vertex_attributes(
+          vertex_attribute_name(),
+          vertex_attribute_name(),
+          vertex_attribute_name(),
+          vertex_attribute_name()
+        ) :: list(vertex_attribute())
+  def vertex_attributes(first_type, second_type, third_type, fourth_type)
+      when is_atom(first_type) and is_atom(second_type) and is_atom(third_type) and
+             is_atom(fourth_type) do
     calculate_attributes([first_type, second_type, third_type, fourth_type])
   end
 
@@ -331,24 +363,30 @@ defmodule EAGL.Buffer do
   @spec calculate_attributes(list(vertex_attribute_name())) :: list(vertex_attribute())
   defp calculate_attributes(attr_types) do
     # Calculate total stride (sum of all attribute sizes in bytes)
-    total_stride = Enum.reduce(attr_types, 0, fn type, acc ->
-      acc + attribute_size_bytes(type)
-    end)
+    total_stride =
+      Enum.reduce(attr_types, 0, fn type, acc ->
+        acc + attribute_size_bytes(type)
+      end)
 
     # Generate attributes with calculated offsets
-    {attributes, _final_offset} = Enum.reduce(attr_types, {[], 0}, fn type, {attrs, offset} ->
-      location = length(attrs)  # Sequential locations: 0, 1, 2, 3...
-      size = attribute_size_floats(type)
-      attr = vertex_attribute(
-        location: location,
-        size: size,
-        type: :float,
-        stride: total_stride,
-        offset: offset
-      )
-      next_offset = offset + attribute_size_bytes(type)
-      {attrs ++ [attr], next_offset}
-    end)
+    {attributes, _final_offset} =
+      Enum.reduce(attr_types, {[], 0}, fn type, {attrs, offset} ->
+        # Sequential locations: 0, 1, 2, 3...
+        location = length(attrs)
+        size = attribute_size_floats(type)
+
+        attr =
+          vertex_attribute(
+            location: location,
+            size: size,
+            type: :float,
+            stride: total_stride,
+            offset: offset
+          )
+
+        next_offset = offset + attribute_size_bytes(type)
+        {attrs ++ [attr], next_offset}
+      end)
 
     attributes
   end
@@ -386,7 +424,8 @@ defmodule EAGL.Buffer do
       indices = [0, 1, 3, 1, 2, 3]  # Two triangles forming a rectangle
       {vao, vbo, ebo} = create_indexed_position_array(vertices, indices)
   """
-  @spec create_indexed_position_array(list(float()), list(integer())) :: {vao_id(), buffer_id(), buffer_id()}
+  @spec create_indexed_position_array(list(float()), list(integer())) ::
+          {vao_id(), buffer_id(), buffer_id()}
   def create_indexed_position_array(vertices, indices) do
     create_indexed_array(vertices, indices, [position_attribute()])
   end
@@ -437,7 +476,14 @@ defmodule EAGL.Buffer do
   # ============================================================================
 
   # Configure a vertex attribute from vertex_attribute struct
-  defp configure_vertex_attribute(%{location: location, size: size, type: type, normalized: normalized, stride: stride, offset: offset}) do
+  defp configure_vertex_attribute(%{
+         location: location,
+         size: size,
+         type: type,
+         normalized: normalized,
+         stride: stride,
+         offset: offset
+       }) do
     gl_type = vertex_attribute_type_to_gl(type)
     gl_normalized = if normalized, do: @gl_true, else: @gl_false
     :gl.vertexAttribPointer(location, size, gl_type, gl_normalized, stride, offset)

@@ -68,13 +68,14 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.HelloTriangle do
 
   import EAGL.Shader
   import EAGL.Buffer
+  import EAGL.Math
 
   # Triangle vertex data (3 vertices in normalized device coordinates)
-  @vertices [
-    -0.5, -0.5, 0.0,  # left vertex
-     0.5, -0.5, 0.0,  # right vertex
-     0.0,  0.5, 0.0   # top vertex
-  ]
+  @vertices ~v'''
+  -0.5 -0.5 0.0  # left vertex
+   0.5 -0.5 0.0  # right vertex
+   0.0  0.5 0.0  # top vertex
+  '''
 
   @spec run_example() :: :ok | {:error, term()}
   def run_example,

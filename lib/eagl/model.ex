@@ -88,7 +88,8 @@ defmodule EAGL.Model do
                         This gives a smoother appearance by eliminating the faceted look.
                         When true, existing normals are ignored and smooth normals are generated.
   """
-  @spec load_model_to_vao(String.t(), keyword()) :: {:ok, %{vao: integer(), vertex_count: integer()}} | {:error, String.t()}
+  @spec load_model_to_vao(String.t(), keyword()) ::
+          {:ok, %{vao: integer(), vertex_count: integer()}} | {:error, String.t()}
   def load_model_to_vao(filename, opts \\ []) do
     case load_model(filename, opts) do
       {:ok, model_data} ->
@@ -96,57 +97,77 @@ defmodule EAGL.Model do
         cond do
           is_nil(model_data.vertices) or length(model_data.vertices) == 0 ->
             {:error, "Invalid model: no vertices found"}
+
           is_nil(model_data.indices) or length(model_data.indices) == 0 ->
             {:error, "Invalid model: no indices found"}
+
           true ->
             try do
-          # Create and bind VAO
-          [vao] = :gl.genVertexArrays(1)
-          :gl.bindVertexArray(vao)
+              # Create and bind VAO
+              [vao] = :gl.genVertexArrays(1)
+              :gl.bindVertexArray(vao)
 
-          # Create and populate vertex buffer
-          [vbo] = :gl.genBuffers(1)
-          :gl.bindBuffer(@gl_array_buffer, vbo)
-          vertex_data = for x <- model_data.vertices, into: <<>>, do: <<x::float-32-native>>
-          :gl.bufferData(@gl_array_buffer, byte_size(vertex_data), vertex_data, @gl_static_draw)
+              # Create and populate vertex buffer
+              [vbo] = :gl.genBuffers(1)
+              :gl.bindBuffer(@gl_array_buffer, vbo)
+              vertex_data = for x <- model_data.vertices, into: <<>>, do: <<x::float-32-native>>
 
-          # Set up vertex position attributes (location 0)
-          :gl.vertexAttribPointer(0, 3, @gl_float, @gl_false, 0, 0)
-          :gl.enableVertexAttribArray(0)
+              :gl.bufferData(
+                @gl_array_buffer,
+                byte_size(vertex_data),
+                vertex_data,
+                @gl_static_draw
+              )
 
-          # Create and populate texture coordinate buffer
-          [tbo] = :gl.genBuffers(1)
-          :gl.bindBuffer(@gl_array_buffer, tbo)
-          tex_data = for x <- model_data.tex_coords, into: <<>>, do: <<x::float-32-native>>
-          :gl.bufferData(@gl_array_buffer, byte_size(tex_data), tex_data, @gl_static_draw)
+              # Set up vertex position attributes (location 0)
+              :gl.vertexAttribPointer(0, 3, @gl_float, @gl_false, 0, 0)
+              :gl.enableVertexAttribArray(0)
 
-          # Set up texture coordinate attributes (location 1)
-          :gl.vertexAttribPointer(1, 2, @gl_float, @gl_false, 0, 0)
-          :gl.enableVertexAttribArray(1)
+              # Create and populate texture coordinate buffer
+              [tbo] = :gl.genBuffers(1)
+              :gl.bindBuffer(@gl_array_buffer, tbo)
+              tex_data = for x <- model_data.tex_coords, into: <<>>, do: <<x::float-32-native>>
+              :gl.bufferData(@gl_array_buffer, byte_size(tex_data), tex_data, @gl_static_draw)
 
-          # Create and populate normal buffer
-          [nbo] = :gl.genBuffers(1)
-          :gl.bindBuffer(@gl_array_buffer, nbo)
-          normal_data = for x <- model_data.normals, into: <<>>, do: <<x::float-32-native>>
-          :gl.bufferData(@gl_array_buffer, byte_size(normal_data), normal_data, @gl_static_draw)
+              # Set up texture coordinate attributes (location 1)
+              :gl.vertexAttribPointer(1, 2, @gl_float, @gl_false, 0, 0)
+              :gl.enableVertexAttribArray(1)
 
-          # Set up normal attributes (location 2)
-          :gl.vertexAttribPointer(2, 3, @gl_float, @gl_false, 0, 0)
-          :gl.enableVertexAttribArray(2)
+              # Create and populate normal buffer
+              [nbo] = :gl.genBuffers(1)
+              :gl.bindBuffer(@gl_array_buffer, nbo)
+              normal_data = for x <- model_data.normals, into: <<>>, do: <<x::float-32-native>>
 
-          # Create and populate index buffer
-          [ebo] = :gl.genBuffers(1)
-          :gl.bindBuffer(@gl_element_array_buffer, ebo)
-          index_data = for x <- model_data.indices, into: <<>>, do: <<x::unsigned-32-native>>
-          :gl.bufferData(@gl_element_array_buffer, byte_size(index_data), index_data, @gl_static_draw)
+              :gl.bufferData(
+                @gl_array_buffer,
+                byte_size(normal_data),
+                normal_data,
+                @gl_static_draw
+              )
 
-          # Store vertex count
-          vertex_count = length(model_data.indices)
+              # Set up normal attributes (location 2)
+              :gl.vertexAttribPointer(2, 3, @gl_float, @gl_false, 0, 0)
+              :gl.enableVertexAttribArray(2)
 
-          # Unbind VAO
-          :gl.bindVertexArray(0)
+              # Create and populate index buffer
+              [ebo] = :gl.genBuffers(1)
+              :gl.bindBuffer(@gl_element_array_buffer, ebo)
+              index_data = for x <- model_data.indices, into: <<>>, do: <<x::unsigned-32-native>>
 
-          {:ok, %{vao: vao, vertex_count: vertex_count}}
+              :gl.bufferData(
+                @gl_element_array_buffer,
+                byte_size(index_data),
+                index_data,
+                @gl_static_draw
+              )
+
+              # Store vertex count
+              vertex_count = length(model_data.indices)
+
+              # Unbind VAO
+              :gl.bindVertexArray(0)
+
+              {:ok, %{vao: vao, vertex_count: vertex_count}}
             rescue
               e ->
                 {:error, "Failed to create VAO: #{Exception.message(e)}"}

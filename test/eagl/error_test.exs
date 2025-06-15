@@ -44,6 +44,7 @@ defmodule EAGL.ErrorTest do
         # Handle wx NIFs not loaded (expected in test environment)
         ErlangError ->
           assert true
+
         # Handle the case where GL context exists but has an error
         RuntimeError ->
           assert true

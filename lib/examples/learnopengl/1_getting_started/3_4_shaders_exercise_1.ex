@@ -73,15 +73,16 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.ShadersExercise1 do
 
   import EAGL.Shader
   import EAGL.Buffer
+  import EAGL.Math
 
   # Same triangle vertex data as 3.2/3.3 - transformation happens in shader
   # Format: [x, y, z, r, g, b] per vertex
-  @vertices [
-    # positions        # colors
-     0.5, -0.5, 0.0,   1.0, 0.0, 0.0,  # bottom right - red
-    -0.5, -0.5, 0.0,   0.0, 1.0, 0.0,  # bottom left - green
-     0.0,  0.5, 0.0,   0.0, 0.0, 1.0   # top center - blue
-  ]
+  @vertices ~v'''
+  # positions        # colors
+   0.5 -0.5 0.0  1.0 0.0 0.0   # bottom right - red
+  -0.5 -0.5 0.0  0.0 1.0 0.0   # bottom left - green
+   0.0  0.5 0.0  0.0 0.0 1.0   # top center - blue
+  '''
 
   @spec run_example() :: :ok | {:error, term()}
   def run_example,

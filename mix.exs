@@ -51,7 +51,7 @@ defmodule EAGL.MixProject do
     ]
   end
 
-    defp description do
+  defp description do
     """
     EAGL (Easier OpenGL) - A clean, idiomatic Elixir interface for OpenGL programming.
     Features GLM-inspired 3D math, Wings3D-inspired helpers and direct ports of
@@ -103,7 +103,7 @@ defmodule EAGL.MixProject do
         "LICENSE"
       ],
       groups_for_modules: [
-        "Core": [
+        Core: [
           EAGL.Math,
           EAGL.Shader,
           EAGL.Buffer,
@@ -115,10 +115,10 @@ defmodule EAGL.MixProject do
           EAGL.Model,
           EAGL.ObjLoader
         ],
-        "Constants": [
+        Constants: [
           EAGL.Const
         ],
-        "Examples": [
+        Examples: [
           EAGL.Examples.Math,
           EAGL.Examples.Teapot
         ],

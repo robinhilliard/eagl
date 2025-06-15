@@ -64,23 +64,24 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.TexturesExercise1 do
   import EAGL.Buffer
   import EAGL.Texture
   import EAGL.Error
+  import EAGL.Math
 
   # Rectangle vertex data with modified texture coordinates for center cropping
   # Format: [x, y, z, r, g, b, s, t] per vertex
   # Texture coordinates show center 50% of image (0.25 to 0.75 range)
-  @vertices [
-    # positions        # colors         # texture coords (center crop)
-     0.5,  0.5, 0.0,   1.0, 0.0, 0.0,   0.75, 0.75,   # top right
-     0.5, -0.5, 0.0,   0.0, 1.0, 0.0,   0.75, 0.25,   # bottom right
-    -0.5, -0.5, 0.0,   0.0, 0.0, 1.0,   0.25, 0.25,   # bottom left
-    -0.5,  0.5, 0.0,   1.0, 1.0, 0.0,   0.25, 0.75    # top left
-  ]
+  @vertices ~v'''
+  # positions        # colors         # texture coords (center crop)
+   0.5  0.5 0.0  1.0 0.0 0.0  0.75 0.75   # top right
+   0.5 -0.5 0.0  0.0 1.0 0.0  0.75 0.25   # bottom right
+  -0.5 -0.5 0.0  0.0 0.0 1.0  0.25 0.25   # bottom left
+  -0.5  0.5 0.0  1.0 1.0 0.0  0.25 0.75   # top left
+  '''
 
   # Indices for drawing the rectangle using two triangles
-  @indices [
-    0, 1, 3,  # first triangle
-    1, 2, 3   # second triangle
-  ]
+  @indices ~i'''
+  0 1 3  # first triangle
+  1 2 3  # second triangle
+  '''
 
   @spec run_example() :: :ok | {:error, term()}
   def run_example,
@@ -140,33 +141,40 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.TexturesExercise1 do
 
       IO.puts("Created VAO, VBO, and EBO (rectangle with center-crop texture coordinates)")
 
-            # Load texture
-      {:ok, texture_id, width, height} = load_texture_from_file("priv/images/eagl_logo_black_on_white.jpg")
+      # Load texture
+      {:ok, texture_id, width, height} =
+        load_texture_from_file("priv/images/eagl_logo_black_on_white.jpg")
+
       IO.puts("Loaded texture (#{width}x#{height}) - showing center crop")
 
       # Bind texture to configure parameters
       :gl.bindTexture(@gl_texture_2d, texture_id)
 
       # Set texture parameters - use GL_NEAREST to see individual pixels clearly
-      set_texture_parameters([
-        wrap_s: :clamp_to_edge,      # Prevent wrapping artifacts
-        wrap_t: :clamp_to_edge,      # Prevent wrapping artifacts
-        min_filter: :nearest,        # Show pixels clearly
-        mag_filter: :nearest         # Show pixels clearly
-      ])
+      set_texture_parameters(
+        # Prevent wrapping artifacts
+        wrap_s: :clamp_to_edge,
+        # Prevent wrapping artifacts
+        wrap_t: :clamp_to_edge,
+        # Show pixels clearly
+        min_filter: :nearest,
+        # Show pixels clearly
+        mag_filter: :nearest
+      )
 
       # Generate mipmaps
       :gl.generateMipmap(@gl_texture_2d)
 
       check("After texture setup")
 
-      {:ok, %{
-        program: program,
-        vao: vao,
-        vbo: vbo,
-        ebo: ebo,
-        texture_id: texture_id
-      }}
+      {:ok,
+       %{
+         program: program,
+         vao: vao,
+         vbo: vbo,
+         ebo: ebo,
+         texture_id: texture_id
+       }}
     else
       error ->
         IO.puts("Failed to set up shaders: #{inspect(error)}")
@@ -215,6 +223,4 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.TexturesExercise1 do
     check("After cleanup")
     :ok
   end
-
-
 end

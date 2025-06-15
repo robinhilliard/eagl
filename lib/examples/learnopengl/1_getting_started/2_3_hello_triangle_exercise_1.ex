@@ -72,19 +72,20 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.HelloTriangleExercise1 do
 
   import EAGL.Shader
   import EAGL.Buffer
+  import EAGL.Math
 
   # Two triangles side by side (6 vertices total)
-  @vertices [
-    # First triangle (left)
-    -0.9, -0.5, 0.0,  # Left vertex
-    -0.0, -0.5, 0.0,  # Right vertex (shared x=0 boundary)
-    -0.45, 0.5, 0.0,  # Top vertex
+  @vertices ~v'''
+  # First triangle (left)
+  -0.9 -0.5 0.0   # Left vertex
+  -0.0 -0.5 0.0   # Right vertex (shared x=0 boundary)
+  -0.45 0.5 0.0   # Top vertex
 
-    # Second triangle (right)
-    0.0, -0.5, 0.0,   # Left vertex (shared x=0 boundary)
-    0.9, -0.5, 0.0,   # Right vertex
-    0.45, 0.5, 0.0    # Top vertex
-  ]
+  # Second triangle (right)
+   0.0 -0.5 0.0   # Left vertex (shared x=0 boundary)
+   0.9 -0.5 0.0   # Right vertex
+   0.45 0.5 0.0   # Top vertex
+  '''
 
   @spec run_example() :: :ok | {:error, term()}
   def run_example,

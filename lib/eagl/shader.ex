@@ -52,11 +52,20 @@ defmodule EAGL.Shader do
 
   @type shader_id :: non_neg_integer()
   @type program_id :: non_neg_integer()
-  @type shader_type :: :vertex | :fragment | :geometry | :tess_control | :tess_evaluation | :compute
+  @type shader_type ::
+          :vertex | :fragment | :geometry | :tess_control | :tess_evaluation | :compute
 
   @type uniform_value ::
-    vec2() | vec3() | vec4() | mat2() | mat3() | mat4() | quat() |
-    float() | integer() | boolean()
+          vec2()
+          | vec3()
+          | vec4()
+          | mat2()
+          | mat3()
+          | mat4()
+          | quat()
+          | float()
+          | integer()
+          | boolean()
 
   @app Mix.Project.config()[:app]
 
@@ -79,6 +88,7 @@ defmodule EAGL.Shader do
         true ->
           :gl.shaderSource(shader, [File.read!(model_path)])
           :gl.compileShader(shader)
+
           case check_compile_status(shader) do
             {:ok, shader} ->
               {:ok, shader}
@@ -87,10 +97,10 @@ defmodule EAGL.Shader do
               cleanup_shader(shader)
               {:error, message}
           end
+
         false ->
           {:error, "Shader file not found: #{filename}"}
       end
-
     rescue
       e ->
         {:error, "Shader creation failed: #{inspect(e)}"}
@@ -110,6 +120,7 @@ defmodule EAGL.Shader do
   """
   def check_compile_status(shader) do
     compile_status = :gl.getShaderiv(shader, @gl_compile_status)
+
     if compile_status == 0 do
       log_length = :gl.getShaderiv(shader, @gl_info_log_length)
       log = :gl.getShaderInfoLog(shader, log_length)
@@ -123,6 +134,7 @@ defmodule EAGL.Shader do
     case :gl.getProgramiv(program, @gl_link_status) do
       status when status != 0 ->
         {:ok, program}
+
       _ ->
         log_length = :gl.getProgramiv(program, @gl_info_log_length)
         log = :gl.getProgramInfoLog(program, log_length)
@@ -137,7 +149,9 @@ defmodule EAGL.Shader do
   def cleanup_program(program) when is_integer(program) do
     # Check if program exists and is valid
     case :gl.getProgramiv(program, @gl_delete_status) do
-      -1 -> {:error, "Invalid program"}
+      -1 ->
+        {:error, "Invalid program"}
+
       _ ->
         # Get attached shaders
         num_shaders = :gl.getProgramiv(program, @gl_attached_shaders)
@@ -145,6 +159,7 @@ defmodule EAGL.Shader do
 
         # Unbind program if it's currently bound
         current_program = :gl.getIntegerv(@gl_current_program) |> List.first()
+
         if current_program == program do
           :gl.useProgram(0)
         end
@@ -165,7 +180,9 @@ defmodule EAGL.Shader do
   def cleanup_shader(shader) when is_integer(shader) do
     # Check if shader exists and is valid
     case :gl.getShaderiv(shader, @gl_delete_status) do
-      -1 -> {:error, "Invalid shader"}
+      -1 ->
+        {:error, "Invalid shader"}
+
       _ ->
         :gl.deleteShader(shader)
         :ok
@@ -221,7 +238,8 @@ defmodule EAGL.Shader do
 
   # vec3 uniform
   @spec set_uniform_at_location(integer(), vec3()) :: :ok
-  def set_uniform_at_location(location, [{x, y, z}]) when is_number(x) and is_number(y) and is_number(z) do
+  def set_uniform_at_location(location, [{x, y, z}])
+      when is_number(x) and is_number(y) and is_number(z) do
     :gl.uniform3f(location, x, y, z)
   end
 
@@ -233,13 +251,17 @@ defmodule EAGL.Shader do
 
   # vec4 uniform (also handles quaternions which have the same structure)
   @spec set_uniform_at_location(integer(), vec4() | quat()) :: :ok
-  def set_uniform_at_location(location, [{x, y, z, w}]) when is_number(x) and is_number(y) and is_number(z) and is_number(w) do
+  def set_uniform_at_location(location, [{x, y, z, w}])
+      when is_number(x) and is_number(y) and is_number(z) and is_number(w) do
     :gl.uniform4f(location, x, y, z, w)
   end
 
   # mat4 uniform (16 element tuple)
   @spec set_uniform_at_location(integer(), mat4()) :: :ok
-  def set_uniform_at_location(location, [{_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _}] = matrix) do
+  def set_uniform_at_location(
+        location,
+        [{_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _}] = matrix
+      ) do
     :gl.uniformMatrix4fv(location, 0, matrix)
   end
 
@@ -270,7 +292,7 @@ defmodule EAGL.Shader do
   # Boolean uniform (as integer)
   @spec set_uniform_at_location(integer(), boolean()) :: :ok
   def set_uniform_at_location(location, value) when is_boolean(value) do
-    :gl.uniform1i(location, (if value, do: 1, else: 0))
+    :gl.uniform1i(location, if(value, do: 1, else: 0))
   end
 
   @doc """
@@ -296,5 +318,4 @@ defmodule EAGL.Shader do
       {uniform_name, get_uniform_location(program, uniform_name)}
     end)
   end
-
 end

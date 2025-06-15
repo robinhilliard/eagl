@@ -46,26 +46,32 @@ defmodule EAGL.Error do
     case :gl.getError() do
       @gl_no_error ->
         :ok
+
       @gl_invalid_enum ->
         error_msg = "#{context}: GL_INVALID_ENUM"
         IO.puts("OpenGL Error: #{error_msg}")
         {:error, error_msg}
+
       @gl_invalid_value ->
         error_msg = "#{context}: GL_INVALID_VALUE"
         IO.puts("OpenGL Error: #{error_msg}")
         {:error, error_msg}
+
       @gl_invalid_operation ->
         error_msg = "#{context}: GL_INVALID_OPERATION"
         IO.puts("OpenGL Error: #{error_msg}")
         {:error, error_msg}
+
       @gl_out_of_memory ->
         error_msg = "#{context}: GL_OUT_OF_MEMORY"
         IO.puts("OpenGL Error: #{error_msg}")
         {:error, error_msg}
+
       @gl_invalid_framebuffer_operation ->
         error_msg = "#{context}: GL_INVALID_FRAMEBUFFER_OPERATION"
         IO.puts("OpenGL Error: #{error_msg}")
         {:error, error_msg}
+
       error_code ->
         error_msg = "#{context}: Unknown OpenGL error #{error_code}"
         IO.puts("OpenGL Error: #{error_msg}")

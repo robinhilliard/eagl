@@ -44,6 +44,7 @@ defmodule EAGL.ModelTest do
 
       # Test a few normals to ensure they're normalized
       sample_normals = Enum.take(normals_list, 5)
+
       for [x, y, z] <- sample_normals do
         length = :math.sqrt(x * x + y * y + z * z)
         assert_in_delta(length, 1.0, 0.01, "Normal should be normalized")
@@ -88,11 +89,13 @@ defmodule EAGL.ModelTest do
           rescue
             _ -> :ok
           end
+
           try do
             :wxFrame.destroy(frame)
           rescue
             _ -> :ok
           end
+
           try do
             :application.stop(:wx)
           rescue
@@ -202,11 +205,13 @@ defmodule EAGL.ModelTest do
           rescue
             _ -> :ok
           end
+
           try do
             :wxFrame.destroy(frame)
           rescue
             _ -> :ok
           end
+
           try do
             :application.stop(:wx)
           rescue

@@ -67,15 +67,16 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.ShadersClass do
 
   import EAGL.Shader
   import EAGL.Buffer
+  import EAGL.Math
 
   # Triangle vertex data with positions and colors interleaved
   # Format: [x, y, z, r, g, b] per vertex
-  @vertices [
-    # positions        # colors
-     0.5, -0.5, 0.0,   1.0, 0.0, 0.0,  # bottom right - red
-    -0.5, -0.5, 0.0,   0.0, 1.0, 0.0,  # bottom left - green
-     0.0,  0.5, 0.0,   0.0, 0.0, 1.0   # top center - blue
-  ]
+  @vertices ~v'''
+  # positions        # colors
+   0.5 -0.5 0.0  1.0 0.0 0.0   # bottom right - red
+  -0.5 -0.5 0.0  0.0 1.0 0.0   # bottom left - green
+   0.0  0.5 0.0  0.0 0.0 1.0   # top center - blue
+  '''
 
   @spec run_example() :: :ok | {:error, term()}
   def run_example,
