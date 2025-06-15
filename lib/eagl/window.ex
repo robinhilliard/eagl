@@ -462,7 +462,8 @@ defmodule EAGL.Window do
 
       {:wx, _, _, _, {:wxKey, :char_hook, _, _, key_code, _, _, _, _, _, _, _}} ->
         # Handle ENTER key if return_to_exit is enabled
-        if return_to_exit and key_code == 13 do  # ENTER key
+        # Check for both main ENTER (13/WXK_RETURN) and numeric keypad ENTER (370/WXK_NUMPAD_ENTER)
+        if return_to_exit and (key_code == 13 or key_code == 370) do
           cleanup_and_exit(frame, gl_canvas, gl_context, callback_module, state)
         end
 
