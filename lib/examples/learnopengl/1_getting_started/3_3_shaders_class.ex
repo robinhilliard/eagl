@@ -133,26 +133,27 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.ShadersClass do
              "learnopengl/1_getting_started/3_3_shaders_class/fragment_shader.glsl"
            ),
          {:ok, program} <- create_attach_link([vertex_shader, fragment_shader]) do
-      IO.puts("✓ Shader abstraction working perfectly!")
-      IO.puts("✓ EAGL.Shader handled compilation, linking, and error checking")
+      IO.puts("Shader abstraction working properly")
+      IO.puts("EAGL.Shader handled compilation, linking, and error checking")
 
-      # Demonstrate EAGL's buffer abstraction - clean VAO/VBO setup
-      {vao, vbo} = create_vertex_array(@vertices, [
-        # Position attribute (location 0)
-        {0, 3, @gl_float, @gl_false, 6 * 4, 0},
-        # Color attribute (location 1)
-        {1, 3, @gl_float, @gl_false, 6 * 4, 3 * 4}
-      ])
+      # Create buffer objects using EAGL.Buffer helpers
+      # This demonstrates a clean attribute specification pattern
+      attribute_configs = [
+        {0, 3, @gl_float, @gl_false, 6 * 4, 0},      # position at location 0, offset 0
+        {1, 3, @gl_float, @gl_false, 6 * 4, 3 * 4}   # color at location 1, offset 12
+      ]
 
-      IO.puts("✓ Buffer abstraction working perfectly!")
-      IO.puts("✓ EAGL.Buffer handled VAO/VBO setup with multiple attributes")
-      IO.puts("✓ Clean, readable code with proper error handling")
+      {vao, vbo} = create_vertex_array(@vertices, attribute_configs)
+
+      IO.puts("Buffer abstraction working properly")
+      IO.puts("EAGL.Buffer handled VAO/VBO setup with multiple attributes")
+      IO.puts("Clean, readable code with proper error handling")
 
       # State: {program, vao, vbo}
       {:ok, {program, vao, vbo}}
     else
       {:error, reason} ->
-        IO.puts("✗ Shader abstraction caught error: #{reason}")
+        IO.puts("Shader abstraction caught error: #{reason}")
         {:error, reason}
     end
   end
@@ -181,7 +182,7 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.ShadersClass do
     # Demonstrate proper resource cleanup - part of good abstraction
     delete_vertex_array(vao, vbo)
     :gl.deleteProgram(program)
-    IO.puts("✓ Resources cleaned up properly through abstraction")
+    IO.puts("Resources cleaned up properly through abstraction")
     :ok
   end
 end

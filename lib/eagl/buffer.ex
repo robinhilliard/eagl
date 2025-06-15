@@ -1,7 +1,34 @@
 defmodule EAGL.Buffer do
   @moduledoc """
-  Helper functions for OpenGL buffer and vertex array object management.
-  Provides convenient wrappers for common VAO/VBO/EBO operations.
+  OpenGL buffer and vertex array object management.
+
+  Provides Wings3D-inspired helper functions for common VAO/VBO/EBO operations
+  with meaningful abstractions for vertex attribute setup.
+
+  ## Usage
+
+      import EAGL.Buffer
+
+      # Simple position-only vertices
+      vertices = [-0.5, -0.5, 0.0, 0.5, -0.5, 0.0, 0.0, 0.5, 0.0]
+      {vao, vbo} = create_position_array(vertices)
+
+      # Custom vertex attributes
+      {vao, vbo} = create_vertex_array(vertices, [
+        {0, 3, @gl_float, @gl_false, 0, 0}  # position at location 0
+      ])
+
+      # Indexed geometry (rectangles, models)
+      vertices = [0.5, 0.5, 0.0, 0.5, -0.5, 0.0, -0.5, -0.5, 0.0, -0.5, 0.5, 0.0]
+      indices = [0, 1, 3, 1, 2, 3]
+      {vao, vbo, ebo} = create_indexed_position_array(vertices, indices)
+
+      # Use OpenGL directly for rendering
+      :gl.bindVertexArray(vao)
+      :gl.drawElements(@gl_triangles, 6, @gl_unsigned_int, 0)
+
+      # Clean up
+      delete_vertex_array(vao, vbo)
   """
 
   use EAGL.Const

@@ -1,7 +1,50 @@
 defmodule EAGL.Window do
   @moduledoc """
-  Utility module for OpenGL window management.
-  Handles window creation, OpenGL context setup, and event loop management.
+  OpenGL window management and application lifecycle.
+
+  Correct window creation with cross-platform OpenGL context setup
+  and automated event handling based on wings_gl.erl patterns.
+
+  ## Usage
+
+      defmodule MyApp do
+        use EAGL.Window
+
+        def run_example do
+          # 2D rendering (default)
+          EAGL.Window.run(__MODULE__, "My 2D App")
+
+          # 3D rendering with depth testing
+          EAGL.Window.run(__MODULE__, "My 3D App", depth_testing: true)
+
+          # Custom size and tutorial mode
+          EAGL.Window.run(__MODULE__, "Tutorial",
+            size: {1280, 720},
+            return_to_exit: true
+          )
+        end
+
+        @impl true
+        def setup do
+          # Initialize shaders, load models, set up state
+          {:ok, initial_state}
+        end
+
+        @impl true
+        def render(width, height, state) do
+          # Clear screen and render content
+          :gl.clearColor(0.2, 0.3, 0.3, 1.0)
+          :gl.clear(@gl_color_buffer_bit)
+          # ... render content
+          :ok
+        end
+
+        @impl true
+        def cleanup(state) do
+          # Clean up OpenGL resources
+          :ok
+        end
+      end
   """
 
   use EAGL.Const
@@ -83,9 +126,10 @@ defmodule EAGL.Window do
 
       IO.puts("Creating OpenGL canvas")
       depth_msg = if depth_testing, do: "24-bit depth buffer, ", else: ""
+      attrs = gl_attributes(depth_testing)
       IO.puts("Requested: RGBA mode, 8-bit RGB channels, #{depth_msg}double buffering")
-      gl_canvas = :wxGLCanvas.new(frame, gl_attributes(depth_testing))
-      IO.puts("✓ OpenGL canvas created successfully with requested attributes")
+      gl_canvas = :wxGLCanvas.new(frame, attrs)
+      IO.puts("OpenGL canvas created successfully with requested attributes")
 
       # Set background style following wings_gl pattern
       :wxGLCanvas.setBackgroundStyle(gl_canvas, @wx_bg_style_paint)

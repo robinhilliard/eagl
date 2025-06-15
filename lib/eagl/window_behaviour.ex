@@ -1,7 +1,39 @@
 defmodule EAGL.WindowBehaviour do
   @moduledoc """
-  Behaviour for OpenGL window management.
-  Handles window creation, OpenGL context setup, and event loop management.
+  Behaviour for OpenGL window applications.
+
+  Defines callbacks for OpenGL window lifecycle management with
+  automatic context setup and event handling.
+
+  ## Usage
+
+      defmodule MyApp do
+        use EAGL.Window
+
+        @impl true
+        def setup do
+          # Initialize shaders, load models, etc.
+          {:ok, initial_state}
+        end
+
+        @impl true
+        def render(width, height, state) do
+          # Clear and render your scene
+          :gl.clearColor(0.2, 0.3, 0.3, 1.0)
+          :gl.clear(@gl_color_buffer_bit)
+          # ... render content
+          :ok
+        end
+
+        @impl true
+        def cleanup(state) do
+          # Clean up resources
+          :ok
+        end
+      end
+
+      # Run the application
+      EAGL.Window.run(MyApp, "My OpenGL App")
   """
 
   @doc """

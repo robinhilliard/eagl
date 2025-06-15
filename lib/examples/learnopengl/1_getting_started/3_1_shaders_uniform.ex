@@ -138,20 +138,20 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.ShadersUniform do
              "learnopengl/1_getting_started/3_1_shaders_uniform/fragment_shader.glsl"
            ),
          {:ok, program} <- create_attach_link([vertex_shader, fragment_shader]) do
-      IO.puts("✓ Vertex and fragment shaders compiled and linked successfully")
+      IO.puts("Vertex and fragment shaders compiled and linked successfully")
 
       # Create VAO and VBO for triangle geometry
       {vao, vbo} = create_position_array(@vertices)
 
-      IO.puts("✓ Created VAO and VBO (3 vertices uploaded to GPU)")
-      IO.puts("✓ Ready to render! You should see a color-changing triangle.")
+      IO.puts("Created VAO and VBO (3 vertices uploaded to GPU)")
+      IO.puts("Ready to render - You should see a color-changing triangle.")
 
       # State: {program, vao, vbo, start_time}
       current_time = :erlang.monotonic_time(:millisecond)
       {:ok, {program, vao, vbo, current_time}}
     else
       {:error, reason} ->
-        IO.puts("✗ Failed to create shader program: #{reason}")
+        IO.puts("Failed to create shader program: #{reason}")
         {:error, reason}
     end
   end

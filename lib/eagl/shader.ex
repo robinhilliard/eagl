@@ -1,7 +1,36 @@
 defmodule EAGL.Shader do
   @moduledoc """
-  Module for OpenGL shader management.
-  Handles shader creation, compilation, and program linking.
+  OpenGL shader compilation and program management.
+
+  Handles the process of shader compilation, linking,
+  and uniform management.
+
+  ## Usage
+
+      import EAGL.Shader
+      import EAGL.Math
+
+      # Compile and link shaders
+      {:ok, vertex} = create_shader(@gl_vertex_shader, "vertex.glsl")
+      {:ok, fragment} = create_shader(@gl_fragment_shader, "fragment.glsl")
+      {:ok, program} = create_attach_link([vertex, fragment])
+
+      # Set uniforms with automatic type detection
+      set_uniform(program, "model_matrix", model_matrix)
+      set_uniform(program, "light_position", vec3(10.0, 10.0, 5.0))
+
+      # Set multiple uniforms efficiently
+      set_uniforms(program, [
+        model: model_matrix,
+        view: view_matrix,
+        projection: projection_matrix
+      ])
+
+      # Use OpenGL directly for program binding
+      :gl.useProgram(program)
+
+      # Clean up when done
+      cleanup_program(program)
   """
 
   use EAGL.Const
@@ -44,21 +73,9 @@ defmodule EAGL.Shader do
           :gl.compileShader(shader)
           case check_compile_status(shader) do
             {:ok, shader} ->
-              shader_type_name = case shader_type do
-                @vertex_shader_type -> "Vertex"
-                @fragment_shader_type -> "Fragment"
-                _ -> "Unknown"
-              end
-              IO.puts("#{shader_type_name} shader compiled successfully")
               {:ok, shader}
 
             {:error, message} ->
-              case shader_type do
-                @vertex_shader_type -> "Vertex"
-                @fragment_shader_type -> "Fragment"
-                _ -> "Unknown"
-              end
-              IO.puts(message)
               cleanup_shader(shader)
               {:error, message}
           end
@@ -89,13 +106,11 @@ defmodule EAGL.Shader do
   def check_link_status(program) do
     case :gl.getProgramiv(program, @gl_link_status) do
       status when status != 0 ->
-        IO.puts("Program linked successfully")
         {:ok, program}
       _ ->
         log_length = :gl.getProgramiv(program, @gl_info_log_length)
         log = :gl.getProgramInfoLog(program, log_length)
         message = "Program linking failed: #{log}"
-        IO.puts(message)
         {:error, message}
     end
   end

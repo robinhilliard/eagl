@@ -185,29 +185,28 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.Textures do
              "learnopengl/1_getting_started/4_1_textures/fragment_shader.glsl"
            ),
          {:ok, program} <- create_attach_link([vertex_shader, fragment_shader]) do
-      IO.puts("✓ Vertex and fragment shaders compiled and linked successfully")
+      IO.puts("Vertex and fragment shaders compiled and linked successfully")
 
-      # Create VAO, VBO, and EBO for rectangle geometry
-      stride = 8 * 4  # 8 floats per vertex * 4 bytes per float
+      # Create VAO, VBO, and EBO for rectangle with texture coordinates
+      # Demonstrates indexed rendering with texture mapping
       {vao, vbo, ebo} = create_indexed_array(@vertices, @indices, [
-        {0, 3, @gl_float, @gl_false, stride, 0},      # Position attribute (location = 0)
-        {1, 3, @gl_float, @gl_false, stride, 3 * 4},  # Color attribute (location = 1)
-        {2, 2, @gl_float, @gl_false, stride, 6 * 4}   # Texture coordinate attribute (location = 2)
+        {0, 3, @gl_float, @gl_false, 5 * 4, 0},      # position
+        {1, 2, @gl_float, @gl_false, 5 * 4, 3 * 4}   # texture coords
       ])
 
-      IO.puts("✓ Created VAO, VBO, and EBO (rectangle with texture coordinates)")
+      IO.puts("Created VAO, VBO, and EBO (rectangle with texture coordinates)")
 
-      # Create and configure texture - try to load EAGL logo, fallback to checkerboard
-      {:ok, texture_id, width, height} = load_texture_from_file("priv/images/eagl_logo_black_on_white.png")
-      IO.puts("✓ Created texture (#{width}x#{height})")
+      # Load texture using EAGL.Texture abstraction
+      {:ok, texture_id, width, height} = load_texture_from_file("priv/images/eagl_logo_black_on_white.jpg")
+      IO.puts("Created texture (#{width}x#{height})")
 
-      IO.puts("✓ Ready to render! You should see an eagle attacking a teapot.")
+      IO.puts("Ready to render - you should see an eagle attacking a teapot.")
 
       # State: {program, vao, vbo, ebo, texture_id}
       {:ok, {program, vao, vbo, ebo, texture_id}}
     else
       {:error, reason} ->
-        IO.puts("✗ Failed to create shader program or texture: #{reason}")
+        IO.puts("Failed to create shader program or texture: #{reason}")
         {:error, reason}
     end
   end
@@ -240,7 +239,7 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.Textures do
     :gl.deleteTextures([texture_id])
     delete_vertex_array(vao, [vbo, ebo])
     cleanup_program(program)
-    IO.puts("✓ Cleaned up all OpenGL resources")
+    IO.puts("Cleaned up all OpenGL resources")
     :ok
   end
 end

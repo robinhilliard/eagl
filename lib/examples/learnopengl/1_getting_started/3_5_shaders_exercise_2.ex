@@ -146,7 +146,7 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.ShadersExercise2 do
              "learnopengl/1_getting_started/3_5_shaders_exercise_2/fragment_shader.glsl"
            ),
          {:ok, program} <- create_attach_link([vertex_shader, fragment_shader]) do
-      IO.puts("✓ Shaders compiled successfully with uniform offset")
+      IO.puts("Shaders compiled successfully with uniform offset")
 
       # Same VAO/VBO setup as previous examples
       {vao, vbo} = create_vertex_array(@vertices, [
@@ -156,14 +156,14 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.ShadersExercise2 do
         {1, 3, @gl_float, @gl_false, 6 * 4, 3 * 4}
       ])
 
-      IO.puts("✓ Same vertex data - offset applied via uniform in shader")
-      IO.puts("✓ Ready to render! Triangle should be moved to the right.")
+      IO.puts("Same vertex data - offset applied via uniform in shader")
+      IO.puts("Ready to render - Triangle should be moved to the right.")
 
       # State: {program, vao, vbo}
       {:ok, {program, vao, vbo}}
     else
       {:error, reason} ->
-        IO.puts("✗ Failed to create shader program: #{reason}")
+        IO.puts("Failed to create shader program: #{reason}")
         {:error, reason}
     end
   end

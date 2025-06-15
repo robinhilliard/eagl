@@ -141,22 +141,22 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.HelloTriangleExercise3 do
            ),
          {:ok, orange_program} <- create_attach_link([vertex_shader, orange_fragment]),
          {:ok, yellow_program} <- create_attach_link([vertex_shader, yellow_fragment]) do
-      IO.puts("✓ Compiled vertex shader (shared between both programs)")
-      IO.puts("✓ Compiled orange and yellow fragment shaders")
-      IO.puts("✓ Created two shader programs successfully")
+      IO.puts("Compiled vertex shader (shared between both programs)")
+      IO.puts("Compiled orange and yellow fragment shaders")
+      IO.puts("Created two shader programs successfully")
 
       # Create VAOs and VBOs using EAGL.Buffer helpers
       {first_vao, first_vbo} = create_position_array(@first_triangle)
       {second_vao, second_vbo} = create_position_array(@second_triangle)
 
-      IO.puts("✓ Created separate VAO/VBO pairs for each triangle")
-      IO.puts("✓ Ready to render! You should see an orange and yellow triangle.")
+      IO.puts("Created separate VAO/VBO pairs for each triangle")
+      IO.puts("Ready to render - You should see an orange and yellow triangle.")
 
       # State: {orange_program, yellow_program, first_vao, first_vbo, second_vao, second_vbo}
       {:ok, {orange_program, yellow_program, first_vao, first_vbo, second_vao, second_vbo}}
     else
       {:error, reason} ->
-        IO.puts("✗ Failed to create shader programs: #{reason}")
+        IO.puts("Failed to create shader programs: #{reason}")
         {:error, reason}
     end
   end

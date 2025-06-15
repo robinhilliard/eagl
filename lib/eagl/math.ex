@@ -1,8 +1,37 @@
 defmodule EAGL.Math do
   @moduledoc """
-  Port of the OpenGL GLM header files to Elixir.
-  Note that Erlang wx OpenGL represents matricies and vectors as
-  flat tuples nested in lists.
+  GLM-compatible 3D math library for OpenGL applications.
+
+  Provides comprehensive vector, matrix, and quaternion operations with
+  OpenGL integration based on the GLM library. All functions work with Erlang's tuple-in-list
+  format required by wx OpenGL bindings.
+
+  ## Usage
+
+      import EAGL.Math
+
+      # Vector operations
+      position = vec3(1.0, 2.0, 3.0)
+      direction = vec3(0.0, 1.0, 0.0)
+      result = vec_add(position, direction)
+      length = vec_length(position)
+
+      # Matrix transformations
+      model = mat4_translate(vec3(5.0, 0.0, 0.0))
+      view = mat4_look_at(
+        vec3(0.0, 0.0, 5.0),  # eye
+        vec3(0.0, 0.0, 0.0),  # target
+        vec3(0.0, 1.0, 0.0)   # up
+      )
+      projection = mat4_perspective(radians(45.0), 16.0/9.0, 0.1, 100.0)
+
+      # Quaternion rotations
+      rotation = quat_from_axis_angle(vec3(0.0, 1.0, 0.0), radians(45.0))
+
+      # All values work directly with EAGL.Shader uniform functions
+      set_uniform(program, "model", model)
+      set_uniform(program, "view", view)
+      set_uniform(program, "projection", projection)
   """
 
   # ============================================================================
@@ -261,7 +290,7 @@ defmodule EAGL.Math do
   end
 
   @doc """
-  Compute the squared length of a vector (avoids sqrt for performance).
+  Compute the squared length of a vector (avoids sqrt).
   """
   @spec length_squared(vec2()) :: float()
   @spec length_squared(vec3()) :: float()

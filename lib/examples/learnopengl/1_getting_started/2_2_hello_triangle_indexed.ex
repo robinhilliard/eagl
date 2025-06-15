@@ -128,20 +128,20 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.HelloTriangleIndexed do
              "learnopengl/1_getting_started/2_2_hello_triangle_indexed/fragment_shader.glsl"
            ),
          {:ok, program} <- create_attach_link([vertex_shader, fragment_shader]) do
-      IO.puts("✓ Vertex and fragment shaders compiled and linked successfully")
+      IO.puts("Vertex and fragment shaders compiled and linked successfully")
 
       # Create VAO, VBO, and EBO for indexed rectangle geometry
       # This is the key difference from basic triangle - we use indices!
       {vao, vbo, ebo} = create_indexed_position_array(@vertices, @indices)
 
-      IO.puts("✓ Created VAO, VBO, and EBO (4 vertices + 6 indices uploaded to GPU)")
-      IO.puts("✓ Ready to render! You should see an orange rectangle.")
+      IO.puts("Created VAO, VBO, and EBO (4 vertices + 6 indices uploaded to GPU)")
+      IO.puts("Ready to render - You should see an orange rectangle.")
 
       # State: {program, vao, vbo, ebo}
       {:ok, {program, vao, vbo, ebo}}
     else
       {:error, reason} ->
-        IO.puts("✗ Failed to create shader program: #{reason}")
+        IO.puts("Failed to create shader program: #{reason}")
         {:error, reason}
     end
   end

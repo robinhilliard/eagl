@@ -1,7 +1,22 @@
 defmodule EAGL.Error do
   @moduledoc """
-  OpenGL error handling utilities.
-  Provides functions for checking and reporting OpenGL errors.
+  OpenGL error checking and reporting utilities.
+
+  Provides Wings3D-inspired error handling patterns with meaningful
+  abstractions for development and debugging.
+
+  ## Usage
+
+      import EAGL.Error
+
+      # Check for errors with context
+      check("After buffer creation")
+
+      # Get error descriptions
+      error_string(1280)  # "GL_INVALID_ENUM"
+
+      # Raise on error (debugging)
+      check!("Critical operation")
   """
 
   use EAGL.Const

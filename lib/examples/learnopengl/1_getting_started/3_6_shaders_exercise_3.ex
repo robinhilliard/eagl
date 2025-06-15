@@ -162,19 +162,19 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.ShadersExercise3 do
              "learnopengl/1_getting_started/3_6_shaders_exercise_3/fragment_shader.glsl"
            ),
          {:ok, program} <- create_attach_link([vertex_shader, fragment_shader]) do
-      IO.puts("✓ Shaders compiled successfully with position-to-color mapping")
+      IO.puts("Shaders compiled successfully with position-to-color mapping")
 
       # Create VAO/VBO with only position data (no color attributes needed)
       {vao, vbo} = create_position_array(@vertices)
 
-      IO.puts("✓ Only position data needed - colors generated from positions")
-      IO.puts("✓ Ready to render! You should see position-based coloring.")
+      IO.puts("Only position data needed - colors generated from positions")
+      IO.puts("Ready to render - You should see position-based coloring.")
 
       # State: {program, vao, vbo}
       {:ok, {program, vao, vbo}}
     else
       {:error, reason} ->
-        IO.puts("✗ Failed to create shader program: #{reason}")
+        IO.puts("Failed to create shader program: #{reason}")
         {:error, reason}
     end
   end

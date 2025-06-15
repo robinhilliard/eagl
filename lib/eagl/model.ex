@@ -1,6 +1,35 @@
 defmodule EAGL.Model do
   @moduledoc """
-  Helper module for loading 3D model resources and creating OpenGL vertex array objects.
+  3D model loading and OpenGL integration.
+
+  Handles model loading with automatic VAO creation. Currently only supports OBJ files
+  but can be extended to support other file formats.
+
+  ## Usage
+
+      import EAGL.Model
+
+      # Load model directly to VAO (most common)
+      {:ok, model} = load_model_to_vao("teapot.obj")
+
+      # Render the model
+      :gl.bindVertexArray(model.vao)
+      :gl.drawElements(@gl_triangles, model.vertex_count, @gl_unsigned_int, 0)
+
+      # Load model data for custom processing
+      {:ok, model_data} = load_model("teapot.obj")
+
+      # Options for normal generation
+      {:ok, model} = load_model_to_vao("teapot.obj",
+        smooth_normals: true,
+        flip_normal_direction: false
+      )
+
+      # List available models
+      models = list_models()
+
+      # Clean up
+      delete_vao(model.vao)
   """
 
   use EAGL.Const
@@ -120,7 +149,6 @@ defmodule EAGL.Model do
           {:ok, %{vao: vao, vertex_count: vertex_count}}
             rescue
               e ->
-                IO.puts("Error creating VAO: #{inspect(e)}")
                 {:error, "Failed to create VAO: #{Exception.message(e)}"}
             end
         end

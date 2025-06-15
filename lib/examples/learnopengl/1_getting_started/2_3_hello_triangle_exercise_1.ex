@@ -129,19 +129,19 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.HelloTriangleExercise1 do
              "learnopengl/1_getting_started/2_3_hello_triangle_exercise_1/fragment_shader.glsl"
            ),
          {:ok, program} <- create_attach_link([vertex_shader, fragment_shader]) do
-      IO.puts("✓ Vertex and fragment shaders compiled and linked successfully")
+      IO.puts("Vertex and fragment shaders compiled and linked successfully")
 
       # Create VAO and VBO for two triangles
       {vao, vbo} = create_position_array(@vertices)
 
-      IO.puts("✓ Created VAO and VBO (6 vertices uploaded to GPU)")
-      IO.puts("✓ Ready to render! You should see two orange triangles side by side.")
+      IO.puts("Created VAO and VBO (6 vertices uploaded to GPU)")
+      IO.puts("Ready to render - You should see two orange triangles side by side.")
 
       # State: {program, vao, vbo}
       {:ok, {program, vao, vbo}}
     else
       {:error, reason} ->
-        IO.puts("✗ Failed to create shader program: #{reason}")
+        IO.puts("Failed to create shader program: #{reason}")
         {:error, reason}
     end
   end
