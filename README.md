@@ -104,8 +104,8 @@ The uniform helpers (from Wings3D) automatically detect the type of EAGL.Math va
 import EAGL.Shader
 
 # Compile and link shaders
-{:ok, vertex} = create_shader(@gl_vertex_shader, "vertex.glsl")
-{:ok, fragment} = create_shader(@gl_fragment_shader, "fragment.glsl")
+{:ok, vertex} = create_shader(:vertex, "vertex.glsl")
+{:ok, fragment} = create_shader(:fragment, "fragment.glsl")
 {:ok, program} = create_attach_link([vertex, fragment])
 
 # Set uniforms with automatic type detection
