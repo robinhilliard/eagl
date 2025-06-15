@@ -71,6 +71,46 @@ EAGL provides a comprehensive 3D math library based on GLM supporting:
 - **Quaternions**: Rotation representation, SLERP, and conversion functions
 - **Utilities**: Trigonometry, interpolation, clamping, and geometric functions
 - **OpenGL Integration**: All functions work with the tuple-in-list format required by Erlang's OpenGL bindings
+- **Sigils**: Compile-time validated literals for matrices (`~m`), vertices (`~v`), and indices (`~i`)
+
+#### Sigil Literals
+
+EAGL provides three sigils for creating OpenGL data with compile-time validation and clean tabular formatting:
+
+```elixir
+import EAGL.Math
+
+# Matrix sigil (~m) - supports comments and automatic size detection
+identity_4x4 = ~m"""
+1.0  0.0  0.0  0.0
+0.0  1.0  0.0  0.0
+0.0  0.0  1.0  0.0
+0.0  0.0  0.0  1.0
+"""
+
+transform_matrix = ~m"""
+1.0  0.0  0.0  10.0  # Translation X
+0.0  1.0  0.0  20.0  # Translation Y
+0.0  0.0  1.0  30.0  # Translation Z
+0.0  0.0  0.0   1.0
+"""
+
+# Vertex sigil (~v) - for raw vertex buffer data
+triangle_vertices = ~v"""
+# position      color
+ 0.0   0.5  0.0  1.0  0.0  0.0  # top vertex - red
+-0.5  -0.5  0.0  0.0  1.0  0.0  # bottom left - green
+ 0.5  -0.5  0.0  0.0  0.0  1.0  # bottom right - blue
+"""
+
+# Index sigil (~i) - for element indices (must be integers)
+quad_indices = ~i"""
+0  1  3  # first triangle
+1  2  3  # second triangle
+"""
+```
+
+#### Vector and Matrix Operations
 
 ```elixir
 import EAGL.Math
@@ -200,16 +240,21 @@ EAGL provides type-safe, buffer management with automatic stride/offset calculat
 import EAGL.Buffer
 
 # Simple position-only VAO/VBO (most common case)
-vertices = [-0.5, -0.5, 0.0, 0.5, -0.5, 0.0, 0.0, 0.5, 0.0]
+vertices = ~v"""
+-0.5  -0.5  0.0
+ 0.5  -0.5  0.0
+ 0.0   0.5  0.0
+"""
 {vao, vbo} = create_position_array(vertices)
 
 # Multiple attribute configuration - choose your approach:
 # Position + color vertices (6 floats per vertex: x,y,z,r,g,b)
-position_color_vertices = [
-  -0.5, -0.5, 0.0,  1.0, 0.0, 0.0,  # vertex 1: position + red
-   0.5, -0.5, 0.0,  0.0, 1.0, 0.0,  # vertex 2: position + green  
-   0.0,  0.5, 0.0,  0.0, 0.0, 1.0   # vertex 3: position + blue
-]
+position_color_vertices = ~v"""
+# position      color
+-0.5  -0.5  0.0  1.0  0.0  0.0  # vertex 1: position + red
+ 0.5  -0.5  0.0  0.0  1.0  0.0  # vertex 2: position + green  
+ 0.0   0.5  0.0  0.0  0.0  1.0  # vertex 3: position + blue
+"""
 
 # APPROACH 1: Automatic calculation (recommended for standard layouts)
 # Automatically calculates stride/offset - no manual math required.
@@ -233,23 +278,26 @@ attributes = [
 #                               - Attribute padding or unusual stride patterns
 
 # Indexed geometry (rectangles, quads, models)
-quad_vertices = [
-   0.5,  0.5, 0.0,  # top right
-   0.5, -0.5, 0.0,  # bottom right
-  -0.5, -0.5, 0.0,  # bottom left
-  -0.5,  0.5, 0.0   # top left
-]
-indices = [0, 1, 3, 1, 2, 3]  # Two triangles forming a rectangle
+quad_vertices = ~v"""
+ 0.5   0.5  0.0  # top right
+ 0.5  -0.5  0.0  # bottom right
+-0.5  -0.5  0.0  # bottom left
+-0.5   0.5  0.0  # top left
+"""
+indices = ~i"""
+0  1  3  # first triangle
+1  2  3  # second triangle
+"""
 {vao, vbo, ebo} = create_indexed_position_array(quad_vertices, indices)
 
 # Complex interleaved vertex data with multiple attributes
 # Format: position(3) + color(3) + texture_coord(2) = 8 floats per vertex
-interleaved_vertices = [
-  # x,    y,    z,    r,    g,    b,    s,    t
-  -0.5, -0.5,  0.0,  1.0,  0.0,  0.0,  0.0,  0.0,  # bottom left
-   0.5, -0.5,  0.0,  0.0,  1.0,  0.0,  1.0,  0.0,  # bottom right
-   0.0,  0.5,  0.0,  0.0,  0.0,  1.0,  0.5,  1.0   # top centre
-]
+interleaved_vertices = ~v"""
+# x     y     z     r     g     b     s     t
+-0.5  -0.5   0.0   1.0   0.0   0.0   0.0   0.0  # bottom left
+ 0.5  -0.5   0.0   0.0   1.0   0.0   1.0   0.0  # bottom right
+ 0.0   0.5   0.0   0.0   0.0   1.0   0.5   1.0  # top centre
+"""
 
 # Three standard attributes with automatic calculation
 {vao, vbo} = create_vertex_array(interleaved_vertices, vertex_attributes(:position, :color, :texture_coordinate))
