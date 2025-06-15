@@ -146,8 +146,8 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.ShadersUniform do
       IO.puts("Created VAO and VBO (3 vertices uploaded to GPU)")
       IO.puts("Ready to render - You should see a color-changing triangle.")
 
-      # State: {program, vao, vbo, start_time}
-      current_time = :erlang.monotonic_time(:millisecond)
+      # Initialize current time for animation
+      current_time = :erlang.monotonic_time(:millisecond) / 1000.0
       {:ok, {program, vao, vbo, current_time}}
     else
       {:error, reason} ->
@@ -168,19 +168,16 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.ShadersUniform do
     # Use the shader program
     :gl.useProgram(program)
 
-    # Calculate time-based color animation
-    # NOTE: In original LearnOpenGL, this would be: float timeValue = glfwGetTime();
-    # EAGL uses tick handler to update time state, then uses it in render
-    time_seconds = current_time / 1000.0
+    # Calculate animated color using sine wave (EAGL framework pattern)
+    # Original LearnOpenGL: time calculated directly in render with glfwGetTime()
+    # EAGL approach: uses time from state updated by tick handler each frame
+    # Benefits: cleaner separation of state updates from rendering logic
+    # Math: sin(time) oscillates -1 to 1, we map to 0.0 to 1.0 for green intensity
+    green_value = (:math.sin(current_time) / 2.0) + 0.5
 
-    # Create color animation using sin function
-    # This creates a smooth oscillation between 0.0 and 1.0
-    # Same math as original: sin(timeValue) / 2.0f + 0.5f
-    green_value = (:math.sin(time_seconds) / 2.0) + 0.5
-
-    # Update the uniform color
-    # Original LearnOpenGL tutorial uses glGetUniformLocation + glUniform4f
-    # EAGL's set_uniform() handles this pattern with automatic type detection
+    # Set uniform color for animated effect
+    # EAGL's set_uniform() handles glGetUniformLocation + glUniform4f pattern
+    # Format: {red, green, blue, alpha} where green animates, others stay constant
     set_uniform(program, "ourColor", [{0.0, green_value, 0.0, 1.0}])
 
     # Draw the triangle
@@ -191,22 +188,19 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.ShadersUniform do
   end
 
   @impl true
-  def handle_event(:tick, {program, vao, vbo, _time}) do
-    # EAGL Framework Pattern: Update time state on each tick (1/60th of a second)
-    # This differs from original LearnOpenGL where glfwGetTime() is called in render loop
-    # Benefits:
-    #   - Separates state updates from rendering
-    #   - Cleaner architecture and better testability
-    #   - Same smooth animation result
-    {:ok, {program, vao, vbo, :erlang.monotonic_time(:millisecond)}}
+  def handle_event(:tick, {program, vao, vbo, _current_time}) do
+    # Update animation time each tick (EAGL framework pattern)
+    # Called at 60 FPS to update the time state used for color animation
+    # This separates timing logic from rendering for cleaner architecture
+    # Benefits: fixed frame rate, better testability, separation of concerns
+    current_time = :erlang.monotonic_time(:millisecond) / 1000.0
+    {:ok, {program, vao, vbo, current_time}}
   end
 
   @impl true
-  def cleanup({program, vao, vbo, _start_time}) do
-    # Cleanup vertex array data
+  def cleanup({program, vao, vbo, _current_time}) do
+    # Clean up OpenGL resources
     delete_vertex_array(vao, vbo)
-
-    # Cleanup shader program
     cleanup_program(program)
     :ok
   end
