@@ -12,9 +12,10 @@
 Most examples of working with OpenGL are written in C++ or C# (Unity). The purpose of the EAGL library is to:
 - Make it easier to translate OpenGL tutorials and examples from resources like [Learn OpenGL](https://learnopengl.com) into Elixir. 
 - Provide basic helper functions to bridge the gap between idiomatic Elixir and OpenGL's state machine, using the Wings 3D Erlang source as a guide to prescriptive vs helpful additions
-- Enable other libraries and apps to build on this one
+- Enable other libraries and apps to build on this one and libraries like [ECSx](https://github.com/ecsx-framework/ECSx) and the list at [Awesome Elixir Gaming](https://github.com/njwest/Awesome-Elixir-Gaming)
 
 The following are non-goals:
+- Focussing on 2D GPU graphics (see [Scenic](https://github.com/ScenicFramework/scenic) for that)
 - Wrapping of the Erlang wx library
 - A Shader DSL
 - A UI layout/component library
