@@ -928,19 +928,15 @@ defmodule EAGL.Math do
         [{a00, a01, a02, a10, a11, a12, a20, a21, a22}],
         [{b00, b01, b02, b10, b11, b12, b20, b21, b22}]
       ) do
+    # mix format: off
     [
       {
-        a00 * b00 + a01 * b10 + a02 * b20,
-        a00 * b01 + a01 * b11 + a02 * b21,
-        a00 * b02 + a01 * b12 + a02 * b22,
-        a10 * b00 + a11 * b10 + a12 * b20,
-        a10 * b01 + a11 * b11 + a12 * b21,
-        a10 * b02 + a11 * b12 + a12 * b22,
-        a20 * b00 + a21 * b10 + a22 * b20,
-        a20 * b01 + a21 * b11 + a22 * b21,
-        a20 * b02 + a21 * b12 + a22 * b22
+        a00 * b00 + a01 * b10 + a02 * b20, a00 * b01 + a01 * b11 + a02 * b21, a00 * b02 + a01 * b12 + a02 * b22,  # Column 0
+        a10 * b00 + a11 * b10 + a12 * b20, a10 * b01 + a11 * b11 + a12 * b21, a10 * b02 + a11 * b12 + a12 * b22,  # Column 1
+        a20 * b00 + a21 * b10 + a22 * b20, a20 * b01 + a21 * b11 + a22 * b21, a20 * b02 + a21 * b12 + a22 * b22   # Column 2
       }
     ]
+    # mix format: on
   end
 
   @doc """
@@ -951,7 +947,16 @@ defmodule EAGL.Math do
   def mat4_transpose([
         {m00, m01, m02, m03, m10, m11, m12, m13, m20, m21, m22, m23, m30, m31, m32, m33}
       ]) do
-    [{m00, m10, m20, m30, m01, m11, m21, m31, m02, m12, m22, m32, m03, m13, m23, m33}]
+    # mix format: off
+    [
+      {
+        m00, m10, m20, m30,  # Column 0 (was row 0)
+        m01, m11, m21, m31,  # Column 1 (was row 1)
+        m02, m12, m22, m32,  # Column 2 (was row 2)
+        m03, m13, m23, m33   # Column 3 (was row 3)
+      }
+    ]
+    # mix format: on
   end
 
   @doc """
@@ -960,7 +965,15 @@ defmodule EAGL.Math do
   """
   @spec mat3_transpose(mat3()) :: mat3()
   def mat3_transpose([{m00, m01, m02, m10, m11, m12, m20, m21, m22}]) do
-    [{m00, m10, m20, m01, m11, m21, m02, m12, m22}]
+    # mix format: off
+    [
+      {
+        m00, m10, m20,  # Column 0 (was row 0)
+        m01, m11, m21,  # Column 1 (was row 1)
+        m02, m12, m22   # Column 2 (was row 2)
+      }
+    ]
+    # mix format: on
   end
 
   @doc """
@@ -1106,7 +1119,16 @@ defmodule EAGL.Math do
     # Check for non-invertible matrix
     if abs(det) < 1.0e-14 do
       # Return the original matrix if not invertible
-      [{m00, m01, m02, m03, m10, m11, m12, m13, m20, m21, m22, m23, m30, m31, m32, m33}]
+      # mix format: off
+      [
+        {
+          m00, m01, m02, m03,  # Column 0
+          m10, m11, m12, m13,  # Column 1
+          m20, m21, m22, m23,  # Column 2
+          m30, m31, m32, m33   # Column 3
+        }
+      ]
+      # mix format: on
     else
       invdet = 1.0 / det
 
@@ -1222,7 +1244,16 @@ defmodule EAGL.Math do
   """
   @spec mat4_transform_point(mat4(), vec3()) :: vec3()
   def mat4_transform_point(
-        [{m00, m01, m02, m03, m10, m11, m12, m13, m20, m21, m22, m23, m30, m31, m32, m33}],
+        # mix format: off
+        [
+          {
+            m00, m01, m02, m03,  # Column 0
+            m10, m11, m12, m13,  # Column 1
+            m20, m21, m22, m23,  # Column 2
+            m30, m31, m32, m33   # Column 3
+          }
+        ],
+        # mix format: on
         [{x, y, z}]
       ) do
     # Multiply as if the vector has w=1
@@ -1245,7 +1276,16 @@ defmodule EAGL.Math do
   """
   @spec mat4_transform_vector(mat4(), vec3()) :: vec3()
   def mat4_transform_vector(
-        [{m00, m01, m02, _m03, m10, m11, m12, _m13, m20, m21, m22, _m23, _m30, _m31, _m32, _m33}],
+        # mix format: off
+        [
+          {
+            m00, m01, m02, _m03,  # Column 0
+            m10, m11, m12, _m13,  # Column 1
+            m20, m21, m22, _m23,  # Column 2
+            _m30, _m31, _m32, _m33   # Column 3 (ignored for direction vectors)
+          }
+        ],
+        # mix format: on
         [{x, y, z}]
       ) do
     # Multiply as if the vector has w=0 (ignore translation)
@@ -1260,7 +1300,16 @@ defmodule EAGL.Math do
   """
   @spec mat4_transform_vec4(mat4(), vec4()) :: vec4()
   def mat4_transform_vec4(
-        [{m00, m01, m02, m03, m10, m11, m12, m13, m20, m21, m22, m23, m30, m31, m32, m33}],
+        # mix format: off
+        [
+          {
+            m00, m01, m02, m03,  # Column 0
+            m10, m11, m12, m13,  # Column 1
+            m20, m21, m22, m23,  # Column 2
+            m30, m31, m32, m33   # Column 3
+          }
+        ],
+        # mix format: on
         [{x, y, z, w}]
       ) do
     new_x = m00 * x + m10 * y + m20 * z + m30 * w
