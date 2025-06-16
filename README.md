@@ -25,7 +25,7 @@ The following are non-goals:
 
 ```elixir
 # Add to mix.exs
-{:eagl, "~> 0.5.0"}
+{:eagl, "~> 0.6.0"}
 ```
 
 EAGL includes several examples to demonstrate its capabilities. Use the unified examples runner:
@@ -53,10 +53,12 @@ EAGL includes several examples to demonstrate its capabilities. Use the unified 
   Textures:         141) 4.1 Basic     142) 4.2 Combined      143) 4.3 Exercise1
                     144) 4.4 Exercise2 145) 4.5 Exercise3     146) 4.6 Exercise4
 
-  Missing:          151) 5.1 Transformations  161) 6.1 Coordinate Systems  171) 7.1 Camera
+  Transformations:  151) 5.1 Basic     152) 5.2 Exercise1  153) 5.2 Exercise2
+
+  Missing:          161) 6.1 Coordinate Systems  171) 7.1 Camera
 
 ════════════════════════════════════════════════════════════════
-Enter code (01, 02, 111-146), 'q' to quit, 'r' to refresh:
+Enter code (01, 02, 111-153), 'q' to quit, 'r' to refresh:
 >
 ```
 
@@ -531,7 +533,7 @@ The current focus is to:
   - ✅ Hello Triangle (2.1-2.5): 5 examples  
   - ✅ Shaders (3.1-3.6): 6 examples
   - ✅ Textures (4.1-4.6): 6 examples
-  - [ ] **Missing**: Transformations (5.1): 1 example needed
+  - ✅ Transformations (5.1-5.2): 3 examples
   - [ ] **Missing**: Coordinate Systems (6.1): 1 example needed  
   - [ ] **Missing**: Camera (7.1): 1 example needed
 - [ ] Continue with "Lighting" chapter examples
