@@ -264,8 +264,15 @@ attributes = vertex_attributes(:position, :color)
 # APPROACH 2: Manual configuration (for fine control or non-standard layouts)  
 # Specify exactly what you want - useful for custom stride, non-sequential locations, etc.
 attributes = [
-  position_attribute(),                           # location: 0, size: 3, stride: 24, offset: 0
-  color_attribute(stride: 24, offset: 12)         # location: 1, size: 3, stride: 24, offset: 12
+  position_attribute(stride: 24, offset: 0),      # uses default location 0
+  color_attribute(stride: 24, offset: 12)         # uses default location 1
+]
+{vao, vbo} = create_vertex_array(position_color_vertices, attributes)
+
+# APPROACH 3: Custom locations (override defaults)
+attributes = [
+  position_attribute(location: 5, stride: 24, offset: 0),    # custom location 5
+  color_attribute(location: 2, stride: 24, offset: 12)       # custom location 2
 ]
 {vao, vbo} = create_vertex_array(position_color_vertices, attributes)
 
@@ -276,6 +283,7 @@ attributes = [
 # Use manual approach when:     - Custom attribute locations or sizes
 #                               - Non-standard data types or normalization 
 #                               - Attribute padding or unusual stride patterns
+#                               - Need to match specific shader attribute locations
 
 # Indexed geometry (rectangles, quads, models)
 quad_vertices = ~v"""
@@ -308,16 +316,21 @@ delete_indexed_array(vao, vbo, ebo)  # For indexed arrays
 ```
 
 **Standard Attribute Helpers:**
-- `position_attribute()` - 3 floats (x, y, z) at location 0
-- `color_attribute()` - 3 floats (r, g, b) at location 1  
-- `texture_coordinate_attribute()` - 2 floats (s, t) at location 2
-- `normal_attribute()` - 3 floats (nx, ny, nz) at location 3
+- `position_attribute()` - 3 floats (x, y, z), defaults to location 0 but can be overridden
+- `color_attribute()` - 3 floats (r, g, b), defaults to location 1 but can be overridden  
+- `texture_coordinate_attribute()` - 2 floats (s, t), defaults to location 2 but can be overridden
+- `normal_attribute()` - 3 floats (nx, ny, nz), defaults to location 3 but can be overridden
+
+**Two Configuration Approaches:**
+
+1. **Automatic Layout** (recommended): `vertex_attributes()` assigns sequential locations (0, 1, 2, 3...) and calculates stride/offset automatically
+2. **Manual Layout**: Individual attribute helpers allow custom locations, stride, and offset for non-standard layouts
 
 **Key Benefits:**
-- **Automatic calculation**: `vertex_attributes()` eliminates manual stride/offset math
+- **Flexible locations**: Default locations can be overridden with `location:` option
+- **Automatic calculation**: `vertex_attributes()` eliminates manual stride/offset math for standard layouts
 - **Type safety**: Compile-time checks for attribute configuration  
-- **Standard patterns**: Common attribute layouts are pre-defined
-- **Flexible**: Mix automatic and manual configuration as needed
+- **Mix approaches**: Use automatic layout for common cases, manual for custom requirements
 
 ### Error Handling
 
@@ -462,15 +475,16 @@ OpenGL is typically available through graphics drivers. If you encounter issues,
 ```
 lib/
 ├── eagl/                   # Core EAGL modules
-│   ├── buffer.ex           # VAO/VBO helper functions
-│   ├── const.ex            # OpenGL constants
-│   ├── error.ex            # Error checking and reporting
-│   ├── math.ex             # GLM-style math library
-│   ├── model.ex            # 3D model management
-│   ├── obj_loader.ex       # Wavefront OBJ parser
-│   ├── shader.ex           # Shader compilation
-│   ├── window.ex           # Window management
-│   └── window_behaviour.ex # Window callback behavior
+│   ├── buffer.ex           # VAO/VBO helper functions (516 lines)
+│   ├── const.ex            # OpenGL constants (842 lines)
+│   ├── error.ex            # Error checking and reporting (110 lines)
+│   ├── math.ex             # GLM-style math library (1494 lines)
+│   ├── model.ex            # 3D model management (191 lines)
+│   ├── obj_loader.ex       # Wavefront OBJ parser (456 lines)
+│   ├── shader.ex           # Shader compilation (322 lines)
+│   ├── texture.ex          # Texture loading and management (451 lines)
+│   ├── window.ex           # Window management (597 lines)
+│   └── window_behaviour.ex # Window callback behavior (66 lines)
 ├── examples/               # Example applications
 │   ├── math_example.ex     # Math library demonstrations
 │   ├── teapot_example.ex   # 3D teapot rendering
@@ -478,6 +492,13 @@ lib/
 └── wx/                     # wxWidgets constants
 test/
 ├── eagl/                   # Unit tests for EAGL modules
+│   ├── buffer_test.exs     # Buffer management tests (577 lines)
+│   ├── error_test.exs      # Error handling tests (55 lines)
+│   ├── math_test.exs       # Math library tests (1136 lines)
+│   ├── model_test.exs      # Model loading tests (250 lines)
+│   ├── obj_loader_test.exs # OBJ parser tests (141 lines)
+│   ├── shader_test.exs     # Shader compilation tests (1033 lines)
+│   └── texture_test.exs    # Texture management tests (449 lines)
 └── eagl_test.exs           # Integration tests
 priv/
 ├── models/                 # 3D model files (.obj)
