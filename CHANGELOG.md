@@ -9,10 +9,64 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### TODO for Next Release
 - **Missing LearnOpenGL Examples**: Need to port remaining "Getting Started" examples:
-  - 151 (5.1 Transformations) - Matrix transformations (scaling, rotation, translation)
   - 161 (6.1 Coordinate Systems) - Model/View/Projection matrices and 3D rendering
   - 171 (7.1 Camera) - Camera controls and view matrix manipulation
 - These examples complete the foundational "Getting Started" series before moving to "Lighting"
+
+## [0.6.0] - 2024-12-24
+
+### Added
+- **Complete LearnOpenGL Transformations Chapter**: Added all transformation examples (5.1-5.2)
+  - **5.1 Basic Transformations**: Matrix transformation fundamentals with orbiting rectangle
+    - Basic matrix operations (translate, rotate, scale) with time-based animation
+    - Single textured rectangle demonstrating transformation order effects (T * R = orbiting)
+    - Educational focus on understanding how transformation matrices combine
+    - Shows why transformation order matters: translate-then-rotate vs rotate-then-translate
+  - **5.2 Exercise 1**: Multiple containers with different transformation types
+    - Two containers: one rotating, one scaling using sine wave animation
+    - Demonstrates applying different transformations to same geometry
+    - Shows matrix independence - each object has its own transformation matrix
+    - Uses `abs(sin(time))` to prevent negative scaling that would flip textures
+  - **5.2 Exercise 2**: Multiple containers with texture mixing
+    - Two containers with same transformations as Exercise 1 but enhanced texture system
+    - Demonstrates multiple texture units and texture mixing concepts from Chapter 4
+    - Uses `mix(texture1, texture2, 0.2)` in fragment shader for blended textures
+    - Includes negative scaling effects with `sin(time)` (no absolute value)
+    - Primary texture (EAGL logo) mixed with checkerboard pattern for clear visual contrast
+
+### Enhanced
+- **EAGL.Math Integration**: All transformation examples utilize EAGL's GLM-compatible matrix functions
+  - `mat4_identity()`, `mat4_translate()`, `mat4_rotate_z()`, `mat4_scale()` 
+  - Automatic matrix uniform handling with `set_uniform()` type detection
+  - Clean Elixir syntax matching original GLM/C++ concepts
+- **Animation Framework**: Proper 60 FPS tick-based animation using EAGL.Window
+  - State-based time management with `handle_event(:tick, state)` callbacks
+  - Clean separation of animation logic from rendering logic
+  - Consistent animation patterns across all transformation examples
+- **Texture System Integration**: Building on Chapter 4 texture capabilities
+  - Single texture loading with `load_texture_from_file()`
+  - Multiple texture units with procedural texture mixing
+  - Seamless integration of transformation and texture concepts
+
+### Technical Improvements
+- **Vertex Shader Attribute Locations**: Fixed vertex attribute layout consistency
+  - Corrected texture coordinate attribute location from `layout (location = 2)` to `layout (location = 1)`
+  - Proper alignment with EAGL's `vertex_attributes(:position, :texture_coordinate)` helper
+  - Ensures texture coordinates are correctly passed to fragment shaders
+- **Shader Management**: All examples use consistent `with` pattern for error handling
+  - Unified error handling approach across transformation examples
+  - Better error messages and graceful failure handling
+  - Consistent with EAGL framework patterns established in previous chapters
+- **Documentation Accuracy**: Fixed transformation behavior descriptions
+  - Corrected documentation to accurately describe "orbiting" vs "rotating around center"
+  - Clear explanation of transformation order effects (T*R vs R*T)
+  - Educational notes about matrix multiplication order and visual results
+
+### Examples Statistics
+- **Total Examples**: 24 (was 21) - added 3 transformation examples
+- **Transformation Series**: Complete 3-example series covering basic to advanced concepts
+- **Getting Started Progress**: 5 of 7 chapters complete (missing only Coordinate Systems and Camera)
+- **Code Coverage**: 151-153 transformation codes added to examples runner
 
 ## [0.5.0] - 2024-12-22
 
