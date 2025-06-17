@@ -58,6 +58,12 @@ defmodule EAGL.WindowBehaviour do
   Called when an event occurs (keyboard, mouse, etc.).
   This callback is optional. If not implemented, events are ignored.
   Should return {:ok, new_state} to continue with updated state.
+
+  Event types:
+  - `{:key, key_code}` - Keyboard key press
+  - `{:mouse_motion, x, y}` - Mouse movement (for camera look around)
+  - `{:mouse_wheel, x, y, wheel_rotation, wheel_delta}` - Scroll wheel (for zoom)
+  - `:tick` - Animation frame tick (60 FPS)
   """
   @callback handle_event(event :: any(), state :: any()) :: {:ok, any()}
 

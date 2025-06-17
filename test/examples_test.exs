@@ -24,9 +24,12 @@ defmodule ExamplesTest do
     # Hello Triangle
     {EAGL.Examples.LearnOpenGL.GettingStarted.HelloTriangle, "2.1 Hello Triangle"},
     {EAGL.Examples.LearnOpenGL.GettingStarted.HelloTriangleIndexed, "2.2 Hello Triangle Indexed"},
-    {EAGL.Examples.LearnOpenGL.GettingStarted.HelloTriangleExercise1, "2.3 Hello Triangle Exercise 1"},
-    {EAGL.Examples.LearnOpenGL.GettingStarted.HelloTriangleExercise2, "2.4 Hello Triangle Exercise 2"},
-    {EAGL.Examples.LearnOpenGL.GettingStarted.HelloTriangleExercise3, "2.5 Hello Triangle Exercise 3"},
+    {EAGL.Examples.LearnOpenGL.GettingStarted.HelloTriangleExercise1,
+     "2.3 Hello Triangle Exercise 1"},
+    {EAGL.Examples.LearnOpenGL.GettingStarted.HelloTriangleExercise2,
+     "2.4 Hello Triangle Exercise 2"},
+    {EAGL.Examples.LearnOpenGL.GettingStarted.HelloTriangleExercise3,
+     "2.5 Hello Triangle Exercise 3"},
 
     # Shaders
     {EAGL.Examples.LearnOpenGL.GettingStarted.ShadersUniform, "3.1 Shaders Uniform"},
@@ -46,18 +49,25 @@ defmodule ExamplesTest do
 
     # Transformations
     {EAGL.Examples.LearnOpenGL.GettingStarted.Transformations, "5.1 Transformations"},
-    {EAGL.Examples.LearnOpenGL.GettingStarted.TransformationsExercise1, "5.2 Transformations Exercise 1"},
-    {EAGL.Examples.LearnOpenGL.GettingStarted.TransformationsExercise2, "5.2 Transformations Exercise 2"},
+    {EAGL.Examples.LearnOpenGL.GettingStarted.TransformationsExercise1,
+     "5.2 Transformations Exercise 1"},
+    {EAGL.Examples.LearnOpenGL.GettingStarted.TransformationsExercise2,
+     "5.2 Transformations Exercise 2"},
 
     # Coordinate Systems
     {EAGL.Examples.LearnOpenGL.GettingStarted.CoordinateSystems, "6.1 Coordinate Systems"},
-    {EAGL.Examples.LearnOpenGL.GettingStarted.CoordinateSystemsDepth, "6.2 Coordinate Systems Depth"},
-    {EAGL.Examples.LearnOpenGL.GettingStarted.CoordinateSystemsMultiple, "6.3 Coordinate Systems Multiple"},
-    {EAGL.Examples.LearnOpenGL.GettingStarted.CoordinateSystemsExercise, "6.4 Coordinate Systems Exercise"},
+    {EAGL.Examples.LearnOpenGL.GettingStarted.CoordinateSystemsDepth,
+     "6.2 Coordinate Systems Depth"},
+    {EAGL.Examples.LearnOpenGL.GettingStarted.CoordinateSystemsMultiple,
+     "6.3 Coordinate Systems Multiple"},
+    {EAGL.Examples.LearnOpenGL.GettingStarted.CoordinateSystemsExercise,
+     "6.4 Coordinate Systems Exercise"},
 
     # Camera
     {EAGL.Examples.LearnOpenGL.GettingStarted.CameraCircle, "7.1 Camera Circle"},
-    {EAGL.Examples.LearnOpenGL.GettingStarted.CameraKeyboardDt, "7.2 Camera Keyboard + Delta Time"}
+    {EAGL.Examples.LearnOpenGL.GettingStarted.CameraKeyboardDt,
+     "7.2 Camera Keyboard + Delta Time"},
+    {EAGL.Examples.LearnOpenGL.GettingStarted.CameraMouseZoom, "7.3 Camera Mouse + Zoom"}
   ]
 
   # Non-interactive examples that complete immediately
@@ -65,35 +75,38 @@ defmodule ExamplesTest do
     {EAGL.Examples.Math, "Math Example"}
   ]
 
-
-
   describe "example timeout tests" do
-    @describetag timeout: 30_000  # Allow time for all examples to complete with their built-in timeouts
+    # Allow time for all examples to complete with their built-in timeouts
+    @describetag timeout: 30_000
     test "examples run and timeout correctly" do
       # Run interactive examples with limited concurrency (8 at a time)
       # Each example uses its own timeout system that starts after first render
-      interactive_results = @interactive_examples
-      |> Task.async_stream(
-        fn {module, name} ->
-          {module, name, run_example_with_timeout(module, name), :interactive}
-        end,
-        max_concurrency: 4,
-        timeout: :infinity  # Let examples handle their own timeouts after setup
-      )
-      |> Enum.to_list()
-      |> Enum.map(fn {:ok, result} -> result end)
+      interactive_results =
+        @interactive_examples
+        |> Task.async_stream(
+          fn {module, name} ->
+            {module, name, run_example_with_timeout(module, name), :interactive}
+          end,
+          max_concurrency: 4,
+          # Let examples handle their own timeouts after setup
+          timeout: :infinity
+        )
+        |> Enum.to_list()
+        |> Enum.map(fn {:ok, result} -> result end)
 
       # Run non-interactive examples (these complete immediately)
-      non_interactive_results = @non_interactive_examples
-      |> Task.async_stream(
-        fn {module, name} ->
-          {module, name, run_example_with_timeout(module, name), :non_interactive}
-        end,
-        max_concurrency: 4,
-        timeout: :infinity  # These complete quickly anyway
-      )
-      |> Enum.to_list()
-      |> Enum.map(fn {:ok, result} -> result end)
+      non_interactive_results =
+        @non_interactive_examples
+        |> Task.async_stream(
+          fn {module, name} ->
+            {module, name, run_example_with_timeout(module, name), :non_interactive}
+          end,
+          max_concurrency: 4,
+          # These complete quickly anyway
+          timeout: :infinity
+        )
+        |> Enum.to_list()
+        |> Enum.map(fn {:ok, result} -> result end)
 
       # Combine all results
       results = interactive_results ++ non_interactive_results
@@ -104,8 +117,12 @@ defmodule ExamplesTest do
 
         case type do
           :interactive ->
-            assert String.contains?(output, "EAGL_TIMEOUT: Window timed out after #{@timeout_duration}ms"),
+            assert String.contains?(
+                     output,
+                     "EAGL_TIMEOUT: Window timed out after #{@timeout_duration}ms"
+                   ),
                    "Interactive example #{name} (#{module}) did not timeout correctly. Output: #{output}"
+
           :non_interactive ->
             # Non-interactive examples complete immediately
             refute String.contains?(output, "EAGL_TIMEOUT"),
@@ -119,10 +136,11 @@ defmodule ExamplesTest do
     end
 
     test "individual example - Math" do
-      {output, result} = run_example_with_timeout(
-        EAGL.Examples.Math,
-        "Math"
-      )
+      {output, result} =
+        run_example_with_timeout(
+          EAGL.Examples.Math,
+          "Math"
+        )
 
       assert result == :ok
       # Math example completes immediately, doesn't timeout
@@ -136,18 +154,20 @@ defmodule ExamplesTest do
   # Helper function to run an example with timeout and capture output
   defp run_example_with_timeout(module, name) do
     try do
-      output = capture_io(fn ->
-        # Let the example handle its own timeout - it will return when ready
-        result = module.run_example(timeout: @timeout_duration)
-        send(self(), {:result, result})
-      end)
+      output =
+        capture_io(fn ->
+          # Let the example handle its own timeout - it will return when ready
+          result = module.run_example(timeout: @timeout_duration)
+          send(self(), {:result, result})
+        end)
 
-            result = receive do
-        {:result, res} -> res
-      after
-        # Very generous timeout - examples control their own timing
-        25_000 -> :timeout
-      end
+      result =
+        receive do
+          {:result, res} -> res
+        after
+          # Very generous timeout - examples control their own timing
+          25_000 -> :timeout
+        end
 
       {output, result}
     rescue

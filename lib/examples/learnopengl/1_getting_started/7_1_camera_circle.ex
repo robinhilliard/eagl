@@ -238,8 +238,10 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.CameraCircle do
     camera_z = :math.cos(state.current_time * orbit_speed) * camera_radius
 
     camera_pos = vec3(camera_x, camera_height, camera_z)
-    target_pos = vec3(0.0, 0.0, 0.0)  # Look at the cube at origin
-    up_vector = vec3(0.0, 1.0, 0.0)   # World up direction
+    # Look at the cube at origin
+    target_pos = vec3(0.0, 0.0, 0.0)
+    # World up direction
+    up_vector = vec3(0.0, 1.0, 0.0)
 
     # Create view matrix using look-at transformation
     view = mat4_look_at(camera_pos, target_pos, up_vector)

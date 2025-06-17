@@ -25,7 +25,7 @@ The following are non-goals:
 
 ```elixir
 # Add to mix.exs
-{:eagl, "~> 0.6.0"}
+{:eagl, "~> 0.7.0"}
 ```
 
 EAGL includes several examples to demonstrate its capabilities. Use the unified examples runner:
@@ -58,7 +58,7 @@ EAGL includes several examples to demonstrate its capabilities. Use the unified 
   Coordinate Systems: 161) 6.1 Basic   162) 6.2 Depth     163) 6.3 Multiple
                       164) 6.4 Exercise
 
-  Camera:           171) 7.1 Circle    172) 7.2 Keyboard+DT
+  Camera:           171) 7.1 Circle    172) 7.2 Keyboard+DT 173) 7.3 Mouse+Zoom
 
 ════════════════════════════════════════════════════════════════
 Enter code (01, 02, 111-153), 'q' to quit, 'r' to refresh:
@@ -538,7 +538,7 @@ The current focus is to:
   - ✅ Textures (4.1-4.6): 6 examples
   - ✅ Transformations (5.1-5.2): 3 examples
   - ✅ Coordinate Systems (6.1-6.4): 4 examples
-  - ✅ Camera (7.1-7.2): 2 examples completed
+  - ✅ Camera (7.1-7.3): 3 examples completed
 - [ ] Continue with "Lighting" chapter examples
 - [ ] Load common model types like GLTF
 

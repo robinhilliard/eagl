@@ -50,7 +50,7 @@ show_menu() {
     echo -e "  ${YELLOW}Coord Systems:${NC}    ${CYAN}161)${NC} 6.1 Basic     ${CYAN}162)${NC} 6.2 Depth      ${CYAN}163)${NC} 6.3 Multiple"
     echo -e "                    ${CYAN}164)${NC} 6.4 Exercise"
     echo
-    echo -e "  ${YELLOW}Camera:${NC}           ${CYAN}171)${NC} 7.1 Circle    ${CYAN}172)${NC} 7.2 Keyboard+DT"
+    echo -e "  ${YELLOW}Camera:${NC}           ${CYAN}171)${NC} 7.1 Circle    ${CYAN}172)${NC} 7.2 Keyboard+DT ${CYAN}173)${NC} 7.3 Mouse+Zoom"
     echo
     echo -e "${PURPLE}════════════════════════════════════════════════════════════════${NC}"
 }
@@ -151,11 +151,14 @@ run_example() {
         172)
             module="EAGL.Examples.LearnOpenGL.GettingStarted.CameraKeyboardDt"
             ;;
+        173)
+            module="EAGL.Examples.LearnOpenGL.GettingStarted.CameraMouseZoom"
+            ;;
         *)
             echo -e "${RED}Invalid choice: $choice${NC}"
             echo -e "${YELLOW}Available examples:${NC}"
             echo -e "${YELLOW}- Non-Learn OpenGL: 01, 02${NC}"
-            echo -e "${YELLOW}- Learn OpenGL Getting Started: 111, 112, 121-125, 131-136, 141-146, 151-153, 161-164, 171-172${NC}"
+            echo -e "${YELLOW}- Learn OpenGL Getting Started: 111, 112, 121-125, 131-136, 141-146, 151-153, 161-164, 171-173${NC}"
             return 1
             ;;
     esac
@@ -173,7 +176,7 @@ run_example() {
 # Main loop
 while true; do
     show_menu
-    echo -e "Enter code (01, 02, 111-172), 'q' to quit, 'r' to refresh:"
+    echo -e "Enter code (01, 02, 111-173), 'q' to quit, 'r' to refresh:"
     echo -n "> "
     
     read -r choice
@@ -186,7 +189,7 @@ while true; do
         r|R|refresh)
             continue
             ;;
-        01|02|111|112|121|122|123|124|125|131|132|133|134|135|136|141|142|143|144|145|146|151|152|153|161|162|163|164|171|172)
+        01|02|111|112|121|122|123|124|125|131|132|133|134|135|136|141|142|143|144|145|146|151|152|153|161|162|163|164|171|172|173)
             clear
             if run_example "$choice"; then
                 echo
@@ -199,7 +202,7 @@ while true; do
             ;;
         *)
             echo -e "${RED}Invalid input.${NC}"
-            echo -e "${YELLOW}Valid codes: 01, 02, 111, 112, 121-125, 131-136, 141-146, 151-153, 161-164, 171-172${NC}"
+            echo -e "${YELLOW}Valid codes: 01, 02, 111, 112, 121-125, 131-136, 141-146, 151-153, 161-164, 171-173${NC}"
             echo -n "Press ENTER to continue..."
             read -r
             ;;

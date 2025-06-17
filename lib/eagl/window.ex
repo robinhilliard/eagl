@@ -50,6 +50,19 @@ defmodule EAGL.Window do
           # Clean up OpenGL resources
           :ok
         end
+
+        # Optional: Handle mouse events for camera control
+        @impl true
+        def handle_event({:mouse_motion, x, y}, state) do
+          # Handle mouse movement for camera look around
+          {:ok, updated_state}
+        end
+
+        @impl true
+        def handle_event({:mouse_wheel, x, y, wheel_rotation, wheel_delta}, state) do
+          # Handle scroll wheel for camera zoom
+          {:ok, updated_state}
+        end
       end
   """
 
@@ -163,6 +176,13 @@ defmodule EAGL.Window do
       :wxGLCanvas.connect(gl_canvas, :paint)
       :wxFrame.connect(frame, :char_hook)
 
+      # Mouse event handlers for camera control
+      :wxFrame.connect(frame, :motion)
+      :wxFrame.connect(frame, :mousewheel)
+      # Also try connecting to canvas
+      :wxGLCanvas.connect(gl_canvas, :motion)
+      :wxGLCanvas.connect(gl_canvas, :mousewheel)
+
       # Create a sizer and add the canvas to it
       sizer = :wxBoxSizer.new(@wx_vertical)
       :wxSizer.add(sizer, gl_canvas, proportion: 1, flag: @wx_expand)
@@ -271,7 +291,15 @@ defmodule EAGL.Window do
 
               # Main loop
               try do
-                main_loop(frame, gl_canvas, gl_context, callback_module, state, enter_to_exit, timeout)
+                main_loop(
+                  frame,
+                  gl_canvas,
+                  gl_context,
+                  callback_module,
+                  state,
+                  enter_to_exit,
+                  timeout
+                )
               catch
                 :exit_main_loop -> :ok
               end
@@ -551,7 +579,80 @@ defmodule EAGL.Window do
 
         # Trigger a repaint after handling the event
         :wxWindow.refresh(gl_canvas)
-        main_loop(frame, gl_canvas, gl_context, callback_module, new_state, enter_to_exit, timeout)
+
+        main_loop(
+          frame,
+          gl_canvas,
+          gl_context,
+          callback_module,
+          new_state,
+          enter_to_exit,
+          timeout
+        )
+
+      # Handle mouse motion events for camera look around
+      {:wx, _, _, _, {:wxMouse, :motion, x, y, _, _, _, _, _, _, _, _, _, _}} ->
+        new_state =
+          if function_exported?(callback_module, :handle_event, 2) do
+            try do
+              case callback_module.handle_event({:mouse_motion, x, y}, state) do
+                {:ok, updated_state} -> updated_state
+                _ -> state
+              end
+            catch
+              :close_window ->
+                cleanup_and_exit(frame, gl_canvas, gl_context, callback_module, state)
+            end
+          else
+            state
+          end
+
+        # Trigger a repaint after handling the event
+        :wxWindow.refresh(gl_canvas)
+
+        main_loop(
+          frame,
+          gl_canvas,
+          gl_context,
+          callback_module,
+          new_state,
+          enter_to_exit,
+          timeout
+        )
+
+      # Handle scroll wheel events for camera zoom
+      {:wx, _, _, _,
+       {:wxMouse, :mousewheel, x, y, _, _, _, _, _, _, _, wheel_rotation, wheel_delta, _}} ->
+        new_state =
+          if function_exported?(callback_module, :handle_event, 2) do
+            try do
+              case callback_module.handle_event(
+                     {:mouse_wheel, x, y, wheel_rotation, wheel_delta},
+                     state
+                   ) do
+                {:ok, updated_state} -> updated_state
+                _ -> state
+              end
+            catch
+              :close_window ->
+                cleanup_and_exit(frame, gl_canvas, gl_context, callback_module, state)
+            end
+          else
+            state
+          end
+
+        # Trigger a repaint after handling the event
+        :wxWindow.refresh(gl_canvas)
+
+        main_loop(
+          frame,
+          gl_canvas,
+          gl_context,
+          callback_module,
+          new_state,
+          enter_to_exit,
+          timeout
+        )
 
       {:wx, _, _, _, {:wxClose, :close_window}} ->
         cleanup_and_close(frame, gl_canvas, gl_context, callback_module, state)
@@ -601,9 +702,25 @@ defmodule EAGL.Window do
             state
           end
 
-        main_loop(frame, gl_canvas, gl_context, callback_module, new_state, enter_to_exit, timeout)
+        main_loop(
+          frame,
+          gl_canvas,
+          gl_context,
+          callback_module,
+          new_state,
+          enter_to_exit,
+          timeout
+        )
 
-      _ ->
+      other ->
+        # Only debug non-tick, non-show, and non-mouse events to avoid spam
+        case other do
+          :tick -> :ok
+          {:wx, _, _, _, {:wxShow, :show, _}} -> :ok
+          {:wx, _, _, _, {:wxMouse, _, _, _, _, _, _, _, _, _, _, _, _, _}} -> :ok
+          _ -> IO.puts("DEBUG: Unhandled event: #{inspect(other)}")
+        end
+
         main_loop(frame, gl_canvas, gl_context, callback_module, state, enter_to_exit, timeout)
     end
   end

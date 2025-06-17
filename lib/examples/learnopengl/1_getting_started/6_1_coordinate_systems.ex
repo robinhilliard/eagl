@@ -240,7 +240,10 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.CoordinateSystems do
       set_uniform(program, "texture1", 0)
 
       IO.puts("Ready to render - you should see a rotating 3D textured cube.")
-      IO.puts("⚠️  WARNING: You will notice visual artifacts (wrong face order) - this is intentional!")
+
+      IO.puts(
+        "⚠️  WARNING: You will notice visual artifacts (wrong face order) - this is intentional!"
+      )
 
       # Initialize current time for animation
       current_time = :erlang.monotonic_time(:millisecond) / 1000.0

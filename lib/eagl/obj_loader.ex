@@ -70,7 +70,8 @@ defmodule EAGL.ObjLoader do
   defp parse_line(<<"v ", rest::binary>>, state) do
     # Vertex position
     [x, y, z] = String.split(rest, " ", trim: true) |> Enum.map(&String.to_float/1)
-    %{state | vertices: [z, y, x | state.vertices]}  # Prepend in reverse order
+    # Prepend in reverse order
+    %{state | vertices: [z, y, x | state.vertices]}
   end
 
   defp parse_line(<<"vt ", rest::binary>>, state) do
@@ -79,13 +80,15 @@ defmodule EAGL.ObjLoader do
     # OBJ can have 1D, 2D, or 3D texture coords. We only use 2D
     # Default to 0.0 if missing
     [u, v | _] = coords ++ [0.0, 0.0]
-    %{state | tex_coords: [v, u | state.tex_coords]}  # Prepend in reverse order
+    # Prepend in reverse order
+    %{state | tex_coords: [v, u | state.tex_coords]}
   end
 
   defp parse_line(<<"vn ", rest::binary>>, state) do
     # Normal
     [x, y, z] = String.split(rest, " ", trim: true) |> Enum.map(&String.to_float/1)
-    %{state | normals: [z, y, x | state.normals]}  # Prepend in reverse order
+    # Prepend in reverse order
+    %{state | normals: [z, y, x | state.normals]}
   end
 
   defp parse_line(<<"f ", rest::binary>>, state) do
@@ -104,7 +107,8 @@ defmodule EAGL.ObjLoader do
         |> pad_vertex_data()
       end)
 
-    %{state | faces: [faces | state.faces]}  # Prepend
+    # Prepend
+    %{state | faces: [faces | state.faces]}
   end
 
   defp parse_line(_, state), do: state
@@ -269,14 +273,14 @@ defmodule EAGL.ObjLoader do
     # PERFORMANCE: Pre-chunk vertices for faster access
     vertex_chunks = Enum.chunk_every(data.vertices, 3)
 
-            # ASYNC: Calculate normals for each face in parallel
+    # ASYNC: Calculate normals for each face in parallel
     # Temporarily using simpler approach to debug the issue
     face_normals =
       if async and length(data.faces) > 10000 do
         # Higher threshold and simpler approach for debugging
         chunk_size = max(div(length(data.faces), System.schedulers_online()), 50)
 
-                # Create data tuples to avoid closure issues
+        # Create data tuples to avoid closure issues
         face_chunks_with_data =
           data.faces
           |> Enum.chunk_every(chunk_size)
@@ -382,36 +386,41 @@ defmodule EAGL.ObjLoader do
         # Sequential processing for smaller models or when async is disabled
         Enum.map(data.faces, fn face ->
           triangle = Enum.take(face, 3)
-          face_normal = calculate_face_normal_optimized(triangle, vertex_chunks, flip_normal_direction)
+
+          face_normal =
+            calculate_face_normal_optimized(triangle, vertex_chunks, flip_normal_direction)
+
           {face, face_normal}
         end)
       end
 
     # Accumulate normals per vertex (this part is harder to parallelize due to shared state)
     {accumulated_normals, face_counts} =
-      Enum.reduce(face_normals_with_faces, {vertex_normals, vertex_face_counts},
-        fn {face, face_normal}, {acc_normals, acc_counts} ->
-          # Add this face normal to each vertex in the face
-          {updated_normals, updated_counts} =
-            Enum.reduce(face, {acc_normals, acc_counts}, fn [v_idx, _t_idx, _n_idx],
-                                                            {curr_normals, curr_counts} ->
-              # Convert to 0-based indexing
-              list_idx = v_idx - 1
+      Enum.reduce(face_normals_with_faces, {vertex_normals, vertex_face_counts}, fn {face,
+                                                                                     face_normal},
+                                                                                    {acc_normals,
+                                                                                     acc_counts} ->
+        # Add this face normal to each vertex in the face
+        {updated_normals, updated_counts} =
+          Enum.reduce(face, {acc_normals, acc_counts}, fn [v_idx, _t_idx, _n_idx],
+                                                          {curr_normals, curr_counts} ->
+            # Convert to 0-based indexing
+            list_idx = v_idx - 1
 
-              # Add face normal to vertex normal
-              current_normal = Enum.at(curr_normals, list_idx)
-              new_normal = add_vectors(current_normal, face_normal)
-              new_normals = List.replace_at(curr_normals, list_idx, new_normal)
+            # Add face normal to vertex normal
+            current_normal = Enum.at(curr_normals, list_idx)
+            new_normal = add_vectors(current_normal, face_normal)
+            new_normals = List.replace_at(curr_normals, list_idx, new_normal)
 
-              # Increment face count for this vertex
-              current_count = Enum.at(curr_counts, list_idx)
-              new_counts = List.replace_at(curr_counts, list_idx, current_count + 1)
+            # Increment face count for this vertex
+            current_count = Enum.at(curr_counts, list_idx)
+            new_counts = List.replace_at(curr_counts, list_idx, current_count + 1)
 
-              {new_normals, new_counts}
-            end)
+            {new_normals, new_counts}
+          end)
 
-          {updated_normals, updated_counts}
-        end)
+        {updated_normals, updated_counts}
+      end)
 
     # ASYNC: Average and normalize normals in parallel
     # Use chunked processing to reduce task overhead

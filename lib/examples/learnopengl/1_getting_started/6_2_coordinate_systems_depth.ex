@@ -186,8 +186,13 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.CoordinateSystemsDepth do
       :gl.useProgram(program)
       set_uniform(program, "texture1", 0)
 
-      IO.puts("Ready to render - you should see two overlapping rotating cubes demonstrating depth.")
-      IO.puts("✅ Notice: NO visual artifacts! Faces now render in correct order thanks to depth testing.")
+      IO.puts(
+        "Ready to render - you should see two overlapping rotating cubes demonstrating depth."
+      )
+
+      IO.puts(
+        "✅ Notice: NO visual artifacts! Faces now render in correct order thanks to depth testing."
+      )
 
       # Initialize current time for animation
       current_time = :erlang.monotonic_time(:millisecond) / 1000.0

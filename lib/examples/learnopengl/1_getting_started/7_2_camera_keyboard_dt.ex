@@ -226,15 +226,17 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.CameraKeyboardDt do
 
       # Initial camera parameters
       camera_pos = vec3(0.0, 0.0, 3.0)
-      camera_front = vec3(0.0, 0.0, -1.0)  # Looking down negative Z
-      camera_up = vec3(0.0, 1.0, 0.0)      # World up vector
+      # Looking down negative Z
+      camera_front = vec3(0.0, 0.0, -1.0)
+      # World up vector
+      camera_up = vec3(0.0, 1.0, 0.0)
 
       # Pre-calculate initial matrices
       target_pos = vec_add(camera_pos, camera_front)
       view = mat4_look_at(camera_pos, target_pos, camera_up)
 
       # Default projection matrix (will be updated on first render with proper aspect ratio)
-      projection = mat4_perspective(radians(45.0), 4.0/3.0, 0.1, 100.0)
+      projection = mat4_perspective(radians(45.0), 4.0 / 3.0, 0.1, 100.0)
 
       {:ok,
        %{
@@ -328,7 +330,13 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.CameraKeyboardDt do
     delta_time = current_time - state.last_frame_time
 
     # Process camera movement based on currently pressed keys
-    new_camera_pos = process_camera_movement(state.camera_pos, state.camera_front, state.keys_pressed, delta_time)
+    new_camera_pos =
+      process_camera_movement(
+        state.camera_pos,
+        state.camera_front,
+        state.keys_pressed,
+        delta_time
+      )
 
     # Update view matrix only if camera position changed
     {new_target_pos, new_view} =

@@ -7,11 +7,82 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### TODO for Next Release
-- **Missing LearnOpenGL Examples**: Need to port remaining "Getting Started" examples:
-  - 161 (6.1 Coordinate Systems) - Model/View/Projection matrices and 3D rendering
-  - 171 (7.1 Camera) - Camera controls and view matrix manipulation
-- These examples complete the foundational "Getting Started" series before moving to "Lighting"
+## [0.7.0] - 2024-12-29
+
+### Added
+- **Complete LearnOpenGL Getting Started Series**: Added all remaining coordinate systems and camera examples (6.1-6.4, 7.1-7.3)
+  - **6.1 Coordinate Systems**: Model/View/Projection matrices and 3D cube rendering
+    - Full 3D rendering pipeline with model, view, and projection matrices
+    - Multiple spinning cubes demonstrating MVP matrix transformations
+    - Proper depth testing for 3D scene rendering
+    - Educational focus on understanding coordinate space transformations
+  - **6.2 Coordinate Systems Depth**: Enhanced depth testing and Z-buffer concepts  
+    - Same scene as 6.1 but with detailed depth buffer explanations
+    - Demonstrates importance of depth testing in 3D rendering
+    - Shows artifacts that occur without proper depth testing
+  - **6.3 Coordinate Systems Multiple**: Multiple cubes with unique transformations
+    - Array of cubes positioned throughout 3D space
+    - Each cube has different rotation and position transforms
+    - Demonstrates rendering multiple objects with individual transformations
+  - **6.4 Coordinate Systems Exercise**: Interactive perspective vs orthographic projection
+    - Toggle between perspective and orthographic projection modes
+    - Shows visual differences between projection types
+    - Educational comparison of 3D projection techniques
+  - **7.1 Camera Circle**: Automatic camera rotation around scene center
+    - Camera moves in circular path using trigonometric functions
+    - Demonstrates view matrix manipulation and camera positioning
+    - Introduction to camera concepts before user interaction
+  - **7.2 Camera Keyboard + Delta Time**: WASD keyboard camera controls with delta time
+    - Full 6DOF camera movement with W/A/S/D keys
+    - Delta time-based movement for frame-rate independent motion
+    - Proper frame timing and smooth camera movement
+    - Foundation for first-person camera controls
+  - **7.3 Camera Mouse + Zoom**: Complete first-person camera with mouse look and scroll zoom
+    - Mouse movement controls camera rotation (look around)
+    - Scroll wheel controls field-of-view zoom (1-45 degrees)
+    - Cursor hiding for immersive first-person experience
+    - Complete FPS-style camera implementation
+
+### Enhanced
+- **Performance Optimizations**: Significant improvements to OBJ loader performance
+  - Optimized face parsing and vertex normal generation
+  - Better memory allocation patterns for large models
+  - Improved async processing capabilities
+- **Camera System**: Comprehensive first-person camera implementation
+  - Mouse sensitivity controls and smooth movement
+  - Proper field-of-view constraints and perspective updates
+  - Clean separation of camera state from rendering logic
+- **Window System**: Enhanced mouse and keyboard event handling
+  - Better mouse motion tracking for camera controls
+  - Scroll wheel support for zoom functionality
+  - Improved event state management
+
+### Fixed
+- **Documentation Warnings**: Fixed `mix docs` warnings from malformed Markdown
+  - Wrapped tuple syntax in backticks to prevent IAL (Inline Attribute List) warnings
+  - Event types now properly formatted as inline code in documentation
+- **Camera Controls**: Refined camera behavior for better user experience
+  - Proper mouse sensitivity scaling for look controls
+  - Correct field-of-view clamping for zoom functionality
+  - Smooth camera movement with consistent delta time handling
+
+### Milestone Achievement
+- **Substantial Progress on LearnOpenGL Getting Started Series**: Added coordinate systems and camera examples
+  - Hello Window (1.1-1.2): 2 examples - Basic window creation and clearing ✅
+  - Hello Triangle (2.1-2.5): 5 examples - Basic geometry and vertex processing ✅  
+  - Shaders (3.1-3.6): 6 examples - Shader fundamentals and uniforms ✅
+  - Textures (4.1-4.6): 6 examples - Texture mapping and multi-texturing ✅
+  - Transformations (5.1-5.2): 3 examples - Matrix transformations and animations ✅
+  - Coordinate Systems (6.1-6.4): 4 examples - 3D rendering and MVP matrices ✅
+  - Camera (7.1-7.6): 3 of 6 examples completed - Camera controls and first-person movement
+    - ✅ 7.1 Camera Circle: Automatic camera rotation around scene center
+    - ✅ 7.2 Camera Keyboard + Delta Time: WASD movement with frame-rate independence
+    - ✅ 7.3 Camera Mouse + Zoom: Mouse look and scroll zoom
+    - ❌ 7.4 Camera Class: Reusable camera object abstraction
+    - ❌ 7.5 Camera Exercise 1: Exercise solution (FPS-style camera)
+    - ❌ 7.6 Camera Exercise 2: Exercise solution (custom LookAt implementation)
+- **Missing for Complete Getting Started Series**: 7.4, 7.5, 7.6 (3 camera examples)
+- **Examples Statistics**: 26 of 29 LearnOpenGL Getting Started examples + 2 original examples = 28 total examples
 
 ## [0.6.0] - 2024-12-24
 
