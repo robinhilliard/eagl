@@ -148,7 +148,7 @@ The uniform helpers (from Wings3D) automatically detect the type of EAGL.Math va
 ```elixir
 import EAGL.Shader
 
-      # Compile and link shaders using GL constants
+      # Compile and link shaders with type-safe shader types
       {:ok, vertex} = create_shader(@gl_vertex_shader, "vertex.glsl")
       {:ok, fragment} = create_shader(@gl_fragment_shader, "fragment.glsl")
       {:ok, program} = create_attach_link([vertex, fragment])
@@ -173,7 +173,7 @@ set_uniforms(program, [
 EAGL provides meaningful texture abstractions:
 - **Image Loading**: `load_texture_from_file()` with automatic fallback to checkerboard patterns
 - **Texture Creation**: `create_texture()` returns `{:ok, id}` tuples for error handling
-- **Parameter Setting**: `set_texture_parameters()` accepts GL constants directly  
+- **Type-Safe Parameters**: `set_texture_parameters()` with compile-time validated options
 - **Data Loading**: `load_texture_data()` handles format/type conversion with defaults
 - **Procedural Textures**: `create_checkerboard_texture()` generates test patterns
 - **Graceful Degradation**: Helpful warnings when optional dependencies aren't available
@@ -194,7 +194,7 @@ import EAGL.Error
 {:ok, texture_id} = create_texture()
 :gl.bindTexture(@gl_texture_2d, texture_id)
 
-      # Set texture parameters using GL constants directly
+      # Set texture parameters with type-safe keyword options
       set_texture_parameters(
         wrap_s: @gl_repeat,
         wrap_t: @gl_repeat,
@@ -638,7 +638,7 @@ EAGL focuses on **meaningful abstractions** rather than thin wrappers around Ope
 
 #### ✅ **Provide Value**
 - **Error handling**: `{:ok, result}` tuples and comprehensive error checking
-- **Type safety**: Direct GL constants (`wrap_s: @gl_repeat`)
+- **Type safety**: Compile-time validation and clear parameter names (`wrap_s: @gl_repeat`)
 - **Sensible defaults**: Reduce boilerplate with common parameter combinations
 - **Complex operations**: Multi-step procedures like shader compilation and linking
 - **Data transformations**: Converting Elixir structures to OpenGL formats

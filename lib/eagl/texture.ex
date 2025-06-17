@@ -45,7 +45,7 @@ defmodule EAGL.Texture do
 
   This module provides substantial helper functions rather than thin wrappers:
   - `create_texture()` - Returns `{:ok, id}` tuples for error handling
-  - `set_texture_parameters()` - Accepts GL constants directly
+  - `set_texture_parameters()` - Type-safe parameter configuration
   - `load_texture_data()` - Handles format/type conversion with defaults
   - `create_checkerboard_texture()` - Generates procedural textures
 
@@ -95,7 +95,7 @@ defmodule EAGL.Texture do
   end
 
   @doc """
-  Sets texture parameters for wrapping and filtering using GL constants directly.
+  Sets texture parameters for wrapping and filtering with type-safe options.
 
   ## Options
 
@@ -109,7 +109,7 @@ defmodule EAGL.Texture do
       # Use default parameters (repeat wrapping, linear filtering)
       set_texture_parameters()
 
-      # Custom parameters using GL constants
+      # Custom parameters with type-safe options
       set_texture_parameters(
         wrap_s: @gl_clamp_to_edge,
         wrap_t: @gl_clamp_to_edge,
