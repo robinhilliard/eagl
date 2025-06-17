@@ -569,6 +569,10 @@ defmodule EAGL.Window do
                 {:ok, updated_state} -> updated_state
                 _ -> state
               end
+            rescue
+              # Handle FunctionClauseError when key handler is not defined
+              _e in [FunctionClauseError] ->
+                state
             catch
               :close_window ->
                 cleanup_and_exit(frame, gl_canvas, gl_context, callback_module, state)
@@ -599,6 +603,10 @@ defmodule EAGL.Window do
                 {:ok, updated_state} -> updated_state
                 _ -> state
               end
+            rescue
+              # Handle FunctionClauseError when mouse motion handler is not defined
+              _e in [FunctionClauseError] ->
+                state
             catch
               :close_window ->
                 cleanup_and_exit(frame, gl_canvas, gl_context, callback_module, state)
@@ -633,6 +641,10 @@ defmodule EAGL.Window do
                 {:ok, updated_state} -> updated_state
                 _ -> state
               end
+            rescue
+              # Handle FunctionClauseError when mouse wheel handler is not defined
+              _e in [FunctionClauseError] ->
+                state
             catch
               :close_window ->
                 cleanup_and_exit(frame, gl_canvas, gl_context, callback_module, state)
