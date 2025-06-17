@@ -55,7 +55,10 @@ EAGL includes several examples to demonstrate its capabilities. Use the unified 
 
   Transformations:  151) 5.1 Basic     152) 5.2 Exercise1  153) 5.2 Exercise2
 
-  Missing:          161) 6.1 Coordinate Systems  171) 7.1 Camera
+  Coordinate Systems: 161) 6.1 Basic   162) 6.2 Depth     163) 6.3 Multiple
+                      164) 6.4 Exercise
+
+  Missing:          171) 7.1 Camera
 
 ════════════════════════════════════════════════════════════════
 Enter code (01, 02, 111-153), 'q' to quit, 'r' to refresh:
@@ -373,10 +376,10 @@ defmodule MyApp do
     EAGL.Window.run(__MODULE__, "My 3D OpenGL App", depth_testing: true)
     
     # For tutorials/examples with automatic ENTER key handling
-    EAGL.Window.run(__MODULE__, "Tutorial Example", return_to_exit: true)
+    EAGL.Window.run(__MODULE__, "Tutorial Example", enter_to_exit: true)
     
     # Custom window size and options
-    EAGL.Window.run(__MODULE__, "Custom Size App", size: {1280, 720}, depth_testing: true, return_to_exit: true)
+    EAGL.Window.run(__MODULE__, "Custom Size App", size: {1280, 720}, depth_testing: true, enter_to_exit: true)
   end
 
   @impl true
@@ -534,7 +537,7 @@ The current focus is to:
   - ✅ Shaders (3.1-3.6): 6 examples
   - ✅ Textures (4.1-4.6): 6 examples
   - ✅ Transformations (5.1-5.2): 3 examples
-  - [ ] **Missing**: Coordinate Systems (6.1): 1 example needed  
+  - ✅ Coordinate Systems (6.1-6.4): 4 examples completed
   - [ ] **Missing**: Camera (7.1): 1 example needed
 - [ ] Continue with "Lighting" chapter examples
 - [ ] Load common model types like GLTF
@@ -586,8 +589,8 @@ If optional dependencies are missing, EAGL will show warnings but continue with 
 ## Contributing
 
 We welcome contributions. Suggested contributions include:
-- **LearnOpenGL tutorial ports**: Help complete the tutorial series
-- **Documentation improvements**: Examples, tutorials, API documentation
+- **LearnOpenGL tutorial ports**: Help correct the tutorial series (I will do the initial ports)
+- **Documentation improvements**: Examples, API documentation
 - **Platform-specific optimisations**: Performance or compatibility improvements
 - **Example applications**: Links to demo projects showcasing EAGL capabilities
 - **Bug fixes**: Issues with existing functionality
@@ -605,7 +608,9 @@ Please read through these guidelines before submitting changes.
 ### Code Standards
 
 #### Style Guidelines
-- Follow standard Elixir formatting (`mix format`) except keep matricies in tabular format
+- Follow standard Elixir formatting (`mix format`) but...
+- Keep matricies in tabular format and wrap with `# mix format: off|on`
+- Use the `~m`atrix, `~v`ertex and `~i`ndex sigils for compile time constants
 - Use descriptive variable names, especially for OpenGL state
 - Include typespecs for public functions
 - Document complex algorithms and OpenGL-specific concepts

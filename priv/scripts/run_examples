@@ -47,7 +47,10 @@ show_menu() {
     echo
     echo -e "  ${YELLOW}Transformations:${NC}  ${CYAN}151)${NC} 5.1 Basic     ${CYAN}152)${NC} 5.2 Exercise1  ${CYAN}153)${NC} 5.2 Exercise2"
     echo
-    echo -e "  ${RED}Missing:${NC}          ${CYAN}161)${NC} 6.1 Coordinate Systems  ${CYAN}171)${NC} 7.1 Camera"
+    echo -e "  ${YELLOW}Coord Systems:${NC}    ${CYAN}161)${NC} 6.1 Basic     ${CYAN}162)${NC} 6.2 Depth      ${CYAN}163)${NC} 6.3 Multiple"
+    echo -e "                    ${CYAN}164)${NC} 6.4 Exercise"
+    echo
+    echo -e "  ${RED}Missing:${NC}          ${CYAN}171)${NC} 7.1 Camera"
     echo
     echo -e "${PURPLE}════════════════════════════════════════════════════════════════${NC}"
 }
@@ -130,10 +133,21 @@ run_example() {
         153)
             module="EAGL.Examples.LearnOpenGL.GettingStarted.TransformationsExercise2"
             ;;
-        161|171)
+        161)
+            module="EAGL.Examples.LearnOpenGL.GettingStarted.CoordinateSystems"
+            ;;
+        162)
+            module="EAGL.Examples.LearnOpenGL.GettingStarted.CoordinateSystemsDepth"
+            ;;
+        163)
+            module="EAGL.Examples.LearnOpenGL.GettingStarted.CoordinateSystemsMultiple"
+            ;;
+        164)
+            module="EAGL.Examples.LearnOpenGL.GettingStarted.CoordinateSystemsExercise"
+            ;;
+        171)
             echo -e "${YELLOW}Example $choice is not yet implemented.${NC}"
             echo -e "${YELLOW}Missing Learn OpenGL examples to be ported in future releases:${NC}"
-            echo -e "${YELLOW}- 161: 6.1 Coordinate Systems${NC}"
             echo -e "${YELLOW}- 171: 7.1 Camera${NC}"
             return 1
             ;;
@@ -141,8 +155,8 @@ run_example() {
             echo -e "${RED}Invalid choice: $choice${NC}"
             echo -e "${YELLOW}Available examples:${NC}"
             echo -e "${YELLOW}- Non-Learn OpenGL: 01, 02${NC}"
-            echo -e "${YELLOW}- Learn OpenGL Getting Started: 111, 112, 121-125, 131-136, 141-146${NC}"
-            echo -e "${YELLOW}- Future: 151, 161, 171 (not yet implemented)${NC}"
+            echo -e "${YELLOW}- Learn OpenGL Getting Started: 111, 112, 121-125, 131-136, 141-146, 151-153, 161-164${NC}"
+            echo -e "${YELLOW}- Future: 171 (not yet implemented)${NC}"
             return 1
             ;;
     esac
@@ -173,7 +187,7 @@ while true; do
         r|R|refresh)
             continue
             ;;
-        01|02|111|112|121|122|123|124|125|131|132|133|134|135|136|141|142|143|144|145|146|151|152|153|161|171)
+        01|02|111|112|121|122|123|124|125|131|132|133|134|135|136|141|142|143|144|145|146|151|152|153|161|162|163|164|171)
             clear
             if run_example "$choice"; then
                 echo
@@ -186,8 +200,8 @@ while true; do
             ;;
         *)
             echo -e "${RED}Invalid input.${NC}"
-            echo -e "${YELLOW}Valid codes: 01, 02, 111, 112, 121-125, 131-136, 141-146, 151-153${NC}"
-            echo -e "${YELLOW}Future codes: 161, 171 (not yet implemented)${NC}"
+            echo -e "${YELLOW}Valid codes: 01, 02, 111, 112, 121-125, 131-136, 141-146, 151-153, 161-164${NC}"
+            echo -e "${YELLOW}Future codes: 171 (not yet implemented)${NC}"
             echo -n "Press ENTER to continue..."
             read -r
             ;;

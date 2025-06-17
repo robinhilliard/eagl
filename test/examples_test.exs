@@ -47,7 +47,13 @@ defmodule ExamplesTest do
     # Transformations
     {EAGL.Examples.LearnOpenGL.GettingStarted.Transformations, "5.1 Transformations"},
     {EAGL.Examples.LearnOpenGL.GettingStarted.TransformationsExercise1, "5.2 Transformations Exercise 1"},
-    {EAGL.Examples.LearnOpenGL.GettingStarted.TransformationsExercise2, "5.2 Transformations Exercise 2"}
+    {EAGL.Examples.LearnOpenGL.GettingStarted.TransformationsExercise2, "5.2 Transformations Exercise 2"},
+
+    # Coordinate Systems
+    {EAGL.Examples.LearnOpenGL.GettingStarted.CoordinateSystems, "6.1 Coordinate Systems"},
+    {EAGL.Examples.LearnOpenGL.GettingStarted.CoordinateSystemsDepth, "6.2 Coordinate Systems Depth"},
+    {EAGL.Examples.LearnOpenGL.GettingStarted.CoordinateSystemsMultiple, "6.3 Coordinate Systems Multiple"},
+    {EAGL.Examples.LearnOpenGL.GettingStarted.CoordinateSystemsExercise, "6.4 Coordinate Systems Exercise"}
   ]
 
   # Non-interactive examples that complete immediately
@@ -67,7 +73,7 @@ defmodule ExamplesTest do
         fn {module, name} ->
           {module, name, run_example_with_timeout(module, name), :interactive}
         end,
-        max_concurrency: 8,
+        max_concurrency: 4,
         timeout: :infinity  # Let examples handle their own timeouts after setup
       )
       |> Enum.to_list()
