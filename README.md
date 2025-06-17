@@ -136,6 +136,154 @@ view = mat4_look_at(
 projection = mat4_perspective(radians(45.0), 16.0/9.0, 0.1, 100.0)
 ```
 
+### Camera System
+
+EAGL provides a comprehensive first-person camera system based on the LearnOpenGL camera class, offering intuitive FPS-style controls with mouse look, keyboard movement, and scroll zoom functionality.
+
+- **Euler Angle Camera**: Uses yaw and pitch angles for smooth rotation
+- **WASD Movement**: Standard FPS keyboard controls with frame-rate independent movement  
+- **Mouse Look**: Mouse movement for camera rotation with pitch constraints
+- **Scroll Zoom**: Field of view adjustment via scroll wheel (1° to 45°)
+- **View Matrix Generation**: Automatic view matrix creation for rendering pipeline
+- **Delta Time Support**: Frame-rate independent movement for smooth gameplay
+- **Pitch Constraints**: Prevents camera flipping at extreme angles (±89°)
+
+```elixir
+import EAGL.Camera
+import EAGL.Math
+
+# Create a camera at the origin looking down negative Z-axis
+camera = Camera.new()
+
+# Create a camera at specific position with custom settings
+camera = Camera.new(
+  position: vec3(0.0, 5.0, 10.0),
+  yaw: 180.0,           # Face toward origin
+  pitch: -30.0,         # Look down 30 degrees
+  movement_speed: 5.0,  # Faster movement
+  mouse_sensitivity: 0.2,
+  zoom: 60.0           # Wider field of view
+)
+
+# Get view matrix for rendering (use in shaders)
+view_matrix = Camera.get_view_matrix(camera)
+projection_matrix = mat4_perspective(
+  radians(Camera.get_zoom(camera)), 
+  aspect_ratio, 
+  0.1, 
+  100.0
+)
+
+# In your window event handler - keyboard movement (WASD)
+def handle_event({:key, key_code}, %{camera: camera, delta_time: dt} = state) do
+  updated_camera = case key_code do
+    ?W -> Camera.process_keyboard(camera, :forward, dt)   # W - forward
+    ?S -> Camera.process_keyboard(camera, :backward, dt)  # S - backward  
+    ?A -> Camera.process_keyboard(camera, :left, dt)      # A - strafe left
+    ?D -> Camera.process_keyboard(camera, :right, dt)     # D - strafe right
+    _ -> camera
+  end
+  
+  {:ok, %{state | camera: updated_camera}}
+end
+
+# Mouse look around (first-person camera)
+def handle_event({:mouse_motion, x, y}, %{camera: camera, last_mouse: {last_x, last_y}} = state) do
+  x_offset = x - last_x
+  y_offset = last_y - y  # Reversed since y-coordinates range bottom to top
+  
+  updated_camera = Camera.process_mouse_movement(camera, x_offset, y_offset)
+  
+  {:ok, %{state | camera: updated_camera, last_mouse: {x, y}}}
+end
+
+# Scroll wheel zoom (field of view)
+def handle_event({:mouse_wheel, _x, _y, _wheel_rotation, wheel_delta}, %{camera: camera} = state) do
+  updated_camera = Camera.process_mouse_scroll(camera, wheel_delta)
+  {:ok, %{state | camera: updated_camera}}
+end
+
+# In your render function
+def render(width, height, %{camera: camera} = state) do
+  # Get matrices from camera
+  view = Camera.get_view_matrix(camera)
+  projection = mat4_perspective(
+    radians(Camera.get_zoom(camera)),
+    width / height,
+    0.1,
+    100.0
+  )
+  
+  # Set shader uniforms
+  set_uniform(shader_program, "view", view)
+  set_uniform(shader_program, "projection", projection)
+  
+  # Render your scene...
+  :ok
+end
+
+# Access camera properties
+position = Camera.get_position(camera)      # Current world position
+front = Camera.get_front(camera)           # Forward direction vector  
+right = Camera.get_right(camera)           # Right direction vector
+up = Camera.get_up(camera)                 # Up direction vector
+yaw = Camera.get_yaw(camera)               # Horizontal rotation (degrees)
+pitch = Camera.get_pitch(camera)           # Vertical rotation (degrees)
+zoom = Camera.get_zoom(camera)             # Current field of view (degrees)
+```
+
+**Integration with Window System:**
+
+```elixir
+defmodule CameraExample do
+  use EAGL.Window
+  import EAGL.Camera
+  import EAGL.Math
+  
+  def run do
+    # Enable mouse capture for FPS-style camera controls
+    EAGL.Window.run(__MODULE__, "Camera Demo", 
+      depth_testing: true,
+      mouse_capture: true  # Hides cursor and captures mouse movement
+    )
+  end
+  
+  @impl true
+  def setup do
+    camera = Camera.new(position: vec3(0.0, 0.0, 3.0))
+    
+    # Initialize timing for frame-rate independent movement
+    last_frame = :erlang.monotonic_time(:millisecond)
+    
+    {:ok, %{
+      camera: camera,
+      last_frame: last_frame,
+      last_mouse: {512, 384},  # Start at screen center
+      first_mouse: true        # Handle initial mouse movement
+    }}
+  end
+  
+  @impl true
+  def handle_event(:tick, %{last_frame: last_frame} = state) do
+    # Calculate delta time for smooth movement
+    current_frame = :erlang.monotonic_time(:millisecond)
+    delta_time = (current_frame - last_frame) / 1000.0
+    
+    {:ok, %{state | last_frame: current_frame, delta_time: delta_time}}
+  end
+  
+  # ... handle keyboard and mouse events as shown above
+end
+```
+
+**Key Features:**
+
+- **Orthonormal Vectors**: Camera maintains proper front/right/up vector relationships
+- **Smooth Controls**: Delta time support ensures consistent movement across frame rates
+- **Pitch Constraints**: Prevents gimbal lock by limiting vertical rotation to ±89°
+- **Zoom Constraints**: Field of view clamped between 1° and 45° for usable zoom range
+- **LearnOpenGL Compatible**: Direct port of the OpenGL tutorial camera with identical behavior
+
 ### Shader Management
 
 The uniform helpers (from Wings3D) automatically detect the type of EAGL.Math values, eliminating the need to manually unpack vectors or handle different uniform types:
@@ -359,8 +507,10 @@ EAGL provides flexible window creation with a clean, options-based API:
 - **Default Size**: 1024x768 pixels (can be customized with `size:` option)
 - **2D Rendering** (default): No depth buffer, suitable for triangles, sprites, UI elements
 - **3D Rendering**: Enables depth testing and depth buffer for proper 3D scene rendering
+- **Comprehensive Input**: Full keyboard, mouse movement, mouse buttons, and scroll wheel support
 - **Automatic ENTER Handling**: Optional ENTER key handling for simple examples and tutorials
 - **Tick Events**: Automatic 60 FPS tick events for animations and updates (optional `handle_event/2` callback)
+- **Mouse Capture**: Cursor hiding and capture for first-person camera controls
 
 ```elixir
 defmodule MyApp do
@@ -409,11 +559,33 @@ defmodule MyApp do
     :ok
   end
 
-  # Optional: Handle tick events for animations (60 FPS)
+  # Optional: Handle input and animation events
   @impl true
-  def handle_event(:tick, state) do
-    # Update animations, physics, etc.
-    {:ok, updated_state}
+  def handle_event(event, state) do
+    case event do
+      # Keyboard input (W/A/S/D for camera movement, ESC to exit, etc.)
+      {:key, key_code} ->
+        # Handle keyboard input - see camera examples for WASD movement
+        {:ok, state}
+      
+      # Mouse movement (for first-person camera look around)
+      {:mouse_motion, x, y} ->
+        # Handle mouse look - see camera examples for implementation
+        {:ok, state}
+      
+      # Scroll wheel (for camera zoom)
+      {:mouse_wheel, _x, _y, _wheel_rotation, wheel_delta} ->
+        # Handle scroll zoom - positive/negative wheel_delta for zoom in/out
+        {:ok, state}
+      
+      # 60 FPS tick for animations and updates
+      :tick ->
+        # Update animations, physics, camera movement, etc.
+        {:ok, updated_state}
+      
+      _ ->
+        {:ok, state}
+    end
   end
 end
 ```
@@ -481,6 +653,7 @@ OpenGL is typically available through graphics drivers. If you encounter issues,
 lib/
 ├── eagl/                   # Core EAGL modules
 │   ├── buffer.ex           # VAO/VBO helper functions (516 lines)
+│   ├── camera.ex           # First-person camera system (392 lines)
 │   ├── const.ex            # OpenGL constants (842 lines)
 │   ├── error.ex            # Error checking and reporting (110 lines)
 │   ├── math.ex             # GLM-style math library (1494 lines)
@@ -498,6 +671,7 @@ lib/
 test/
 ├── eagl/                   # Unit tests for EAGL modules
 │   ├── buffer_test.exs     # Buffer management tests (577 lines)
+│   ├── camera_test.exs     # Camera system tests (38 tests)
 │   ├── error_test.exs      # Error handling tests (55 lines)
 │   ├── math_test.exs       # Math library tests (1136 lines)
 │   ├── model_test.exs      # Model loading tests (250 lines)
@@ -515,6 +689,7 @@ priv/
 
 ## Features
 
+- ✅ **Camera System**: First-person camera with WASD movement, mouse look, and scroll zoom
 - ✅ **Shader Management**: Automatic compilation, linking, and error reporting
 - ✅ **Texture Management**: Comprehensive texture creation, configuration, and loading
 - ✅ **3D Model Loading**: Wavefront OBJ format with normals and texture coordinates
@@ -522,7 +697,7 @@ priv/
 - ✅ **Buffer Helpers**: Wings3D-inspired VAO/VBO management functions
 - ✅ **Error Handling**: Comprehensive OpenGL error checking and reporting
 - ✅ **Window Management**: Cross-platform window creation with wxWidgets
-- ✅ **Event Handling**: Resize, close, paint, and 60 FPS tick events
+- ✅ **Event Handling**: Comprehensive input system with keyboard, mouse, scroll wheel, resize, close, and 60 FPS tick events
 - ✅ **Resource Cleanup**: Automatic cleanup of OpenGL resources
 - ✅ **LearnOpenGL Examples**: Partial "Getting Started" series - direct ports of OpenGL tutorials
 - ✅ **Testing**: Full test suite with OpenGL context mocking
