@@ -553,25 +553,29 @@ And in future:
 
 ### Common Issues
 
-#### Interactive Examples Not Responding
-Examples require user interaction (ENTER key to exit). This can cause issues during testing:
+#### Example Testing Timeouts
+Examples use automatic timeouts for testing and will exit cleanly after the specified duration:
 
 ```bash
-# Run only unit tests, excluding interactive examples
-mix test test/eagl/ --exclude interactive
+# Run all tests including automated example tests
+mix test
 
-# Set a timeout for interactive tests
-mix test --timeout 10000
+# Run only unit tests if you want to skip example testing
+mix test test/eagl/
+
+# Run automated example tests specifically
+mix test test/examples_test.exs
 ```
 
 #### IEx Break Prompt
 If you encounter an unexpected error in IEx and see a `BREAK: (a)bort` prompt, this indicates a crash in the BEAM VM. Enter 'a' to abort and return to the shell, then investigate the error that caused the crash.
 
 #### Test Timeouts in CI
-Interactive examples wait for user input and will timeout in continuous integration:
-- Examples are tagged with `@tag :interactive`
-- CI environments automatically exclude these tests
-- Run interactive tests individually during local development
+Examples now use automatic timeouts and run successfully in continuous integration environments:
+- Examples accept a `timeout:` option for automated testing
+- CI environments run examples with 500ms timeouts
+- Examples exit cleanly after timeout with proper resource cleanup
+- No manual interaction required
 
 ### Platform-Specific Issues
 
@@ -618,7 +622,7 @@ Please read through these guidelines before submitting changes.
 #### Testing Requirements  
 - Add tests for new functionality
 - Ensure existing tests pass: `mix test`
-- Tag interactive tests with `@tag :interactive`
+- Update examples to accept `opts` parameter for timeout testing
 - Mock OpenGL calls in unit tests where possible
 
 #### Documentation Standards

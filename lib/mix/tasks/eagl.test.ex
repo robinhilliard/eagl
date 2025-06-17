@@ -1,8 +1,8 @@
 defmodule Mix.Tasks.Eagl.Test do
   @moduledoc """
-  Runs EAGL tests excluding interactive examples that require user input.
+  Runs EAGL unit tests for quick development feedback.
 
-  This prevents tests from hanging while waiting for ENTER key presses.
+  This focuses on unit tests without the slower example integration tests.
 
   ## Examples
 
@@ -12,17 +12,18 @@ defmodule Mix.Tasks.Eagl.Test do
 
   use Mix.Task
 
-  @shortdoc "Run EAGL tests excluding interactive examples"
+  @shortdoc "Run EAGL unit tests for quick development feedback"
 
   def run(args) do
     # Ensure we're in test environment
     Mix.env(:test)
 
-    # Add --exclude interactive to the arguments
-    test_args = ["test/eagl/", "--exclude", "interactive"] ++ args
+    # Run unit tests only
+    test_args = ["test/eagl/"] ++ args
 
-    Mix.shell().info("🧪 Running EAGL tests (excluding interactive examples)")
-    Mix.shell().info("📝 Interactive examples can be run with: ./priv/scripts/run_examples")
+    Mix.shell().info("🧪 Running EAGL unit tests (quick development feedback)")
+    Mix.shell().info("📝 For all tests including examples: mix test")
+    Mix.shell().info("📝 For interactive examples: ./priv/scripts/run_examples")
     Mix.shell().info("")
 
     # Run the test task with our arguments

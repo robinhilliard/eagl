@@ -75,7 +75,7 @@ jobs:
       run: mix compile --warnings-as-errors
       
     - name: Run tests with virtual display
-      run: xvfb-run -a mix test --exclude interactive
+      run: xvfb-run -a mix test
       env:
         # Ensure software rendering is used
         LIBGL_ALWAYS_SOFTWARE: 1

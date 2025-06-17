@@ -1,16 +1,18 @@
 #!/bin/bash
 
 # EAGL Development Testing Script
-# Runs tests while avoiding interactive hanging issues
+# Runs unit tests for quick development feedback
 
 echo "🧪 Running EAGL development tests..."
-echo "📝 Excluding interactive tests to prevent hanging"
+echo "📝 Running unit tests for quick feedback"
 echo
 
-# Run unit tests only, excluding interactive examples
-mix test test/eagl/ --exclude interactive
+# Run unit tests only (faster feedback during development)
+mix test test/eagl/
 
 echo
 echo "✅ Development tests completed"
+echo "💡 To run all tests including examples:"
+echo "   mix test"
 echo "💡 To run interactive examples manually:"
 echo "   ./priv/scripts/run_examples" 
