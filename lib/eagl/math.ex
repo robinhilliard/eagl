@@ -782,12 +782,29 @@ defmodule EAGL.Math do
     # mix format: off
     [
       {
-        m00, m01, m02, 0.0,  # Column 0
-        m10, m11, m12, 0.0,  # Column 1
-        m20, m21, m22, 0.0,  # Column 2
-        0.0, 0.0, 0.0, 1.0   # Column 3
+        # Column 0
+        m00,
+        m01,
+        m02,
+        0.0,
+        # Column 1
+        m10,
+        m11,
+        m12,
+        0.0,
+        # Column 2
+        m20,
+        m21,
+        m22,
+        0.0,
+        # Column 3
+        0.0,
+        0.0,
+        0.0,
+        1.0
       }
     ]
+
     # mix format: on
   end
 
@@ -910,12 +927,29 @@ defmodule EAGL.Math do
     # mix format: off
     [
       {
-        a00 * b00 + a01 * b10 + a02 * b20 + a03 * b30, a00 * b01 + a01 * b11 + a02 * b21 + a03 * b31, a00 * b02 + a01 * b12 + a02 * b22 + a03 * b32, a00 * b03 + a01 * b13 + a02 * b23 + a03 * b33,  # Column 0
-        a10 * b00 + a11 * b10 + a12 * b20 + a13 * b30, a10 * b01 + a11 * b11 + a12 * b21 + a13 * b31, a10 * b02 + a11 * b12 + a12 * b22 + a13 * b32, a10 * b03 + a11 * b13 + a12 * b23 + a13 * b33,  # Column 1
-        a20 * b00 + a21 * b10 + a22 * b20 + a23 * b30, a20 * b01 + a21 * b11 + a22 * b21 + a23 * b31, a20 * b02 + a21 * b12 + a22 * b22 + a23 * b32, a20 * b03 + a21 * b13 + a22 * b23 + a23 * b33,  # Column 2
-        a30 * b00 + a31 * b10 + a32 * b20 + a33 * b30, a30 * b01 + a31 * b11 + a32 * b21 + a33 * b31, a30 * b02 + a31 * b12 + a32 * b22 + a33 * b32, a30 * b03 + a31 * b13 + a32 * b23 + a33 * b33   # Column 3
+        # Column 0
+        a00 * b00 + a01 * b10 + a02 * b20 + a03 * b30,
+        a00 * b01 + a01 * b11 + a02 * b21 + a03 * b31,
+        a00 * b02 + a01 * b12 + a02 * b22 + a03 * b32,
+        a00 * b03 + a01 * b13 + a02 * b23 + a03 * b33,
+        # Column 1
+        a10 * b00 + a11 * b10 + a12 * b20 + a13 * b30,
+        a10 * b01 + a11 * b11 + a12 * b21 + a13 * b31,
+        a10 * b02 + a11 * b12 + a12 * b22 + a13 * b32,
+        a10 * b03 + a11 * b13 + a12 * b23 + a13 * b33,
+        # Column 2
+        a20 * b00 + a21 * b10 + a22 * b20 + a23 * b30,
+        a20 * b01 + a21 * b11 + a22 * b21 + a23 * b31,
+        a20 * b02 + a21 * b12 + a22 * b22 + a23 * b32,
+        a20 * b03 + a21 * b13 + a22 * b23 + a23 * b33,
+        # Column 3
+        a30 * b00 + a31 * b10 + a32 * b20 + a33 * b30,
+        a30 * b01 + a31 * b11 + a32 * b21 + a33 * b31,
+        a30 * b02 + a31 * b12 + a32 * b22 + a33 * b32,
+        a30 * b03 + a31 * b13 + a32 * b23 + a33 * b33
       }
     ]
+
     # mix format: on
   end
 
@@ -931,11 +965,21 @@ defmodule EAGL.Math do
     # mix format: off
     [
       {
-        a00 * b00 + a01 * b10 + a02 * b20, a00 * b01 + a01 * b11 + a02 * b21, a00 * b02 + a01 * b12 + a02 * b22,  # Column 0
-        a10 * b00 + a11 * b10 + a12 * b20, a10 * b01 + a11 * b11 + a12 * b21, a10 * b02 + a11 * b12 + a12 * b22,  # Column 1
-        a20 * b00 + a21 * b10 + a22 * b20, a20 * b01 + a21 * b11 + a22 * b21, a20 * b02 + a21 * b12 + a22 * b22   # Column 2
+        # Column 0
+        a00 * b00 + a01 * b10 + a02 * b20,
+        a00 * b01 + a01 * b11 + a02 * b21,
+        a00 * b02 + a01 * b12 + a02 * b22,
+        # Column 1
+        a10 * b00 + a11 * b10 + a12 * b20,
+        a10 * b01 + a11 * b11 + a12 * b21,
+        a10 * b02 + a11 * b12 + a12 * b22,
+        # Column 2
+        a20 * b00 + a21 * b10 + a22 * b20,
+        a20 * b01 + a21 * b11 + a22 * b21,
+        a20 * b02 + a21 * b12 + a22 * b22
       }
     ]
+
     # mix format: on
   end
 
@@ -950,12 +994,29 @@ defmodule EAGL.Math do
     # mix format: off
     [
       {
-        m00, m10, m20, m30,  # Column 0 (was row 0)
-        m01, m11, m21, m31,  # Column 1 (was row 1)
-        m02, m12, m22, m32,  # Column 2 (was row 2)
-        m03, m13, m23, m33   # Column 3 (was row 3)
+        # Column 0 (was row 0)
+        m00,
+        m10,
+        m20,
+        m30,
+        # Column 1 (was row 1)
+        m01,
+        m11,
+        m21,
+        m31,
+        # Column 2 (was row 2)
+        m02,
+        m12,
+        m22,
+        m32,
+        # Column 3 (was row 3)
+        m03,
+        m13,
+        m23,
+        m33
       }
     ]
+
     # mix format: on
   end
 
@@ -968,11 +1029,21 @@ defmodule EAGL.Math do
     # mix format: off
     [
       {
-        m00, m10, m20,  # Column 0 (was row 0)
-        m01, m11, m21,  # Column 1 (was row 1)
-        m02, m12, m22   # Column 2 (was row 2)
+        # Column 0 (was row 0)
+        m00,
+        m10,
+        m20,
+        # Column 1 (was row 1)
+        m01,
+        m11,
+        m21,
+        # Column 2 (was row 2)
+        m02,
+        m12,
+        m22
       }
     ]
+
     # mix format: on
   end
 
@@ -987,12 +1058,29 @@ defmodule EAGL.Math do
     # mix format: off
     [
       {
-        1.0, 0.0, 0.0, 0.0,  # Column 0
-        0.0, 1.0, 0.0, 0.0,  # Column 1
-        0.0, 0.0, 1.0, 0.0,  # Column 2
-        x,   y,   z,   1.0   # Column 3 (translation)
+        # Column 0
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        # Column 1
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        # Column 2
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        # Column 3 (translation)
+        x,
+        y,
+        z,
+        1.0
       }
     ]
+
     # mix format: on
   end
 
@@ -1007,12 +1095,29 @@ defmodule EAGL.Math do
     # mix format: off
     [
       {
-        x,   0.0, 0.0, 0.0,  # Column 0 (X scale)
-        0.0, y,   0.0, 0.0,  # Column 1 (Y scale)
-        0.0, 0.0, z,   0.0,  # Column 2 (Z scale)
-        0.0, 0.0, 0.0, 1.0   # Column 3
+        # Column 0 (X scale)
+        x,
+        0.0,
+        0.0,
+        0.0,
+        # Column 1 (Y scale)
+        0.0,
+        y,
+        0.0,
+        0.0,
+        # Column 2 (Z scale)
+        0.0,
+        0.0,
+        z,
+        0.0,
+        # Column 3
+        0.0,
+        0.0,
+        0.0,
+        1.0
       }
     ]
+
     # mix format: on
   end
 
@@ -1028,12 +1133,29 @@ defmodule EAGL.Math do
     # mix format: off
     [
       {
-        1.0, 0.0, 0.0, 0.0,  # Column 0
-        0.0, c,   s,   0.0,  # Column 1 (swapped s and -s for column-major)
-        0.0, -s,  c,   0.0,  # Column 2
-        0.0, 0.0, 0.0, 1.0   # Column 3
+        # Column 0
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        # Column 1 (swapped s and -s for column-major)
+        0.0,
+        c,
+        s,
+        0.0,
+        # Column 2
+        0.0,
+        -s,
+        c,
+        0.0,
+        # Column 3
+        0.0,
+        0.0,
+        0.0,
+        1.0
       }
     ]
+
     # mix format: on
   end
 
@@ -1049,12 +1171,29 @@ defmodule EAGL.Math do
     # mix format: off
     [
       {
-        c,   0.0, -s,  0.0,  # Column 0 (swapped s and -s for column-major)
-        0.0, 1.0, 0.0, 0.0,  # Column 1
-        s,   0.0, c,   0.0,  # Column 2
-        0.0, 0.0, 0.0, 1.0   # Column 3
+        # Column 0 (swapped s and -s for column-major)
+        c,
+        0.0,
+        -s,
+        0.0,
+        # Column 1
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        # Column 2
+        s,
+        0.0,
+        c,
+        0.0,
+        # Column 3
+        0.0,
+        0.0,
+        0.0,
+        1.0
       }
     ]
+
     # mix format: on
   end
 
@@ -1070,12 +1209,29 @@ defmodule EAGL.Math do
     # mix format: off
     [
       {
-        c,   s,   0.0, 0.0,  # Column 0 (swapped s and -s for column-major)
-        -s,  c,   0.0, 0.0,  # Column 1
-        0.0, 0.0, 1.0, 0.0,  # Column 2
-        0.0, 0.0, 0.0, 1.0   # Column 3
+        # Column 0 (swapped s and -s for column-major)
+        c,
+        s,
+        0.0,
+        0.0,
+        # Column 1
+        -s,
+        c,
+        0.0,
+        0.0,
+        # Column 2
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        # Column 3
+        0.0,
+        0.0,
+        0.0,
+        1.0
       }
     ]
+
     # mix format: on
   end
 
@@ -1122,12 +1278,29 @@ defmodule EAGL.Math do
       # mix format: off
       [
         {
-          m00, m01, m02, m03,  # Column 0
-          m10, m11, m12, m13,  # Column 1
-          m20, m21, m22, m23,  # Column 2
-          m30, m31, m32, m33   # Column 3
+          # Column 0
+          m00,
+          m01,
+          m02,
+          m03,
+          # Column 1
+          m10,
+          m11,
+          m12,
+          m13,
+          # Column 2
+          m20,
+          m21,
+          m22,
+          m23,
+          # Column 3
+          m30,
+          m31,
+          m32,
+          m33
         }
       ]
+
       # mix format: on
     else
       invdet = 1.0 / det
@@ -1156,12 +1329,29 @@ defmodule EAGL.Math do
       # mix format: off
       [
         {
-          inv00, inv01, inv02, inv03,  # Column 0
-          inv10, inv11, inv12, inv13,  # Column 1
-          inv20, inv21, inv22, inv23,  # Column 2
-          inv30, inv31, inv32, inv33   # Column 3
+          # Column 0
+          inv00,
+          inv01,
+          inv02,
+          inv03,
+          # Column 1
+          inv10,
+          inv11,
+          inv12,
+          inv13,
+          # Column 2
+          inv20,
+          inv21,
+          inv22,
+          inv23,
+          # Column 3
+          inv30,
+          inv31,
+          inv32,
+          inv33
         }
       ]
+
       # mix format: on
     end
   end
@@ -1181,12 +1371,29 @@ defmodule EAGL.Math do
     # mix format: off
     [
       {
-        1.0 / (aspect_ratio * tan_half_fov), 0.0,                    0.0,                                     0.0,  # Column 0
-        0.0,                                 1.0 / tan_half_fov,     0.0,                                     0.0,  # Column 1
-        0.0,                                 0.0,                    -(z_far + z_near) / (z_far - z_near),    -1.0, # Column 2
-        0.0,                                 0.0,                    -(2.0 * z_far * z_near) / (z_far - z_near), 0.0  # Column 3
+        # Column 0
+        1.0 / (aspect_ratio * tan_half_fov),
+        0.0,
+        0.0,
+        0.0,
+        # Column 1
+        0.0,
+        1.0 / tan_half_fov,
+        0.0,
+        0.0,
+        # Column 2
+        0.0,
+        0.0,
+        -(z_far + z_near) / (z_far - z_near),
+        -1.0,
+        # Column 3
+        0.0,
+        0.0,
+        -(2.0 * z_far * z_near) / (z_far - z_near),
+        0.0
       }
     ]
+
     # mix format: on
   end
 
@@ -1199,12 +1406,29 @@ defmodule EAGL.Math do
     # mix format: off
     [
       {
-        2.0 / (right - left),                  0.0,                               0.0,                                    0.0,  # Column 0
-        0.0,                                   2.0 / (top - bottom),              0.0,                                    0.0,  # Column 1
-        0.0,                                   0.0,                               -2.0 / (z_far - z_near),               0.0,  # Column 2
-        -(right + left) / (right - left),      -(top + bottom) / (top - bottom),  -(z_far + z_near) / (z_far - z_near),  1.0   # Column 3
+        # Column 0
+        2.0 / (right - left),
+        0.0,
+        0.0,
+        0.0,
+        # Column 1
+        0.0,
+        2.0 / (top - bottom),
+        0.0,
+        0.0,
+        # Column 2
+        0.0,
+        0.0,
+        -2.0 / (z_far - z_near),
+        0.0,
+        # Column 3
+        -(right + left) / (right - left),
+        -(top + bottom) / (top - bottom),
+        -(z_far + z_near) / (z_far - z_near),
+        1.0
       }
     ]
+
     # mix format: on
   end
 
@@ -1225,12 +1449,29 @@ defmodule EAGL.Math do
     # mix format: off
     [
       {
-        sx,           sy,           sz,          0.0,  # Column 0 (right vector)
-        ux,           uy,           uz,          0.0,  # Column 1 (up vector)
-        -fx,          -fy,          -fz,         0.0,  # Column 2 (forward vector, negated)
-        -dot(s, eye), -dot(u, eye), dot(f, eye), 1.0   # Column 3 (translation)
+        # Column 0 (right vector)
+        sx,
+        sy,
+        sz,
+        0.0,
+        # Column 1 (up vector)
+        ux,
+        uy,
+        uz,
+        0.0,
+        # Column 2 (forward vector, negated)
+        -fx,
+        -fy,
+        -fz,
+        0.0,
+        # Column 3 (translation)
+        -dot(s, eye),
+        -dot(u, eye),
+        dot(f, eye),
+        1.0
       }
     ]
+
     # mix format: on
   end
 
@@ -1247,10 +1488,26 @@ defmodule EAGL.Math do
         # mix format: off
         [
           {
-            m00, m01, m02, m03,  # Column 0
-            m10, m11, m12, m13,  # Column 1
-            m20, m21, m22, m23,  # Column 2
-            m30, m31, m32, m33   # Column 3
+            # Column 0
+            m00,
+            m01,
+            m02,
+            m03,
+            # Column 1
+            m10,
+            m11,
+            m12,
+            m13,
+            # Column 2
+            m20,
+            m21,
+            m22,
+            m23,
+            # Column 3
+            m30,
+            m31,
+            m32,
+            m33
           }
         ],
         # mix format: on
@@ -1279,10 +1536,26 @@ defmodule EAGL.Math do
         # mix format: off
         [
           {
-            m00, m01, m02, _m03,  # Column 0
-            m10, m11, m12, _m13,  # Column 1
-            m20, m21, m22, _m23,  # Column 2
-            _m30, _m31, _m32, _m33   # Column 3 (ignored for direction vectors)
+            # Column 0
+            m00,
+            m01,
+            m02,
+            _m03,
+            # Column 1
+            m10,
+            m11,
+            m12,
+            _m13,
+            # Column 2
+            m20,
+            m21,
+            m22,
+            _m23,
+            # Column 3 (ignored for direction vectors)
+            _m30,
+            _m31,
+            _m32,
+            _m33
           }
         ],
         # mix format: on
@@ -1303,10 +1576,26 @@ defmodule EAGL.Math do
         # mix format: off
         [
           {
-            m00, m01, m02, m03,  # Column 0
-            m10, m11, m12, m13,  # Column 1
-            m20, m21, m22, m23,  # Column 2
-            m30, m31, m32, m33   # Column 3
+            # Column 0
+            m00,
+            m01,
+            m02,
+            m03,
+            # Column 1
+            m10,
+            m11,
+            m12,
+            m13,
+            # Column 2
+            m20,
+            m21,
+            m22,
+            m23,
+            # Column 3
+            m30,
+            m31,
+            m32,
+            m33
           }
         ],
         # mix format: on

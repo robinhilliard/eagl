@@ -145,10 +145,10 @@ The uniform helpers (from Wings3D) automatically detect the type of EAGL.Math va
 ```elixir
 import EAGL.Shader
 
-# Compile and link shaders
-{:ok, vertex} = create_shader(:vertex, "vertex.glsl")
-{:ok, fragment} = create_shader(:fragment, "fragment.glsl")
-{:ok, program} = create_attach_link([vertex, fragment])
+      # Compile and link shaders using GL constants
+      {:ok, vertex} = create_shader(@gl_vertex_shader, "vertex.glsl")
+      {:ok, fragment} = create_shader(@gl_fragment_shader, "fragment.glsl")
+      {:ok, program} = create_attach_link([vertex, fragment])
 
 # Set uniforms with automatic type detection
 set_uniform(program, "model_matrix", model_matrix)
@@ -170,7 +170,7 @@ set_uniforms(program, [
 EAGL provides meaningful texture abstractions:
 - **Image Loading**: `load_texture_from_file()` with automatic fallback to checkerboard patterns
 - **Texture Creation**: `create_texture()` returns `{:ok, id}` tuples for error handling
-- **Parameter Setting**: `set_texture_parameters()` converts atoms to OpenGL constants
+- **Parameter Setting**: `set_texture_parameters()` accepts GL constants directly  
 - **Data Loading**: `load_texture_data()` handles format/type conversion with defaults
 - **Procedural Textures**: `create_checkerboard_texture()` generates test patterns
 - **Graceful Degradation**: Helpful warnings when optional dependencies aren't available
@@ -191,13 +191,13 @@ import EAGL.Error
 {:ok, texture_id} = create_texture()
 :gl.bindTexture(@gl_texture_2d, texture_id)
 
-# Set texture parameters with atom-to-constant conversion
-set_texture_parameters(
-  wrap_s: :repeat,
-  wrap_t: :repeat,
-  min_filter: :linear_mipmap_linear,
-  mag_filter: :linear
-)
+      # Set texture parameters using GL constants directly
+      set_texture_parameters(
+        wrap_s: @gl_repeat,
+        wrap_t: @gl_repeat,
+        min_filter: @gl_linear_mipmap_linear,
+        mag_filter: @gl_linear
+      )
 
 # Load pixel data with format handling
 load_texture_data(width, height, pixel_data, 
@@ -629,7 +629,7 @@ EAGL focuses on **meaningful abstractions** rather than thin wrappers around Ope
 
 #### ✅ **Provide Value**
 - **Error handling**: `{:ok, result}` tuples and comprehensive error checking
-- **Type safety**: Atoms to OpenGL constants (`wrap_s: :repeat`)
+- **Type safety**: Direct GL constants (`wrap_s: @gl_repeat`)
 - **Sensible defaults**: Reduce boilerplate with common parameter combinations
 - **Complex operations**: Multi-step procedures like shader compilation and linking
 - **Data transformations**: Converting Elixir structures to OpenGL formats

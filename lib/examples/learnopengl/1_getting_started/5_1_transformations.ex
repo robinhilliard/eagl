@@ -152,12 +152,12 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.Transformations do
     # Compile and link shaders
     with {:ok, vertex_shader} <-
            create_shader(
-             :vertex,
+             @gl_vertex_shader,
              "learnopengl/1_getting_started/5_1_transformations/vertex_shader.glsl"
            ),
          {:ok, fragment_shader} <-
            create_shader(
-             :fragment,
+             @gl_fragment_shader,
              "learnopengl/1_getting_started/5_1_transformations/fragment_shader.glsl"
            ),
          {:ok, program} <- create_attach_link([vertex_shader, fragment_shader]) do
@@ -179,7 +179,8 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.Transformations do
 
       # Set up shader uniforms for texture
       :gl.useProgram(program)
-      set_uniform(program, "texture1", 0)  # Use texture unit 0
+      # Use texture unit 0
+      set_uniform(program, "texture1", 0)
 
       IO.puts("Ready to render - you should see a rotating textured rectangle.")
 
@@ -224,8 +225,10 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.Transformations do
     # Benefits: cleaner separation of state updates from rendering logic
     transform =
       mat4_identity()
-      |> mat4_mul(mat4_translate(vec3(0.5, -0.5, 0.0)))  # Move to bottom-right
-      |> mat4_mul(mat4_rotate_z(state.current_time))      # Rotate around Z-axis
+      # Move to bottom-right
+      |> mat4_mul(mat4_translate(vec3(0.5, -0.5, 0.0)))
+      # Rotate around Z-axis
+      |> mat4_mul(mat4_rotate_z(state.current_time))
 
     # Pass transformation matrix to shader
     set_uniform(state.program, "transform", transform)

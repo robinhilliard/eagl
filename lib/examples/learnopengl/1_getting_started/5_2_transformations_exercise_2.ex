@@ -92,7 +92,9 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.TransformationsExercise2 do
   import EAGL.Error
 
   def run_example do
-    EAGL.Window.run(__MODULE__, "LearnOpenGL 5.2 - Transformations Exercise 2", return_to_exit: true)
+    EAGL.Window.run(__MODULE__, "LearnOpenGL 5.2 - Transformations Exercise 2",
+      return_to_exit: true
+    )
   end
 
   @impl true
@@ -126,12 +128,12 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.TransformationsExercise2 do
     # Compile and link shaders using 'with' for consistent error handling
     with {:ok, vertex_shader} <-
            create_shader(
-             :vertex,
+             @gl_vertex_shader,
              "learnopengl/1_getting_started/5_2_transformations_exercise_2/vertex_shader.glsl"
            ),
          {:ok, fragment_shader} <-
            create_shader(
-             :fragment,
+             @gl_fragment_shader,
              "learnopengl/1_getting_started/5_2_transformations_exercise_2/fragment_shader.glsl"
            ),
          {:ok, program} <- create_attach_link([vertex_shader, fragment_shader]) do
@@ -170,9 +172,12 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.TransformationsExercise2 do
 
       # Set up shader uniforms for both textures
       :gl.useProgram(program)
+
       set_uniforms(program, [
-        {"texture1", 0},  # Use texture unit 0
-        {"texture2", 1}   # Use texture unit 1
+        # Use texture unit 0
+        {"texture1", 0},
+        # Use texture unit 1
+        {"texture2", 1}
       ])
 
       IO.puts("Ready to render - you should see two animated textured containers.")
@@ -209,40 +214,47 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.TransformationsExercise2 do
     :gl.activeTexture(@gl_texture1)
     :gl.bindTexture(@gl_texture_2d, state.texture2_id)
 
-         # Use shader program
-     :gl.useProgram(state.program)
+    # Use shader program
+    :gl.useProgram(state.program)
 
-     # Use current time from state (EAGL framework pattern)
-     # Original LearnOpenGL: time calculated directly in render with glfwGetTime()
-     # EAGL approach: uses time from state updated by tick handler each frame
-     # Benefits: cleaner separation of state updates from rendering logic
+    # Use current time from state (EAGL framework pattern)
+    # Original LearnOpenGL: time calculated directly in render with glfwGetTime()
+    # EAGL approach: uses time from state updated by tick handler each frame
+    # Benefits: cleaner separation of state updates from rendering logic
 
-     # ===== FIRST CONTAINER - Rotating (bottom-right) =====
-     # Create transformation: translate first, then rotate
-     # This creates an orbiting effect around the translated position
-     transform1 = mat4_identity()
-                 |> mat4_mul(mat4_translate(vec3(0.5, -0.5, 0.0)))           # Move to bottom-right
-                 |> mat4_mul(mat4_rotate_z(state.current_time))               # Rotate around Z-axis
+    # ===== FIRST CONTAINER - Rotating (bottom-right) =====
+    # Create transformation: translate first, then rotate
+    # This creates an orbiting effect around the translated position
+    transform1 =
+      mat4_identity()
+      # Move to bottom-right
+      |> mat4_mul(mat4_translate(vec3(0.5, -0.5, 0.0)))
+      # Rotate around Z-axis
+      |> mat4_mul(mat4_rotate_z(state.current_time))
 
-     # Set transformation uniform and draw first container
-     set_uniform(state.program, "transform", transform1)
+    # Set transformation uniform and draw first container
+    set_uniform(state.program, "transform", transform1)
 
-     # Draw first container
-     :gl.bindVertexArray(state.vao)
-     :gl.drawElements(@gl_triangles, 6, @gl_unsigned_int, 0)
+    # Draw first container
+    :gl.bindVertexArray(state.vao)
+    :gl.drawElements(@gl_triangles, 6, @gl_unsigned_int, 0)
 
-          # ===== SECOND CONTAINER - Scaling (top-left) =====
-     # Create transformation: translate first, then scale
-     # This creates a pulsing effect at the translated position
-     # Original LearnOpenGL uses sin() without abs() - allows negative scaling
-     scale_factor = :math.sin(state.current_time)  # Oscillates between -1 and 1
+    # ===== SECOND CONTAINER - Scaling (top-left) =====
+    # Create transformation: translate first, then scale
+    # This creates a pulsing effect at the translated position
+    # Original LearnOpenGL uses sin() without abs() - allows negative scaling
+    # Oscillates between -1 and 1
+    scale_factor = :math.sin(state.current_time)
 
-     transform2 = mat4_identity()
-                 |> mat4_mul(mat4_translate(vec3(-0.5, 0.5, 0.0)))                       # Move to top-left
-                 |> mat4_mul(mat4_scale(vec3(scale_factor, scale_factor, scale_factor)))  # Scale uniformly
+    transform2 =
+      mat4_identity()
+      # Move to top-left
+      |> mat4_mul(mat4_translate(vec3(-0.5, 0.5, 0.0)))
+      # Scale uniformly
+      |> mat4_mul(mat4_scale(vec3(scale_factor, scale_factor, scale_factor)))
 
-     # Set transformation uniform and draw second container
-     set_uniform(state.program, "transform", transform2)
+    # Set transformation uniform and draw second container
+    set_uniform(state.program, "transform", transform2)
 
     # Draw second container
     :gl.drawElements(@gl_triangles, 6, @gl_unsigned_int, 0)

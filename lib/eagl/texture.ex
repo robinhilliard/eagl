@@ -26,8 +26,8 @@ defmodule EAGL.Texture do
       # Manual texture creation and configuration
       {:ok, texture_id} = create_texture()
       :gl.bindTexture(@gl_texture_2d, texture_id)
-      set_texture_parameters(wrap_s: :clamp_to_edge, min_filter: :linear)
-      load_texture_data(width, height, pixel_data, format: :rgb)
+      set_texture_parameters(wrap_s: @gl_clamp_to_edge, min_filter: @gl_linear)
+      load_texture_data(width, height, pixel_data, format: @gl_rgb)
       :gl.generateMipmap(@gl_texture_2d)
       check("After generating mipmaps")
 
@@ -36,15 +36,16 @@ defmodule EAGL.Texture do
 
   ## Texture Parameters
 
-  - **Wrapping**: `:repeat`, `:mirrored_repeat`, `:clamp_to_edge`, `:clamp_to_border`
-  - **Filtering**: `:nearest`, `:linear`, `:nearest_mipmap_nearest`, `:linear_mipmap_linear`, etc.
-  - **Format**: `:rgb`, `:rgba`, `:red`, `:rg`
+  Use OpenGL constants for texture parameters:
+  - **Wrapping**: `@gl_repeat`, `@gl_mirrored_repeat`, `@gl_clamp_to_edge`, `@gl_clamp_to_border`
+  - **Filtering**: `@gl_nearest`, `@gl_linear`, `@gl_nearest_mipmap_nearest`, `@gl_linear_mipmap_linear`, etc.
+  - **Format**: `@gl_rgb`, `@gl_rgba`, `@gl_red`, `@gl_rg`
 
   ## Philosophy
 
   This module provides substantial helper functions rather than thin wrappers:
   - `create_texture()` - Returns `{:ok, id}` tuples for error handling
-  - `set_texture_parameters()` - Converts atoms to GL constants
+  - `set_texture_parameters()` - Accepts GL constants directly
   - `load_texture_data()` - Handles format/type conversion with defaults
   - `create_checkerboard_texture()` - Generates procedural textures
 
@@ -56,17 +57,14 @@ defmodule EAGL.Texture do
   import EAGL.Error
 
   @type texture_id :: non_neg_integer()
-  @type wrap_mode :: :repeat | :mirrored_repeat | :clamp_to_edge | :clamp_to_border
-  @type filter_mode ::
-          :nearest
-          | :linear
-          | :nearest_mipmap_nearest
-          | :linear_mipmap_nearest
-          | :nearest_mipmap_linear
-          | :linear_mipmap_linear
-  @type texture_format :: :red | :rg | :rgb | :rgba | :depth_component | :depth_stencil
-  @type pixel_type ::
-          :unsigned_byte | :byte | :unsigned_short | :short | :unsigned_int | :int | :float
+  # GL constants like @gl_repeat, @gl_clamp_to_edge
+  @type wrap_mode :: non_neg_integer()
+  # GL constants like @gl_linear, @gl_nearest
+  @type filter_mode :: non_neg_integer()
+  # GL constants like @gl_rgb, @gl_rgba
+  @type texture_format :: non_neg_integer()
+  # GL constants like @gl_unsigned_byte, @gl_float
+  @type pixel_type :: non_neg_integer()
 
   @doc """
   Creates a new texture object and returns its ID.
@@ -97,42 +95,42 @@ defmodule EAGL.Texture do
   end
 
   @doc """
-  Sets texture parameters for wrapping and filtering.
+  Sets texture parameters for wrapping and filtering using GL constants directly.
 
   ## Options
 
-  - `wrap_s`: Wrapping mode for S coordinate (default: :repeat)
-  - `wrap_t`: Wrapping mode for T coordinate (default: :repeat)
-  - `min_filter`: Minification filter (default: :linear)
-  - `mag_filter`: Magnification filter (default: :linear)
+  - `wrap_s`: Wrapping mode for S coordinate (default: @gl_repeat)
+  - `wrap_t`: Wrapping mode for T coordinate (default: @gl_repeat)
+  - `min_filter`: Minification filter (default: @gl_linear)
+  - `mag_filter`: Magnification filter (default: @gl_linear)
 
   ## Examples
 
       # Use default parameters (repeat wrapping, linear filtering)
       set_texture_parameters()
 
-      # Custom parameters
+      # Custom parameters using GL constants
       set_texture_parameters(
-        wrap_s: :clamp_to_edge,
-        wrap_t: :clamp_to_edge,
-        min_filter: :nearest,
-        mag_filter: :nearest
+        wrap_s: @gl_clamp_to_edge,
+        wrap_t: @gl_clamp_to_edge,
+        min_filter: @gl_nearest,
+        mag_filter: @gl_nearest
       )
   """
   @spec set_texture_parameters(keyword()) :: :ok
   def set_texture_parameters(opts \\ []) do
-    wrap_s = Keyword.get(opts, :wrap_s, :repeat)
-    wrap_t = Keyword.get(opts, :wrap_t, :repeat)
-    min_filter = Keyword.get(opts, :min_filter, :linear)
-    mag_filter = Keyword.get(opts, :mag_filter, :linear)
+    wrap_s = Keyword.get(opts, :wrap_s, @gl_repeat)
+    wrap_t = Keyword.get(opts, :wrap_t, @gl_repeat)
+    min_filter = Keyword.get(opts, :min_filter, @gl_linear)
+    mag_filter = Keyword.get(opts, :mag_filter, @gl_linear)
 
     # Set wrapping parameters
-    :gl.texParameteri(@gl_texture_2d, @gl_texture_wrap_s, wrap_mode_to_gl(wrap_s))
-    :gl.texParameteri(@gl_texture_2d, @gl_texture_wrap_t, wrap_mode_to_gl(wrap_t))
+    :gl.texParameteri(@gl_texture_2d, @gl_texture_wrap_s, wrap_s)
+    :gl.texParameteri(@gl_texture_2d, @gl_texture_wrap_t, wrap_t)
 
     # Set filtering parameters
-    :gl.texParameteri(@gl_texture_2d, @gl_texture_min_filter, filter_mode_to_gl(min_filter))
-    :gl.texParameteri(@gl_texture_2d, @gl_texture_mag_filter, filter_mode_to_gl(mag_filter))
+    :gl.texParameteri(@gl_texture_2d, @gl_texture_min_filter, min_filter)
+    :gl.texParameteri(@gl_texture_2d, @gl_texture_mag_filter, mag_filter)
 
     check("After setting texture parameters")
   end
@@ -149,39 +147,39 @@ defmodule EAGL.Texture do
 
   ## Options
 
-  - `internal_format`: Internal storage format (default: :rgb)
-  - `format`: Pixel data format (default: :rgb)
-  - `type`: Pixel data type (default: :unsigned_byte)
+  - `internal_format`: Internal storage format (default: @gl_rgb)
+  - `format`: Pixel data format (default: @gl_rgb)
+  - `type`: Pixel data type (default: @gl_unsigned_byte)
   - `level`: Mipmap level (default: 0)
 
   ## Examples
 
       # RGB data
-      load_texture_data(256, 256, pixel_data, format: :rgb)
+      load_texture_data(256, 256, pixel_data, format: @gl_rgb)
 
       # RGBA data with alpha channel
       load_texture_data(256, 256, pixel_data,
-        internal_format: :rgba,
-        format: :rgba
+        internal_format: @gl_rgba,
+        format: @gl_rgba
       )
   """
   @spec load_texture_data(pos_integer(), pos_integer(), binary(), keyword()) :: :ok
   def load_texture_data(width, height, pixel_data, opts \\ []) do
     level = Keyword.get(opts, :level, 0)
-    internal_format = Keyword.get(opts, :internal_format, :rgb)
-    format = Keyword.get(opts, :format, :rgb)
-    type = Keyword.get(opts, :type, :unsigned_byte)
+    internal_format = Keyword.get(opts, :internal_format, @gl_rgb)
+    format = Keyword.get(opts, :format, @gl_rgb)
+    type = Keyword.get(opts, :type, @gl_unsigned_byte)
 
     :gl.texImage2D(
       @gl_texture_2d,
       level,
-      texture_format_to_gl(internal_format),
+      internal_format,
       width,
       height,
       # border (must be 0)
       0,
-      texture_format_to_gl(format),
-      pixel_type_to_gl(type),
+      format,
+      type,
       pixel_data
     )
 
@@ -230,18 +228,18 @@ defmodule EAGL.Texture do
           # Determine format based on channels
           format =
             case channels do
-              1 -> :red
-              2 -> :rg
-              3 -> :rgb
-              4 -> :rgba
-              _ -> :rgb
+              1 -> @gl_red
+              2 -> @gl_rg
+              3 -> @gl_rgb
+              4 -> @gl_rgba
+              _ -> @gl_rgb
             end
 
           set_texture_parameters(
-            wrap_s: :repeat,
-            wrap_t: :repeat,
-            min_filter: :linear_mipmap_linear,
-            mag_filter: :linear
+            wrap_s: @gl_repeat,
+            wrap_t: @gl_repeat,
+            min_filter: @gl_linear_mipmap_linear,
+            mag_filter: @gl_linear
           )
 
           # Set pixel store parameters for proper alignment
@@ -300,13 +298,13 @@ defmodule EAGL.Texture do
       :gl.bindTexture(@gl_texture_2d, texture_id)
 
       set_texture_parameters(
-        wrap_s: :repeat,
-        wrap_t: :repeat,
-        min_filter: :linear,
-        mag_filter: :linear
+        wrap_s: @gl_repeat,
+        wrap_t: @gl_repeat,
+        min_filter: @gl_linear,
+        mag_filter: @gl_linear
       )
 
-      load_texture_data(size, size, pixel_data, format: :rgb)
+      load_texture_data(size, size, pixel_data, format: @gl_rgb)
       :gl.generateMipmap(@gl_texture_2d)
 
       {:ok, texture_id, size, size}
@@ -318,41 +316,6 @@ defmodule EAGL.Texture do
   # ============================================================================
   # PRIVATE HELPER FUNCTIONS
   # ============================================================================
-
-  # Convert wrap mode atoms to OpenGL constants
-  @spec wrap_mode_to_gl(wrap_mode()) :: non_neg_integer()
-  defp wrap_mode_to_gl(:repeat), do: @gl_repeat
-  defp wrap_mode_to_gl(:mirrored_repeat), do: @gl_mirrored_repeat
-  defp wrap_mode_to_gl(:clamp_to_edge), do: @gl_clamp_to_edge
-  defp wrap_mode_to_gl(:clamp_to_border), do: @gl_clamp_to_border
-
-  # Convert filter mode atoms to OpenGL constants
-  @spec filter_mode_to_gl(filter_mode()) :: non_neg_integer()
-  defp filter_mode_to_gl(:nearest), do: @gl_nearest
-  defp filter_mode_to_gl(:linear), do: @gl_linear
-  defp filter_mode_to_gl(:nearest_mipmap_nearest), do: @gl_nearest_mipmap_nearest
-  defp filter_mode_to_gl(:linear_mipmap_nearest), do: @gl_linear_mipmap_nearest
-  defp filter_mode_to_gl(:nearest_mipmap_linear), do: @gl_nearest_mipmap_linear
-  defp filter_mode_to_gl(:linear_mipmap_linear), do: @gl_linear_mipmap_linear
-
-  # Convert texture format atoms to OpenGL constants
-  @spec texture_format_to_gl(texture_format()) :: non_neg_integer()
-  defp texture_format_to_gl(:red), do: @gl_red
-  defp texture_format_to_gl(:rg), do: @gl_rg
-  defp texture_format_to_gl(:rgb), do: @gl_rgb
-  defp texture_format_to_gl(:rgba), do: @gl_rgba
-  defp texture_format_to_gl(:depth_component), do: @gl_depth_component
-  defp texture_format_to_gl(:depth_stencil), do: @gl_depth_stencil
-
-  # Convert pixel type atoms to OpenGL constants
-  @spec pixel_type_to_gl(pixel_type()) :: non_neg_integer()
-  defp pixel_type_to_gl(:unsigned_byte), do: @gl_unsigned_byte
-  defp pixel_type_to_gl(:byte), do: @gl_byte
-  defp pixel_type_to_gl(:unsigned_short), do: @gl_unsigned_short
-  defp pixel_type_to_gl(:short), do: @gl_short
-  defp pixel_type_to_gl(:unsigned_int), do: @gl_unsigned_int
-  defp pixel_type_to_gl(:int), do: @gl_int
-  defp pixel_type_to_gl(:float), do: @gl_float
 
   # Generate checkerboard pattern data
   @spec generate_checkerboard_data(pos_integer(), pos_integer(), pos_integer()) :: binary()

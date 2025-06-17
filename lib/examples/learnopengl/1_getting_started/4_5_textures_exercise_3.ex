@@ -113,12 +113,12 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.TexturesExercise3 do
     # Compile and link shaders
     with {:ok, vertex_shader} <-
            create_shader(
-             :vertex,
+             @gl_vertex_shader,
              "learnopengl/1_getting_started/4_5_textures_exercise_3/vertex_shader.glsl"
            ),
          {:ok, fragment_shader} <-
            create_shader(
-             :fragment,
+             @gl_fragment_shader,
              "learnopengl/1_getting_started/4_5_textures_exercise_3/fragment_shader.glsl"
            ),
          {:ok, program} <- create_attach_link([vertex_shader, fragment_shader]) do
@@ -143,13 +143,13 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.TexturesExercise3 do
 
       set_texture_parameters(
         # Prevent wrapping artifacts
-        wrap_s: :clamp_to_edge,
+        wrap_s: @gl_clamp_to_edge,
         # Prevent wrapping artifacts
-        wrap_t: :clamp_to_edge,
+        wrap_t: @gl_clamp_to_edge,
         # Smooth filtering
-        min_filter: :linear,
+        min_filter: @gl_linear,
         # Smooth filtering
-        mag_filter: :linear
+        mag_filter: @gl_linear
       )
 
       # Generate mipmaps

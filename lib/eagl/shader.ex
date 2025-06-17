@@ -52,8 +52,7 @@ defmodule EAGL.Shader do
 
   @type shader_id :: non_neg_integer()
   @type program_id :: non_neg_integer()
-  @type shader_type ::
-          :vertex | :fragment | :geometry | :tess_control | :tess_evaluation | :compute
+  @type shader_type :: non_neg_integer()
 
   @type uniform_value ::
           vec2()
@@ -70,50 +69,109 @@ defmodule EAGL.Shader do
   @app Mix.Project.config()[:app]
 
   @doc """
-  Creates and compiles a shader of the specified type with the given source code.
-  Returns the shader ID.
+  Creates and compiles a shader from a file.
+
+  ## Parameters
+
+  - `shader_type`: OpenGL shader type constant (e.g., @gl_vertex_shader, @gl_fragment_shader)
+  - `file_path`: Path to the shader file (relative to priv/shaders/ or absolute)
+
+  ## Examples
+
+      {:ok, vertex_shader} = create_shader(@gl_vertex_shader, "vertex.glsl")
+      {:ok, fragment_shader} = create_shader(@gl_fragment_shader, "fragment.glsl")
   """
   @spec create_shader(shader_type(), String.t()) :: {:ok, shader_id()} | {:error, String.t()}
-  def create_shader(shader_type, filename) do
-    gl_shader_type = shader_type_to_gl(shader_type)
+  def create_shader(shader_type, file_path) do
+    case read_shader_file(file_path) do
+      {:ok, source} ->
+        compile_shader_source(shader_type, source, file_path)
 
-    try do
-      # Create shader
-      shader = :gl.createShader(gl_shader_type)
-
-      priv_dir = :code.priv_dir(@app)
-      model_path = Path.join([priv_dir, "shaders", filename])
-
-      case File.exists?(model_path) do
-        true ->
-          :gl.shaderSource(shader, [File.read!(model_path)])
-          :gl.compileShader(shader)
-
-          case check_compile_status(shader) do
-            {:ok, shader} ->
-              {:ok, shader}
-
-            {:error, message} ->
-              cleanup_shader(shader)
-              {:error, message}
-          end
-
-        false ->
-          {:error, "Shader file not found: #{filename}"}
-      end
-    rescue
-      e ->
-        {:error, "Shader creation failed: #{inspect(e)}"}
+      {:error, reason} ->
+        {:error, "Failed to read shader file '#{file_path}': #{reason}"}
     end
   end
 
-  # Private helper to convert shader type atoms to GL constants
-  defp shader_type_to_gl(:vertex), do: @gl_vertex_shader
-  defp shader_type_to_gl(:fragment), do: @gl_fragment_shader
-  defp shader_type_to_gl(:geometry), do: @gl_geometry_shader
-  defp shader_type_to_gl(:tess_control), do: @gl_tess_control_shader
-  defp shader_type_to_gl(:tess_evaluation), do: @gl_tess_evaluation_shader
-  defp shader_type_to_gl(:compute), do: @gl_compute_shader
+  @doc """
+  Creates and compiles a shader from source code.
+
+  ## Parameters
+
+  - `shader_type`: OpenGL shader type constant (e.g., @gl_vertex_shader, @gl_fragment_shader)
+  - `source`: GLSL source code as string or charlist
+  - `name`: Optional name for error reporting (defaults to "inline shader")
+
+  ## Examples
+
+      vertex_source = "#version 330 core\nlayout (location = 0) in vec3 aPos;\nvoid main() { gl_Position = vec4(aPos, 1.0); }"
+      {:ok, shader_id} = create_shader_from_source(@gl_vertex_shader, vertex_source, "my_vertex")
+  """
+  @spec create_shader_from_source(shader_type(), String.t() | charlist(), String.t()) ::
+          {:ok, shader_id()} | {:error, String.t()}
+  def create_shader_from_source(shader_type, source, name \\ "inline shader") do
+    compile_shader_source(shader_type, source, name)
+  end
+
+  # ============================================================================
+  # PRIVATE HELPER FUNCTIONS
+  # ============================================================================
+
+  # Read shader file from priv/shaders/ directory or absolute path
+  @spec read_shader_file(String.t()) :: {:ok, String.t()} | {:error, String.t()}
+  defp read_shader_file(file_path) do
+    # Try absolute path first, then relative to priv/shaders/
+    path =
+      if Path.absname(file_path) == file_path do
+        file_path
+      else
+        priv_dir = :code.priv_dir(@app)
+        Path.join([priv_dir, "shaders", file_path])
+      end
+
+    case File.read(path) do
+      {:ok, content} -> {:ok, content}
+      {:error, reason} -> {:error, "Cannot read file '#{path}': #{:file.format_error(reason)}"}
+    end
+  end
+
+  # Prepare shader source for OpenGL
+  @spec prepare_shader_source(String.t() | charlist()) :: charlist()
+  defp prepare_shader_source(source) when is_binary(source) do
+    String.to_charlist(source)
+  end
+
+  defp prepare_shader_source(source) when is_list(source) do
+    source
+  end
+
+  # Compile shader source code
+  @spec compile_shader_source(shader_type(), String.t() | charlist(), String.t()) ::
+          {:ok, shader_id()} | {:error, String.t()}
+  defp compile_shader_source(shader_type, source, name) do
+    shader_id = :gl.createShader(shader_type)
+
+    try do
+      # Convert source to the format expected by gl:shaderSource
+      gl_source = prepare_shader_source(source)
+      :gl.shaderSource(shader_id, [gl_source])
+      :gl.compileShader(shader_id)
+
+      case :gl.getShaderiv(shader_id, @gl_compile_status) do
+        @gl_true ->
+          {:ok, shader_id}
+
+        @gl_false ->
+          log_length = :gl.getShaderiv(shader_id, @gl_info_log_length)
+          error_log = :gl.getShaderInfoLog(shader_id, log_length)
+          :gl.deleteShader(shader_id)
+          {:error, "Shader compilation failed for '#{name}':\n#{error_log}"}
+      end
+    catch
+      error_type, reason ->
+        :gl.deleteShader(shader_id)
+        {:error, "Shader compilation exception for '#{name}': #{error_type}:#{inspect(reason)}"}
+    end
+  end
 
   @doc """
   Checks if a shader compiled successfully.

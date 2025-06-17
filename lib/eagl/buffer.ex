@@ -58,28 +58,15 @@ defmodule EAGL.Buffer do
   @type buffer_id :: non_neg_integer()
   @type vao_id :: non_neg_integer()
 
+  # GL constants like @gl_float, @gl_int, @gl_unsigned_byte
   @type vertex_attribute_type ::
-          :byte
-          | :unsigned_byte
-          | :short
-          | :unsigned_short
-          | :int
-          | :unsigned_int
-          | :fixed
-          | :float
-          | :half_float
-          | :double
+          non_neg_integer()
 
+  # GL constants like @gl_static_draw, @gl_dynamic_draw
   @type buffer_usage ::
-          :stream_draw
-          | :stream_read
-          | :stream_copy
-          | :static_draw
-          | :static_read
-          | :static_copy
-          | :dynamic_draw
-          | :dynamic_read
-          | :dynamic_copy
+          non_neg_integer()
+
+  @type buffer_target :: non_neg_integer()
 
   @type vertex_attribute :: %{
           location: non_neg_integer(),
@@ -224,7 +211,7 @@ defmodule EAGL.Buffer do
     # Bind and fill VBO
     :gl.bindBuffer(@gl_array_buffer, vbo)
     vertex_data = vertices_to_binary(vertices)
-    usage = buffer_usage_to_gl(Keyword.get(opts, :usage, :static_draw))
+    usage = Keyword.get(opts, :usage, @gl_static_draw)
     :gl.bufferData(@gl_array_buffer, byte_size(vertex_data), vertex_data, usage)
 
     # Configure vertex attributes
@@ -271,7 +258,7 @@ defmodule EAGL.Buffer do
     # Bind and fill VBO with vertex data
     :gl.bindBuffer(@gl_array_buffer, vbo)
     vertex_data = vertices_to_binary(vertices)
-    usage = buffer_usage_to_gl(Keyword.get(opts, :usage, :static_draw))
+    usage = Keyword.get(opts, :usage, @gl_static_draw)
     :gl.bufferData(@gl_array_buffer, byte_size(vertex_data), vertex_data, usage)
 
     # Bind and fill EBO with index data
@@ -484,32 +471,25 @@ defmodule EAGL.Buffer do
          stride: stride,
          offset: offset
        }) do
-    gl_type = vertex_attribute_type_to_gl(type)
+    # For compatibility with existing code, convert atom types to GL constants
+    gl_type =
+      case type do
+        :float -> @gl_float
+        :int -> @gl_int
+        :unsigned_int -> @gl_unsigned_int
+        :byte -> @gl_byte
+        :unsigned_byte -> @gl_unsigned_byte
+        :short -> @gl_short
+        :unsigned_short -> @gl_unsigned_short
+        :fixed -> @gl_fixed
+        :half_float -> @gl_half_float
+        :double -> @gl_double
+        # If it's already a GL constant (integer), use it directly
+        gl_constant when is_integer(gl_constant) -> gl_constant
+      end
+
     gl_normalized = if normalized, do: @gl_true, else: @gl_false
     :gl.vertexAttribPointer(location, size, gl_type, gl_normalized, stride, offset)
     :gl.enableVertexAttribArray(location)
   end
-
-  # Convert vertex attribute type atoms to OpenGL constants
-  defp vertex_attribute_type_to_gl(:byte), do: @gl_byte
-  defp vertex_attribute_type_to_gl(:unsigned_byte), do: @gl_unsigned_byte
-  defp vertex_attribute_type_to_gl(:short), do: @gl_short
-  defp vertex_attribute_type_to_gl(:unsigned_short), do: @gl_unsigned_short
-  defp vertex_attribute_type_to_gl(:int), do: @gl_int
-  defp vertex_attribute_type_to_gl(:unsigned_int), do: @gl_unsigned_int
-  defp vertex_attribute_type_to_gl(:fixed), do: @gl_fixed
-  defp vertex_attribute_type_to_gl(:float), do: @gl_float
-  defp vertex_attribute_type_to_gl(:half_float), do: @gl_half_float
-  defp vertex_attribute_type_to_gl(:double), do: @gl_double
-
-  # Convert buffer usage atoms to OpenGL constants
-  defp buffer_usage_to_gl(:stream_draw), do: @gl_stream_draw
-  defp buffer_usage_to_gl(:stream_read), do: @gl_stream_read
-  defp buffer_usage_to_gl(:stream_copy), do: @gl_stream_copy
-  defp buffer_usage_to_gl(:static_draw), do: @gl_static_draw
-  defp buffer_usage_to_gl(:static_read), do: @gl_static_read
-  defp buffer_usage_to_gl(:static_copy), do: @gl_static_copy
-  defp buffer_usage_to_gl(:dynamic_draw), do: @gl_dynamic_draw
-  defp buffer_usage_to_gl(:dynamic_read), do: @gl_dynamic_read
-  defp buffer_usage_to_gl(:dynamic_copy), do: @gl_dynamic_copy
 end

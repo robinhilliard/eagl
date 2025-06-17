@@ -95,10 +95,10 @@ defmodule EAGL.TextureTest do
 
         assert :ok =
                  set_texture_parameters(
-                   wrap_s: :clamp_to_edge,
-                   wrap_t: :clamp_to_edge,
-                   min_filter: :nearest,
-                   mag_filter: :nearest
+                   wrap_s: @gl_clamp_to_edge,
+                   wrap_t: @gl_clamp_to_edge,
+                   min_filter: @gl_nearest,
+                   mag_filter: @gl_nearest
                  )
 
         # Clean up
@@ -135,7 +135,7 @@ defmodule EAGL.TextureTest do
           255
         >>
 
-        assert :ok = load_texture_data(2, 2, pixel_data, format: :rgb)
+        assert :ok = load_texture_data(2, 2, pixel_data, format: @gl_rgb)
 
         # Clean up
         :gl.deleteTextures([texture_id])
@@ -175,8 +175,8 @@ defmodule EAGL.TextureTest do
 
         assert :ok =
                  load_texture_data(2, 2, pixel_data,
-                   internal_format: :rgba,
-                   format: :rgba
+                   internal_format: @gl_rgba,
+                   format: @gl_rgba
                  )
 
         # Clean up
@@ -423,16 +423,16 @@ defmodule EAGL.TextureTest do
 
         assert :ok =
                  set_texture_parameters(
-                   wrap_s: :repeat,
-                   wrap_t: :repeat,
-                   min_filter: :linear,
-                   mag_filter: :linear
+                   wrap_s: @gl_repeat,
+                   wrap_t: @gl_repeat,
+                   min_filter: @gl_linear,
+                   mag_filter: @gl_linear
                  )
 
         # Create simple test data
         # 3x1 RGB strip
         pixel_data = <<255, 0, 0, 0, 255, 0, 0, 0, 255>>
-        assert :ok = load_texture_data(3, 1, pixel_data, format: :rgb)
+        assert :ok = load_texture_data(3, 1, pixel_data, format: @gl_rgb)
 
         # Generate mipmaps
         :gl.generateMipmap(@gl_texture_2d)

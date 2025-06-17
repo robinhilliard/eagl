@@ -130,12 +130,12 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.ShadersExercise1 do
     # Compile and link shaders - vertex shader contains the transformation
     with {:ok, vertex_shader} <-
            create_shader(
-             :vertex,
+             @gl_vertex_shader,
              "learnopengl/1_getting_started/3_4_shaders_exercise_1/vertex_shader.glsl"
            ),
          {:ok, fragment_shader} <-
            create_shader(
-             :fragment,
+             @gl_fragment_shader,
              "learnopengl/1_getting_started/3_4_shaders_exercise_1/fragment_shader.glsl"
            ),
          {:ok, program} <- create_attach_link([vertex_shader, fragment_shader]) do

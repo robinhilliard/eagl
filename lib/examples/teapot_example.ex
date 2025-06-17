@@ -28,8 +28,8 @@ defmodule EAGL.Examples.Teapot do
   @impl true
   def setup do
     # Load all three shader programs
-    with {:ok, vertex_phong} <- create_shader(:vertex, @vertex_source_file),
-         {:ok, fragment_phong} <- create_shader(:fragment, @fragment_source_file),
+    with {:ok, vertex_phong} <- create_shader(@gl_vertex_shader, @vertex_source_file),
+         {:ok, fragment_phong} <- create_shader(@gl_fragment_shader, @fragment_source_file),
          {:ok, program} <- create_attach_link([vertex_phong, fragment_phong]),
          {:ok, model} <- load_model_to_vao("teapot.obj") do
       # State: {program, model, time}
