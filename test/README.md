@@ -20,7 +20,7 @@ The `EAGL.Window` module now supports a `timeout` option:
 EAGL.Window.run(MyExample, "Title", timeout: 500)
 
 # Normal interactive mode (no timeout)
-EAGL.Window.run(MyExample, "Title", return_to_exit: true)
+EAGL.Window.run(MyExample, "Title", enter_to_exit: true)
 ```
 
 When a timeout is set:
@@ -38,12 +38,12 @@ defmodule MyExample do
 
   # Before: Fixed options
   def run_example do
-    EAGL.Window.run(__MODULE__, "Title", return_to_exit: true)
+    EAGL.Window.run(__MODULE__, "Title", enter_to_exit: true)
   end
 
   # After: Configurable options
   def run_example(opts \\ []) do
-    default_opts = [return_to_exit: true]
+    default_opts = [enter_to_exit: true]
     final_opts = Keyword.merge(default_opts, opts)
     EAGL.Window.run(__MODULE__, "Title", final_opts)
   end
@@ -103,7 +103,7 @@ To add an example to the automated test suite:
 1. **Update the example** to accept options:
    ```elixir
    def run_example(opts \\ []) do
-     default_opts = [return_to_exit: true]
+     default_opts = [enter_to_exit: true]
      final_opts = Keyword.merge(default_opts, opts)
      EAGL.Window.run(__MODULE__, "Title", final_opts)
    end

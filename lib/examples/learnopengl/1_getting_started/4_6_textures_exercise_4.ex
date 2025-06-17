@@ -77,7 +77,7 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.TexturesExercise4 do
 
   @spec run_example() :: :ok | {:error, term()}
   def run_example(opts \\ []) do
-    default_opts = [return_to_exit: true]
+    default_opts = [enter_to_exit: true]
     merged_opts = Keyword.merge(default_opts, opts)
 
     EAGL.Window.run(

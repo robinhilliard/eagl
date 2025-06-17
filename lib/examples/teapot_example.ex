@@ -19,7 +19,7 @@ defmodule EAGL.Examples.Teapot do
 
   @spec run_example() :: :ok | {:error, term()}
   def run_example(opts \\ []) do
-    default_opts = [depth_testing: true, return_to_exit: true]
+    default_opts = [depth_testing: true, enter_to_exit: true]
     merged_opts = Keyword.merge(default_opts, opts)
 
     EAGL.Window.run(__MODULE__, "EaGL Utah Teapot Example", merged_opts)

@@ -79,7 +79,7 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.TransformationsExercise2 do
 
   ## Keybindings
 
-  - **ENTER**: Exit the example (when `return_to_exit: true`)
+  - **ENTER**: Exit the example (when `enter_to_exit: true`)
   - **ESC**: Alternative exit method
   """
 
@@ -92,7 +92,7 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.TransformationsExercise2 do
   import EAGL.Error
 
   def run_example(opts \\ []) do
-    default_opts = [return_to_exit: true]
+    default_opts = [enter_to_exit: true]
     merged_opts = Keyword.merge(default_opts, opts)
 
     EAGL.Window.run(__MODULE__, "LearnOpenGL 5.2 - Transformations Exercise 2", merged_opts)

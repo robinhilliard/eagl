@@ -26,7 +26,7 @@ defmodule EAGL.Window do
           # Custom size and tutorial mode
           EAGL.Window.run(__MODULE__, "Tutorial",
             size: {1280, 720},
-            return_to_exit: true
+            enter_to_exit: true
           )
         end
 
@@ -125,7 +125,7 @@ defmodule EAGL.Window do
   Options:
   - size: {width, height} tuple, defaults to {1024, 768}. Sets the initial window size.
   - depth_testing: boolean, defaults to false. When true, enables depth testing and requests a depth buffer.
-  - return_to_exit: boolean, defaults to false. When true, pressing ENTER will automatically close the window.
+  - enter_to_exit: boolean, defaults to false. When true, pressing ENTER will automatically close the window.
   - timeout: integer, optional. If set, automatically exits after this many milliseconds for automated testing.
   """
 
@@ -138,7 +138,7 @@ defmodule EAGL.Window do
   def run(callback_module, title, opts) when is_list(opts) do
     size = Keyword.get(opts, :size, @default_window_size)
     depth_testing = Keyword.get(opts, :depth_testing, false)
-    return_to_exit = Keyword.get(opts, :return_to_exit, false)
+    enter_to_exit = Keyword.get(opts, :enter_to_exit, false)
     timeout = Keyword.get(opts, :timeout)
 
     try do
@@ -271,7 +271,7 @@ defmodule EAGL.Window do
 
               # Main loop
               try do
-                main_loop(frame, gl_canvas, gl_context, callback_module, state, return_to_exit, timeout)
+                main_loop(frame, gl_canvas, gl_context, callback_module, state, enter_to_exit, timeout)
               catch
                 :exit_main_loop -> :ok
               end
@@ -477,7 +477,7 @@ defmodule EAGL.Window do
           boolean(),
           integer() | nil
         ) :: :ok
-  defp main_loop(frame, gl_canvas, gl_context, callback_module, state, return_to_exit, timeout) do
+  defp main_loop(frame, gl_canvas, gl_context, callback_module, state, enter_to_exit, timeout) do
     receive do
       # Handle timeout for automated testing
       {:timeout_expired, timeout_ms} ->
@@ -524,12 +524,12 @@ defmodule EAGL.Window do
           :wxGLCanvas.swapBuffers(gl_canvas)
         end
 
-        main_loop(frame, gl_canvas, gl_context, callback_module, state, return_to_exit, timeout)
+        main_loop(frame, gl_canvas, gl_context, callback_module, state, enter_to_exit, timeout)
 
       {:wx, _, _, _, {:wxKey, :char_hook, _, _, key_code, _, _, _, _, _, _, _}} ->
-        # Handle ENTER key if return_to_exit is enabled
+        # Handle ENTER key if enter_to_exit is enabled
         # Check for both main ENTER (13/WXK_RETURN) and numeric keypad ENTER (370/WXK_NUMPAD_ENTER)
-        if return_to_exit and (key_code == 13 or key_code == 370) do
+        if enter_to_exit and (key_code == 13 or key_code == 370) do
           cleanup_and_exit(frame, gl_canvas, gl_context, callback_module, state)
         end
 
@@ -551,7 +551,7 @@ defmodule EAGL.Window do
 
         # Trigger a repaint after handling the event
         :wxWindow.refresh(gl_canvas)
-        main_loop(frame, gl_canvas, gl_context, callback_module, new_state, return_to_exit, timeout)
+        main_loop(frame, gl_canvas, gl_context, callback_module, new_state, enter_to_exit, timeout)
 
       {:wx, _, _, _, {:wxClose, :close_window}} ->
         cleanup_and_close(frame, gl_canvas, gl_context, callback_module, state)
@@ -573,7 +573,7 @@ defmodule EAGL.Window do
         callback_module.render(safe_width * 1.0, safe_height * 1.0, state)
         :wxGLCanvas.swapBuffers(gl_canvas)
         # Set timeout to nil after first render to prevent multiple timers
-        main_loop(frame, gl_canvas, gl_context, callback_module, state, return_to_exit, nil)
+        main_loop(frame, gl_canvas, gl_context, callback_module, state, enter_to_exit, nil)
 
       :tick ->
         new_state =
@@ -601,10 +601,10 @@ defmodule EAGL.Window do
             state
           end
 
-        main_loop(frame, gl_canvas, gl_context, callback_module, new_state, return_to_exit, timeout)
+        main_loop(frame, gl_canvas, gl_context, callback_module, new_state, enter_to_exit, timeout)
 
       _ ->
-        main_loop(frame, gl_canvas, gl_context, callback_module, state, return_to_exit, timeout)
+        main_loop(frame, gl_canvas, gl_context, callback_module, state, enter_to_exit, timeout)
     end
   end
 end
