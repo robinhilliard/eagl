@@ -453,7 +453,9 @@ defmodule EAGL.Examples.Math do
   @doc """
   Run the math example - consistent interface with other examples.
   """
-  def run_example do
+  def run_example(opts \\ []) do
+    # Math example doesn't need timeout since it's non-interactive
+    _merged_opts = Keyword.merge([], opts)
     IO.puts("EAGL Math Library Comprehensive Demo")
     IO.puts("====================================")
     IO.puts("This example demonstrates all EAGL.Math functionality without OpenGL.")

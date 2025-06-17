@@ -75,13 +75,16 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.TexturesExercise3 do
   '''
 
   @spec run_example() :: :ok | {:error, term()}
-  def run_example,
-    do:
-      EAGL.Window.run(
-        __MODULE__,
-        "LearnOpenGL - 1 Getting Started - 4.5 Textures Exercise 3",
-        return_to_exit: true
-      )
+  def run_example(opts \\ []) do
+    default_opts = [return_to_exit: true]
+    merged_opts = Keyword.merge(default_opts, opts)
+
+    EAGL.Window.run(
+      __MODULE__,
+      "LearnOpenGL - 1 Getting Started - 4.5 Textures Exercise 3",
+      merged_opts
+    )
+  end
 
   @impl true
   def setup do

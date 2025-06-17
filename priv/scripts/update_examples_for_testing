@@ -1,0 +1,80 @@
+#!/bin/bash
+
+# EAGL Examples Testing Update Script
+# This script updates example modules to support options for automated testing
+
+set -e
+
+echo "Updating EAGL examples to support timeout testing..."
+
+# List of example files to update
+EXAMPLES=(
+  "lib/examples/learnopengl/1_getting_started/2_1_hello_triangle.ex"
+  "lib/examples/learnopengl/1_getting_started/3_1_shaders_uniform.ex"
+  "lib/examples/learnopengl/1_getting_started/4_1_textures.ex"
+)
+
+# Function to update a single example file
+update_example() {
+  local file="$1"
+  local module_name=$(basename "$file" .ex)
+  
+  echo "Updating $file..."
+  
+  # Check if file exists
+  if [[ ! -f "$file" ]]; then
+    echo "Warning: $file not found, skipping..."
+    return
+  fi
+  
+  # Check if already updated
+  if grep -q "def run_example(opts" "$file"; then
+    echo "  Already updated, skipping..."
+    return
+  fi
+  
+  # Backup original
+  cp "$file" "$file.bak"
+  
+  # Update the run_example function
+  sed -i 's/def run_example,/def run_example(opts \\\= []) do/' "$file"
+  sed -i 's/do:/# Function body updated to support options/' "$file"
+  
+  # Add options processing (this is a simplified version - may need manual adjustment)
+  if grep -q "EAGL.Window.run(" "$file"; then
+    # Find the EAGL.Window.run call and add opts parameter
+    sed -i '/EAGL.Window.run(/,/)/ {
+      s/)/,\n      merge_example_opts(opts)\n    )/
+    }' "$file"
+    
+    # Add helper function before the run_example function
+    sed -i '/def run_example/i \
+  # Helper function to merge default options with user options\
+  defp merge_example_opts(opts) do\
+    default_opts = [return_to_exit: true]\
+    Keyword.merge(default_opts, opts)\
+  end\
+' "$file"
+  fi
+  
+  echo "  Updated successfully (backup saved as $file.bak)"
+}
+
+# Update examples
+for example in "${EXAMPLES[@]}"; do
+  if [[ -f "$example" ]]; then
+    update_example "$example"
+  else
+    echo "Warning: $example not found"
+  fi
+done
+
+echo
+echo "Update complete! Modified files have .bak backups."
+echo "Note: Some files may need manual adjustment for complex run_example functions."
+echo
+echo "To test an updated example with timeout:"
+echo "  mix run -e \"ModuleName.run_example(timeout: 500)\""
+echo
+echo "To run the automated test suite:"
+echo "  mix test test/examples_test.exs" 

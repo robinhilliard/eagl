@@ -47,8 +47,11 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.HelloWindow do
 
   import Bitwise
 
-  def run_example do
-    EAGL.Window.run(__MODULE__, "LearnOpenGL 1.1 - Hello Window", return_to_exit: true)
+  def run_example(opts \\ []) do
+    default_opts = [return_to_exit: true]
+    merged_opts = Keyword.merge(default_opts, opts)
+
+    EAGL.Window.run(__MODULE__, "LearnOpenGL 1.1 - Hello Window", merged_opts)
   end
 
   @impl true

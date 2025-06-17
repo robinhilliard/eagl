@@ -88,13 +88,16 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.HelloTriangleExercise1 do
   '''
 
   @spec run_example() :: :ok | {:error, term()}
-  def run_example,
-    do:
-      EAGL.Window.run(
-        __MODULE__,
-        "LearnOpenGL - 1 Getting Started - 2.3 Hello Triangle Exercise 1",
-        return_to_exit: true
-      )
+  def run_example(opts \\ []) do
+    default_opts = [return_to_exit: true]
+    merged_opts = Keyword.merge(default_opts, opts)
+
+    EAGL.Window.run(
+      __MODULE__,
+      "LearnOpenGL - 1 Getting Started - 2.3 Hello Triangle Exercise 1",
+      merged_opts
+    )
+  end
 
   @impl true
   def setup do
