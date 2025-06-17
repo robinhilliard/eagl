@@ -149,7 +149,7 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.ShadersExercise3 do
     - RGB color channels cannot be negative (clamped to 0.0)
     - Result: (0.0, 0.0, 0.0) = black color
 
-    This demonstrates how coordinate systems and color systems interact!
+    This demonstrates how coordinate systems and color systems interact.
 
     Press ENTER to exit.
     """)

@@ -288,7 +288,7 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.TransformationsExercise2 do
     :gl.deleteProgram(state.program)
 
     check("After cleanup")
-    IO.puts("Cleanup complete!")
+    IO.puts("Cleanup complete.")
     :ok
   end
 end

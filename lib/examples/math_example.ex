@@ -470,7 +470,7 @@ defmodule EAGL.Examples.Math do
     opengl_usage_examples()
 
     IO.puts("\n====================================")
-    IO.puts("Math demo completed successfully!")
+    IO.puts("Math demo completed successfully.")
     IO.puts("Check out the other examples for OpenGL rendering demos.")
   end
 

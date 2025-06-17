@@ -191,7 +191,7 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.CoordinateSystemsDepth do
       )
 
       IO.puts(
-        "✅ Notice: NO visual artifacts! Faces now render in correct order thanks to depth testing."
+        "✅ Notice: NO visual artifacts. Faces now render in correct order thanks to depth testing."
       )
 
       # Initialize current time for animation
@@ -217,7 +217,7 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.CoordinateSystemsDepth do
     # Set viewport
     :gl.viewport(0, 0, trunc(viewport_width), trunc(viewport_height))
 
-    # Set clear color and clear screen AND depth buffer (essential for depth testing!)
+    # Set clear color and clear screen AND depth buffer (essential for depth testing)
     :gl.clearColor(0.2, 0.3, 0.3, 1.0)
     :gl.clear(@gl_color_buffer_bit ||| @gl_depth_buffer_bit)
 
@@ -277,7 +277,7 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.CoordinateSystemsDepth do
     - Demonstrated depth testing and Z-buffer usage
     - Showed proper 3D occlusion with overlapping objects
     - SOLVED the visual artifacts from example 6.1 with depth testing
-    - Key lesson: Always enable depth testing for 3D rendering!
+    - Key lesson: Always enable depth testing for 3D rendering.
     """)
 
     # Clean up texture

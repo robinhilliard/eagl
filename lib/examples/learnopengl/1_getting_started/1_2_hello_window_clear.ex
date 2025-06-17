@@ -117,7 +117,7 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.HelloWindowClear do
     IO.puts("""
     Hello Window Clear example finished.
 
-    Next: Try the triangle examples to see actual geometry rendering!
+    Next: Try the triangle examples to see actual geometry rendering.
     """)
 
     :ok

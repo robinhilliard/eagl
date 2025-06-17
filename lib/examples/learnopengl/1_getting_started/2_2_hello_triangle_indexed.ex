@@ -79,7 +79,7 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.HelloTriangleIndexed do
   '''
 
   # Indices for two triangles forming a rectangle
-  # Note: we can reuse vertices!
+      # Note: we can reuse vertices
   # First triangle: 0, 1, 3 (top-right, bottom-right, top-left)
   # Second triangle: 1, 2, 3 (bottom-right, bottom-left, top-left)
   @indices ~i'''
@@ -135,7 +135,7 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.HelloTriangleIndexed do
       IO.puts("Vertex and fragment shaders compiled and linked successfully")
 
       # Create VAO, VBO, and EBO for indexed rectangle geometry
-      # This is the key difference from basic triangle - we use indices!
+      # This is the key difference from basic triangle - we use indices
       {vao, vbo, ebo} = create_indexed_position_array(@vertices, @indices)
 
       IO.puts("Created VAO, VBO, and EBO (4 vertices + 6 indices uploaded to GPU)")

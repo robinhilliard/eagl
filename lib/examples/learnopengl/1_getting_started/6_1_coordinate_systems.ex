@@ -79,7 +79,7 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.CoordinateSystems do
   - **Rotates**: Around a diagonal axis using the model matrix
   - **Positioned**: At the world origin, viewed from a distance
   - **Projected**: Using perspective projection for realistic 3D appearance
-  - **Visually Confusing**: Faces render in wrong order without depth testing!
+  - **Visually Confusing**: Faces render in wrong order without depth testing.
 
   ## Usage
 
@@ -163,7 +163,7 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.CoordinateSystems do
     This example demonstrates the OpenGL coordinate system transformation pipeline
 
     ⚠️  IMPORTANT PEDAGOGICAL NOTE:
-    This example intentionally DISABLES depth testing to show visual artifacts!
+    This example intentionally DISABLES depth testing to show visual artifacts.
     You will see cube faces rendering in the wrong order, creating visual confusion.
     This demonstrates why depth testing is essential for 3D rendering.
     See example 6.2 for the solution with depth testing enabled.
@@ -183,7 +183,7 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.CoordinateSystems do
 
     Visual Artifacts Demonstrated:
     - WITHOUT depth testing: faces render based on draw order, not depth
-    - Back faces may appear in front of front faces (incorrect!)
+    - Back faces may appear in front of front faces (incorrect)
     - Rotation makes the visual confusion very obvious
     - This is why all 3D applications need depth testing
 
@@ -202,7 +202,7 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.CoordinateSystems do
     Press ENTER to exit.
     """)
 
-    # NOTE: Depth testing is intentionally DISABLED in this example!
+    # NOTE: Depth testing is intentionally DISABLED in this example
     # This causes visual artifacts where faces render in wrong order.
     # See example 6.2 for the corrected version with depth testing enabled.
 
@@ -324,7 +324,7 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.CoordinateSystems do
     - Demonstrated model, view, and projection matrices
     - Showed 3D coordinate system transformations
     - Intentionally showed visual artifacts without depth testing
-    - Next: Try example 6.2 to see the solution with depth testing enabled!
+    - Next: Try example 6.2 to see the solution with depth testing enabled.
     """)
 
     # Clean up texture
