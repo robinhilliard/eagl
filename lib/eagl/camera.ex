@@ -12,7 +12,7 @@ defmodule EAGL.Camera do
   <https://github.com/JoeyDeVries/LearnOpenGL/tree/master/includes/learnopengl/camera.h>
 
   The design and functionality closely follow the C++ camera class tutorial from
-  LearnOpenGL Chapter 7 - Camera, providing equivalent behavior and API in Elixir.
+  LearnOpenGL Chapter 7 - Camera, providing equivalent behaviour and API in Elixir.
 
   ## Features
 

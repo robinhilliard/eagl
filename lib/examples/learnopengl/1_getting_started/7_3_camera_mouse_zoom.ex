@@ -53,10 +53,11 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.CameraMouseZoom do
   basic mouse input concepts and their limitations.
 
   These limitations motivate the need for better camera abstractions, which are addressed
-  in **LearnOpenGL 7.4 Camera Class**. The progression from simple (7.3) to sophisticated
-  (7.4) camera control is an important part of the learning journey.
+  in **LearnOpenGL 7.4 Camera Class**. The progression from manual implementation (7.3)
+  to abstracted camera class (7.4) demonstrates important software engineering principles.
 
-  If you're looking for natural first-person camera feel, continue to example 7.4.
+  **Note**: Example 7.4 focuses on code organisation and abstraction. Further camera
+  control improvements may be explored in subsequent exercises (7.5, 7.6).
   """
 
   use EAGL.Window
