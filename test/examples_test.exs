@@ -53,7 +53,11 @@ defmodule ExamplesTest do
     {EAGL.Examples.LearnOpenGL.GettingStarted.CoordinateSystems, "6.1 Coordinate Systems"},
     {EAGL.Examples.LearnOpenGL.GettingStarted.CoordinateSystemsDepth, "6.2 Coordinate Systems Depth"},
     {EAGL.Examples.LearnOpenGL.GettingStarted.CoordinateSystemsMultiple, "6.3 Coordinate Systems Multiple"},
-    {EAGL.Examples.LearnOpenGL.GettingStarted.CoordinateSystemsExercise, "6.4 Coordinate Systems Exercise"}
+    {EAGL.Examples.LearnOpenGL.GettingStarted.CoordinateSystemsExercise, "6.4 Coordinate Systems Exercise"},
+
+    # Camera
+    {EAGL.Examples.LearnOpenGL.GettingStarted.CameraCircle, "7.1 Camera Circle"},
+    {EAGL.Examples.LearnOpenGL.GettingStarted.CameraKeyboardDt, "7.2 Camera Keyboard + Delta Time"}
   ]
 
   # Non-interactive examples that complete immediately

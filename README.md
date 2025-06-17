@@ -58,7 +58,7 @@ EAGL includes several examples to demonstrate its capabilities. Use the unified 
   Coordinate Systems: 161) 6.1 Basic   162) 6.2 Depth     163) 6.3 Multiple
                       164) 6.4 Exercise
 
-  Missing:          171) 7.1 Camera
+  Camera:           171) 7.1 Circle    172) 7.2 Keyboard+DT
 
 ════════════════════════════════════════════════════════════════
 Enter code (01, 02, 111-153), 'q' to quit, 'r' to refresh:
@@ -537,8 +537,8 @@ The current focus is to:
   - ✅ Shaders (3.1-3.6): 6 examples
   - ✅ Textures (4.1-4.6): 6 examples
   - ✅ Transformations (5.1-5.2): 3 examples
-  - ✅ Coordinate Systems (6.1-6.4): 4 examples completed
-  - [ ] **Missing**: Camera (7.1): 1 example needed
+  - ✅ Coordinate Systems (6.1-6.4): 4 examples
+  - ✅ Camera (7.1-7.2): 2 examples completed
 - [ ] Continue with "Lighting" chapter examples
 - [ ] Load common model types like GLTF
 
