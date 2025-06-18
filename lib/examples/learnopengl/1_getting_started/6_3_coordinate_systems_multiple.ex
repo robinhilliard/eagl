@@ -29,7 +29,7 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.CoordinateSystemsMultiple do
 
   Shows 10 cubes arranged in 3D space:
   - Each cube at a different position
-  - Some cubes rotating at different speeds
+  - Each cube with a unique static rotation (20 degrees × index)
   - Demonstrates scene complexity with coordinate systems
 
   ## Usage
@@ -154,7 +154,7 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.CoordinateSystemsMultiple do
 
     Visual Result:
     - 10 cubes scattered throughout 3D space
-    - Some cubes rotating at different rates
+    - Each cube with unique static rotation (20° × index)
     - Proper depth sorting via Z-buffer
     - Demonstrates coordinate system transformations at scale
 
@@ -193,16 +193,12 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.CoordinateSystemsMultiple do
 
       IO.puts("Ready to render - you should see 10 cubes scattered in 3D space.")
 
-      # Initialize current time for animation
-      current_time = :erlang.monotonic_time(:millisecond) / 1000.0
-
       {:ok,
        %{
          program: program,
          vao: vao,
          vbo: vbo,
-         texture_id: texture_id,
-         current_time: current_time
+         texture_id: texture_id
        }}
     else
       {:error, reason} ->
@@ -245,18 +241,11 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.CoordinateSystemsMultiple do
     @cube_positions
     |> Enum.with_index()
     |> Enum.each(fn {position, index} ->
-      # Create model matrix for this cube
+      # Create model matrix for this cube (matches original C++ tutorial)
       model =
         mat4_identity()
         |> mat4_mul(mat4_translate(position))
-        |> mat4_mul(
-          # Rotate only some cubes (every 3rd cube rotates)
-          if rem(index, 3) == 0 do
-            mat4_rotate(vec3(1.0, 0.3, 0.5), state.current_time * radians(20.0) * (index + 1))
-          else
-            mat4_identity()
-          end
-        )
+        |> mat4_mul(mat4_rotate(vec3(1.0, 0.3, 0.5), radians(20.0 * index)))
 
       set_uniform(state.program, "model", model)
       :gl.drawArrays(@gl_triangles, 0, 36)
@@ -266,11 +255,7 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.CoordinateSystemsMultiple do
     :ok
   end
 
-  @impl true
-  def handle_event(:tick, state) do
-    current_time = :erlang.monotonic_time(:millisecond) / 1000.0
-    {:ok, %{state | current_time: current_time}}
-  end
+
 
   @impl true
   def cleanup(state) do

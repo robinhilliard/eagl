@@ -38,7 +38,7 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.CoordinateSystemsExercise do
   Shows multiple cubes with an orbiting camera:
   - Camera moves in a circular path around the scene
   - Camera always points toward the center of the scene
-  - Cubes remain in their positions but appear to move due to camera motion
+  - Cubes have static rotations (20 degrees × index) and appear to move due to camera motion
   - Demonstrates the relationship between camera and world coordinates
 
   ## Usage
@@ -162,8 +162,8 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.CoordinateSystemsExercise do
     - Grasp camera space transformations
 
     Visual Experience:
-    - Camera orbits around stationary cubes in circular motion
-    - Cubes appear to rotate around viewer due to camera movement
+    - Camera orbits around cubes positioned in 3D space
+    - Cubes have static rotations but appear to move due to camera motion
     - Smooth, continuous camera animation
     - Scene center remains fixed while camera perspective changes
 
@@ -274,18 +274,11 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.CoordinateSystemsExercise do
     @cube_positions
     |> Enum.with_index()
     |> Enum.each(fn {position, index} ->
-      # Create model matrix for this cube
+      # Create model matrix for this cube (matches original C++ tutorial)
       model =
         mat4_identity()
         |> mat4_mul(mat4_translate(position))
-        |> mat4_mul(
-          # Some cubes rotate independently of camera motion
-          if rem(index, 2) == 0 do
-            mat4_rotate(vec3(1.0, 0.3, 0.5), state.current_time * radians(20.0))
-          else
-            mat4_identity()
-          end
-        )
+        |> mat4_mul(mat4_rotate(vec3(1.0, 0.3, 0.5), radians(20.0 * index)))
 
       set_uniform(state.program, "model", model)
       :gl.drawArrays(@gl_triangles, 0, 36)
