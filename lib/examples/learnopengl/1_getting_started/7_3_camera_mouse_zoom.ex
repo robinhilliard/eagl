@@ -11,14 +11,40 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.CameraMouseZoom do
   This example is based on the original LearnOpenGL C++ tutorial:
   <https://github.com/JoeyDeVries/LearnOpenGL/tree/master/src/1.getting_started/7.3.camera_mouse_zoom>
 
-  ## Framework Adaptation Notes
+  ## Learning Objectives
 
-  This example introduces advanced interactive camera control:
-  - Mouse look around using yaw and pitch rotation
-  - Scroll wheel zoom control via field of view adjustment
-  - Mouse sensitivity configuration
-  - Pitch constraints to prevent camera flipping
-  - Smooth camera control with frame-rate independent movement
+  This example teaches:
+  - **Mouse Input Processing**: Converting mouse movements to camera rotation
+  - **Euler Angle Mathematics**: Understanding yaw/pitch for 3D orientation
+  - **Camera Vector Calculation**: Computing front vector from angles
+  - **Zoom Implementation**: Using field of view for zoom effects
+  - **Input State Management**: Handling continuous input processing
+
+  ## Pedagogical Design Notes
+
+  **⚠️ INTENTIONAL LIMITATIONS (For Learning)**
+
+  This example uses a **simplified manual camera implementation** that exhibits
+  some unnatural behaviours that students should notice:
+
+  1. **"World Rotation" Feel**: Camera control may feel like rotating the entire
+     world rather than natural first-person movement
+  2. **Manual State Tracking**: Complex manual management of camera vectors and state
+  3. **Code Duplication**: Repetitive camera calculations spread throughout the code
+
+  **These limitations are pedagogically intentional** and represent the natural
+  progression of camera system development. They demonstrate:
+  - The complexity of manual camera implementation
+  - The need for better abstractions (addressed in 7.4)
+  - Common pitfalls when building camera systems from scratch
+
+  ## Educational Progression
+
+  **7.1-7.2**: Basic movement concepts
+  **7.3**: Mouse look + manual implementation (this example)
+  **7.4**: Code organisation with camera class
+  **7.5**: Addressing "flying" camera limitations
+  **7.6**: Understanding underlying mathematics
 
   ## Controls
 
@@ -26,9 +52,9 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.CameraMouseZoom do
   - **Scroll Wheel**: Zoom in/out (field of view)
   - **ENTER**: Exit (when run with enter_to_exit: true)
 
-  ## Mathematical Background
+  ## Technical Implementation
 
-  ### Mouse Look Implementation
+  ### Mouse Look Mathematics
   - **Yaw**: Horizontal rotation around the world Y-axis
   - **Pitch**: Vertical rotation around the camera's right vector
   - **Constraints**: Pitch clamped to [-89°, 89°] to prevent gimbal lock
@@ -45,19 +71,9 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.CameraMouseZoom do
   - Wide FOV (> 45°) = zoomed out
   - Clamped to [1°, 45°] for practical range
 
-  ## Known Limitations (Pedagogically Intentional)
-
-  This example uses a simplified mouse look implementation that may feel like
-  "rotating the world coordinate system" rather than natural first-person camera control.
-  This behavior is intentionally preserved from the original C++ tutorial to demonstrate
-  basic mouse input concepts and their limitations.
-
-  These limitations motivate the need for better camera abstractions, which are addressed
-  in **LearnOpenGL 7.4 Camera Class**. The progression from manual implementation (7.3)
-  to abstracted camera class (7.4) demonstrates important software engineering principles.
-
-  **Note**: Example 7.4 focuses on code organisation and abstraction. Further camera
-  control improvements may be explored in subsequent exercises (7.5, 7.6).
+  **Note**: The camera behaviour in this example represents an early stage of camera
+  development. Students should observe the limitations and consider how they might be
+  improved - these observations lead naturally to the solutions presented in examples 7.4-7.6.
   """
 
   use EAGL.Window
@@ -79,6 +95,29 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.CameraMouseZoom do
 
   @impl true
   def setup do
+    IO.puts("""
+
+    === LearnOpenGL 7.3: Camera (Mouse + Zoom) ===
+    This example demonstrates mouse look and zoom with manual camera implementation.
+
+    🎯 Learning Focus:
+      • Mouse input processing for camera rotation
+      • Manual camera vector calculations
+      • Field of view zoom implementation
+
+    ⚠️  Pedagogical Note:
+      This example uses simplified manual camera implementation.
+      You may notice the camera feels like 'rotating the world'
+      rather than natural first-person movement.
+
+      This behaviour is intentionally preserved from the original
+      LearnOpenGL tutorial to demonstrate the need for better
+      camera abstractions (introduced in 7.4).
+
+    💡 Controls: Move mouse to look around, scroll wheel to zoom
+    =====================================
+    """)
+
     # Compile shaders
     {:ok, vertex} =
       create_shader(
@@ -249,7 +288,7 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.CameraMouseZoom do
 
     # Update projection matrix based on current viewport and fov
     aspect_ratio = viewport_width / viewport_height
-    projection = mat4_perspective(radians(state.fov), aspect_ratio, 0.1, 100.0)
+    projection = mat4_perspective(radians(state.fov), aspect_ratio, 0.1, 20.0)
 
     # Set matrices: view is pre-calculated in state when camera moves, projection calculated for current viewport
     set_uniform(state.program, "view", state.view)

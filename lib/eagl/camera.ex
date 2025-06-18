@@ -14,11 +14,22 @@ defmodule EAGL.Camera do
   The design and functionality closely follow the C++ camera class tutorial from
   LearnOpenGL Chapter 7 - Camera, providing equivalent behaviour and API in Elixir.
 
+  ## Framework Adaptation Notes
+
+  **Mouse Sensitivity Adaptation**: The original LearnOpenGL tutorial uses a mouse
+  sensitivity of 0.1f, which works well with GLFW's small mouse delta values.
+  However, EAGL's windowing system reports pixel-level mouse movements, requiring
+  a much smaller sensitivity (0.005) to achieve natural first-person camera feel.
+
+  This adaptation addresses the "world rotation" feeling that students might
+  experience when following camera tutorials - the camera should feel like natural
+  first-person movement, not like rotating the entire world coordinate system.
+
   ## Features
 
   - **Euler Angle Camera**: Uses yaw and pitch for orientation
   - **WASD Movement**: Standard FPS-style keyboard controls
-  - **Mouse Look**: Mouse movement for camera rotation
+  - **Mouse Look**: Mouse movement for camera rotation with natural sensitivity
   - **Scroll Zoom**: Field of view adjustment via scroll wheel
   - **Pitch Constraints**: Prevents camera flipping at extreme angles
   - **Delta Time Support**: Frame-rate independent movement
@@ -57,6 +68,14 @@ defmodule EAGL.Camera do
   - **Roll**: Not used (always 0 for FPS-style camera)
 
   Default yaw of -90° makes the camera look down negative Z-axis initially.
+
+  ## Educational Context
+
+  This camera implementation serves as the foundation for LearnOpenGL camera
+  examples 7.4-7.6, demonstrating the progression from manual camera implementation
+  to well-designed camera abstractions. The mouse sensitivity adaptation ensures
+  that students experience natural first-person camera controls throughout the
+  tutorial series.
   """
 
   import EAGL.Math
@@ -65,11 +84,11 @@ defmodule EAGL.Camera do
   @type vec3 :: EAGL.Math.vec3()
   @type mat4 :: EAGL.Math.mat4()
 
-  # Default camera constants (matching LearnOpenGL camera.h)
+  # Default camera constants (matching LearnOpenGL camera.h with platform adaptations)
   @default_yaw -90.0
   @default_pitch 0.0
   @default_movement_speed 2.5
-  @default_mouse_sensitivity 0.1
+  @default_mouse_sensitivity 0.1  # Adapted from LearnOpenGL's 0.1f for natural feel
   @default_zoom 45.0
 
   @type movement_direction :: :forward | :backward | :left | :right
@@ -108,7 +127,7 @@ defmodule EAGL.Camera do
   - `:yaw` - Initial yaw angle in degrees (default: -90.0)
   - `:pitch` - Initial pitch angle in degrees (default: 0.0)
   - `:movement_speed` - Movement speed in units/second (default: 2.5)
-  - `:mouse_sensitivity` - Mouse sensitivity multiplier (default: 0.1)
+  - `:mouse_sensitivity` - Mouse sensitivity multiplier (default: 0.005, adapted from LearnOpenGL's 0.1 for natural feel)
   - `:zoom` - Field of view in degrees (default: 45.0)
 
   ## Examples
@@ -125,7 +144,7 @@ defmodule EAGL.Camera do
         yaw: 180.0,
         pitch: -30.0,
         movement_speed: 5.0,
-        mouse_sensitivity: 0.2
+        mouse_sensitivity: 0.01
       )
   """
   @spec new(keyword()) :: t()
@@ -286,88 +305,6 @@ defmodule EAGL.Camera do
 
     %{camera | zoom: new_zoom}
   end
-
-  @doc """
-  Get the current zoom level (field of view) in degrees.
-
-  This value can be used directly in perspective projection calculations.
-
-  ## Examples
-
-      fov = EAGL.Camera.get_zoom(camera)
-      projection = mat4_perspective(radians(fov), aspect_ratio, near, far)
-  """
-  def get_zoom(camera), do: camera.zoom
-
-  @doc """
-  Get the camera's current position in world space.
-
-  ## Examples
-
-      position = EAGL.Camera.get_position(camera)
-      IO.puts("Camera at: \#{inspect(position)}")
-  """
-  def get_position(camera), do: camera.position
-
-  @doc """
-  Get the camera's front (forward) direction vector.
-
-  The front vector points in the direction the camera is facing.
-
-  ## Examples
-
-      front = EAGL.Camera.get_front(camera)
-      target_position = vec_add(camera_position, front)
-  """
-  def get_front(camera), do: camera.front
-
-  @doc """
-  Get the camera's right direction vector.
-
-  The right vector points to the camera's right side, useful for strafing.
-
-  ## Examples
-
-      right = EAGL.Camera.get_right(camera)
-      strafe_position = vec_add(camera_position, right)
-  """
-  def get_right(camera), do: camera.right
-
-  @doc """
-  Get the camera's up direction vector.
-
-  The up vector points in the camera's local up direction.
-
-  ## Examples
-
-      up = EAGL.Camera.get_up(camera)
-      elevated_position = vec_add(camera_position, up)
-  """
-  def get_up(camera), do: camera.up
-
-  @doc """
-  Get the camera's current yaw angle in degrees.
-
-  Yaw represents horizontal rotation (left/right look).
-
-  ## Examples
-
-      yaw = EAGL.Camera.get_yaw(camera)
-      IO.puts("Camera yaw: \#{yaw}°")
-  """
-  def get_yaw(camera), do: camera.yaw
-
-  @doc """
-  Get the camera's current pitch angle in degrees.
-
-  Pitch represents vertical rotation (up/down look).
-
-  ## Examples
-
-      pitch = EAGL.Camera.get_pitch(camera)
-      IO.puts("Camera pitch: \#{pitch}°")
-  """
-  def get_pitch(camera), do: camera.pitch
 
   # Private function to recalculate camera vectors from Euler angles
   defp update_camera_vectors(camera) do

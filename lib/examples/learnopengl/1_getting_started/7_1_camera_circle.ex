@@ -4,7 +4,7 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.CameraCircle do
 
   This example introduces the camera system in OpenGL by demonstrating how the view matrix
   controls the camera position and orientation. It shows a simple circular camera movement
-  around a single textured cube to illustrate basic camera concepts.
+  around multiple textured cubes to illustrate basic camera concepts.
 
   ## Original C++ Source
 
@@ -35,11 +35,12 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.CameraCircle do
 
   ## Visual Effect
 
-  Shows a single textured cube with a camera orbiting around it:
-  - Camera moves in a circular path around the cube
-  - Camera always points toward the cube (fixed target)
+  Shows multiple textured cubes with a camera orbiting around them:
+  - Camera moves in a circular path around the scene
+  - Camera always points toward the center of the scene
   - Demonstrates how camera position affects the view of objects
   - Smooth, continuous circular motion
+  - 10 cubes at different positions with individual rotations
 
   ## Usage
 
@@ -104,6 +105,20 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.CameraCircle do
   -0.5  0.5 -0.5     0.0 1.0
   '''
 
+  # World space positions of our cubes (matches original C++ tutorial)
+  @cube_positions [
+    {0.0, 0.0, 0.0},
+    {2.0, 5.0, -15.0},
+    {-1.5, -2.2, -2.5},
+    {-3.8, -2.0, -12.3},
+    {2.4, -0.4, -3.5},
+    {-1.7, 3.0, -7.5},
+    {1.3, -2.0, -2.5},
+    {1.5, 2.0, -2.5},
+    {1.5, 0.2, -1.5},
+    {-1.3, 1.0, -1.5}
+  ]
+
   @spec run_example() :: :ok | {:error, term()}
   def run_example(opts \\ []) do
     default_opts = [depth_testing: true, enter_to_exit: true]
@@ -132,14 +147,15 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.CameraCircle do
     Camera Mathematics:
     - Look-At Matrix: Calculated from position, target, and up vectors
     - Right-handed coordinate system with Y-axis pointing up
-    - Camera moves in a circle while always looking at the center cube
+    - Camera moves in a circle while always looking at the center of the scene
     - Trigonometric functions (sin/cos) create smooth circular motion
 
     Implementation Details:
-    - Camera orbits around a single cube at the origin
+    - Camera orbits around multiple cubes positioned throughout the scene
     - Fixed target at world origin (0, 0, 0)
     - Camera height remains constant during circular motion
     - View matrix updates each frame based on camera position
+    - 10 cubes with individual positions and rotations
 
     Learning Progression:
     - This is the first camera example in the LearnOpenGL series
@@ -186,7 +202,7 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.CameraCircle do
       :gl.useProgram(program)
       set_uniform(program, "texture1", 0)
 
-      IO.puts("Ready to render - you should see a camera orbiting around a textured cube.")
+      IO.puts("Ready to render - you should see a camera orbiting around 10 textured cubes.")
 
       # Initialize current time for animation
       current_time = :erlang.monotonic_time(:millisecond) / 1000.0
@@ -222,15 +238,10 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.CameraCircle do
     # Use the shader program
     :gl.useProgram(state.program)
 
-    # Model matrix: simple rotation of the cube itself
-    model =
-      mat4_identity()
-      |> mat4_mul(mat4_rotate(vec3(0.5, 1.0, 0.0), state.current_time * radians(50.0)))
-
     # Camera setup for circular movement
-    # Camera orbits around the cube at a fixed distance and height
-    camera_radius = 3.0
-    camera_height = 1.0
+    # Camera orbits around the scene at a fixed distance and height
+    camera_radius = 10.0
+    camera_height = 0.0
     orbit_speed = 1.0
 
     # Calculate camera position using parametric circle equations
@@ -238,7 +249,7 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.CameraCircle do
     camera_z = :math.cos(state.current_time * orbit_speed) * camera_radius
 
     camera_pos = vec3(camera_x, camera_height, camera_z)
-    # Look at the cube at origin
+    # Look at the center of the scene
     target_pos = vec3(0.0, 0.0, 0.0)
     # World up direction
     up_vector = vec3(0.0, 1.0, 0.0)
@@ -250,18 +261,31 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.CameraCircle do
     aspect_ratio = viewport_width / viewport_height
     projection = mat4_perspective(radians(45.0), aspect_ratio, 0.1, 100.0)
 
-    # Set transformation matrices
-    set_uniform(state.program, "model", model)
+    # Set view and projection matrices (these are the same for all cubes)
     set_uniform(state.program, "view", view)
     set_uniform(state.program, "projection", projection)
 
-    check("After setting transformation matrices")
-
-    # Draw the cube
+    # Bind vertex array once for all cubes
     :gl.bindVertexArray(state.vao)
-    :gl.drawArrays(@gl_triangles, 0, 36)
 
-    check("After rendering cube with circular camera")
+    # Render all cubes
+    @cube_positions
+    |> Enum.with_index()
+    |> Enum.each(fn {{x, y, z}, index} ->
+      # Calculate the model matrix for each cube
+      model =
+        mat4_identity()
+        |> mat4_mul(mat4_translate(vec3(x, y, z)))
+        |> mat4_mul(mat4_rotate(vec3(1.0, 0.3, 0.5), radians(20.0 * index)))
+
+      # Set the model matrix for this cube
+      set_uniform(state.program, "model", model)
+
+      # Draw this cube
+      :gl.drawArrays(@gl_triangles, 0, 36)
+    end)
+
+    check("After rendering all cubes with circular camera")
     :ok
   end
 
@@ -277,6 +301,7 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.CameraCircle do
     Cleaning up camera circle example...
     - Demonstrated basic camera concepts with circular movement
     - Introduced view matrix and look-at transformation
+    - Rendered 10 cubes with individual transformations
     """)
 
     # Clean up texture

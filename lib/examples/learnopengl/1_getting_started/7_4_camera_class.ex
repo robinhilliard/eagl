@@ -11,14 +11,52 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.CameraClass do
   This example is based on the original LearnOpenGL C++ tutorial:
   <https://github.com/JoeyDeVries/LearnOpenGL/tree/master/src/1.getting_started/7.4.camera_class>
 
-  ## Framework Adaptation Notes
+  ## Learning Objectives
 
-  This example showcases the EAGL.Camera module, which provides:
-  - **WASD Movement**: Smooth keyboard controls with frame-rate independence
-  - **Mouse Look**: Natural first-person camera rotation with pitch constraints
-  - **Scroll Zoom**: Field of view adjustment via scroll wheel
-  - **Clean API**: Simple, intuitive interface hiding complex camera mathematics
-  - **Code Organisation**: Encapsulated camera logic for better maintainability
+  This example teaches:
+  - **Camera Abstraction**: Encapsulating complex camera mathematics in a clean API
+  - **Code Organisation**: Moving from scattered manual implementation to modular design
+  - **Software Engineering**: Benefits of abstraction, encapsulation, and tested code
+  - **API Design**: Simple, intuitive interfaces hiding complex functionality
+
+  ## Educational Progression Context
+
+  **7.1-7.3**: Manual camera implementation with increasing complexity
+  **7.4**: Code organisation and abstraction (this example)
+  **7.5**: Addressing specific camera behavior limitations
+  **7.6**: Understanding the mathematical foundations
+
+  This example represents a crucial step in the learning progression - moving from
+  "how to implement camera controls" to "how to organize and structure camera code."
+
+  ## Key Improvements Over 7.3
+
+  ### Code Simplification
+  ```elixir
+  # Manual Implementation (7.3) - Complex and error-prone
+  camera_pos: camera_pos,
+  camera_front: camera_front,
+  camera_up: camera_up,
+  yaw: yaw,
+  pitch: pitch,
+  fov: fov,
+  # Plus manual front vector calculation...
+  # Plus manual movement processing...
+  # Plus manual mouse handling...
+
+  # Camera Class (7.4) - Clean and maintainable
+  camera: Camera.new(position: vec3(0.0, 0.0, 3.0))
+  camera = Camera.process_keyboard(camera, :forward, delta_time)
+  camera = Camera.process_mouse_movement(camera, x_offset, y_offset)
+  view = Camera.get_view_matrix(camera)
+  ```
+
+  ### Technical Benefits
+  - **Encapsulation**: Camera state contained in single struct
+  - **Tested Implementation**: Reduces manual calculation errors
+  - **Clean API**: Simple function calls replace complex manual code
+  - **Maintainability**: Changes to camera behavior centralized
+  - **Mouse Sensitivity**: Automatically adjusted for natural first-person feel
 
   ## Controls
 
@@ -29,76 +67,28 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.CameraClass do
 
   ## Camera Features Demonstrated
 
-  ### Camera Abstraction Features
-  - **Encapsulated Movement**: Camera movement logic abstracted into simple function calls
-  - **Strafe Movement**: Side-to-side movement perpendicular to view direction
-  - **Simplified Rotation**: Mouse look handled by the camera module
+  - **Encapsulated Movement**: Simple function calls for complex movement logic
+  - **Automatic Vector Management**: Front/right/up vectors maintained automatically
   - **Pitch Constraints**: Prevents camera flipping (±89° limit)
-
-  ### Technical Features
-  - **Delta Time**: Frame-rate independent movement for consistent speed
-  - **Orthonormal Vectors**: Maintains proper front/right/up relationships
-  - **View Matrix**: Automatic calculation for rendering pipeline
+  - **Delta Time**: Frame-rate independent movement
   - **Zoom Control**: Field of view adjustment (1° to 45° range)
-
-  ## Comparison with Example 7.3
-
-  **7.3 Manual Implementation** (Complex):
-  ```elixir
-  # Manual camera state tracking
-  camera_pos: camera_pos,
-  camera_front: camera_front,
-  camera_up: camera_up,
-  yaw: yaw,
-  pitch: pitch,
-  fov: fov,
-
-  # Manual front vector calculation
-  defp calculate_front_vector(yaw, pitch) do
-    yaw_rad = radians(yaw)
-    pitch_rad = radians(pitch)
-    front_x = :math.cos(yaw_rad) * :math.cos(pitch_rad)
-    front_y = :math.sin(pitch_rad)
-    front_z = :math.sin(yaw_rad) * :math.cos(pitch_rad)
-    normalize(vec3(front_x, front_y, front_z))
-  end
-
-  # Manual movement processing
-  defp process_camera_movement(camera_pos, camera_front, keys_pressed, delta_time) do
-    # Complex implementation...
-  end
-  ```
-
-  **7.4 Camera Class** (Abstracted):
-  ```elixir
-      # Camera creation
-    camera = Camera.new(position: vec3(0.0, 0.0, 3.0))
-
-    # Movement processing
-    camera = Camera.process_keyboard(camera, :forward, delta_time)
-
-    # Mouse look processing
-    camera = Camera.process_mouse_movement(camera, x_offset, y_offset)
-
-    # View matrix generation
-    view = Camera.get_view_matrix(camera)
-  ```
 
   ## Educational Value
 
-  This example demonstrates the benefits of camera abstractions:
-  - **Reduced Complexity**: Manual camera math is encapsulated in function calls
-  - **Fewer Bugs**: Tested camera implementation reduces manual errors
-  - **Code Organisation**: Camera logic is contained in a reusable module
-  - **Maintainability**: Changes to camera behaviour are centralised
-  - **Focus on Content**: Less time spent on camera implementation details
+  This example demonstrates fundamental software engineering principles:
+  - **Abstraction**: Complex camera math hidden behind simple API
+  - **Encapsulation**: Related functionality grouped in cohesive module
+  - **Reusability**: Camera implementation can be used across multiple projects
+  - **Maintainability**: Bug fixes and improvements centralized
+  - **Focus**: Developers can focus on content rather than camera implementation details
 
-  The progression from manual camera (7.1-7.3) to camera class (7.4) illustrates
-  fundamental software engineering principles: abstraction, encapsulation, and reusability.
+  **Pedagogical Note**: While this example significantly improves code organization
+  and reduces complexity, some advanced camera behaviors (like FPS ground constraints
+  and mathematical understanding) are explored in exercises 7.5 and 7.6.
 
-  **Note**: While this example demonstrates excellent code organisation, some camera
-  behaviour (like the "world rotation" feel) may be addressed in subsequent exercises
-  (7.5, 7.6) that focus on advanced camera control techniques.
+  The progression from manual implementation (7.1-7.3) to camera class (7.4) to
+  specialized exercises (7.5-7.6) demonstrates both practical software development
+  and deeper understanding of 3D camera systems.
   """
 
   use EAGL.Window
@@ -121,6 +111,34 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.CameraClass do
 
   @impl true
   def setup do
+    IO.puts("""
+
+    === LearnOpenGL 7.4: Camera Class ===
+    This example demonstrates the benefits of camera abstraction and
+    code organisation using the EAGL.Camera module.
+
+    Learning Focus:
+      • Camera abstraction and encapsulation
+      • Code organisation and maintainability
+      • Clean API design for complex functionality
+      • Reducing manual camera implementation complexity
+
+    ✅ Improvements over 7.3:
+      • Simplified code: Camera.process_keyboard() vs manual calculations
+      • Encapsulated state: Single camera struct vs scattered variables
+      • Tested implementation: Reduced bugs from manual math errors
+      • Cleaner rendering: Camera.get_view_matrix() vs manual matrix building
+
+    Technical Benefits:
+      • Mouse sensitivity automatically adjusted for natural first-person feel
+      • Pitch constraints prevent camera flipping (±89° limit)
+      • Frame-rate independent movement with delta time
+      • Orthonormal camera vectors maintained automatically
+
+    Controls: WASD to move, mouse to look around, scroll wheel to zoom
+    ==========================================
+    """)
+
     # Compile shaders
     {:ok, vertex} =
       create_shader(
@@ -226,7 +244,7 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.CameraClass do
       yaw: -90.0,
       pitch: 0.0,
       movement_speed: 2.5,
-      mouse_sensitivity: 0.1,
+      mouse_sensitivity: 0.005,  # Reduced for natural first-person feel
       zoom: 45.0
     )
 
@@ -270,14 +288,14 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.CameraClass do
     # Use the shader program
     :gl.useProgram(state.program)
 
-          # Get matrices from camera - much cleaner than manual calculation!
+          # Get matrices from camera - much cleaner than manual calculation
     view = Camera.get_view_matrix(state.camera)
     aspect_ratio = viewport_width / viewport_height
     projection = mat4_perspective(
-      radians(Camera.get_zoom(state.camera)),
+      radians(state.camera.zoom),
       aspect_ratio,
       0.1,
-      100.0
+      20.0
     )
 
     # Set matrices

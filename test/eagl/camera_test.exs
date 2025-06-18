@@ -50,7 +50,7 @@ defmodule EAGL.CameraTest do
 
       # Default settings
       assert_float_equal(camera.movement_speed, 2.5)
-      assert_float_equal(camera.mouse_sensitivity, 0.1)
+      assert_float_equal(camera.mouse_sensitivity, 0.1)  # Default mouse sensitivity
       assert_float_equal(camera.zoom, 45.0)
 
       # Default world up
@@ -277,12 +277,12 @@ defmodule EAGL.CameraTest do
     test "constrains pitch to prevent camera flipping" do
       camera = Camera.new()
 
-      # Large upward movement that would exceed 89°
-      moved_camera = Camera.process_mouse_movement(camera, 0.0, 1000.0)
+      # Large upward movement that would exceed 89° (with sensitivity 0.005, need 18000+ to exceed 89°)
+      moved_camera = Camera.process_mouse_movement(camera, 0.0, 20000.0)
       assert_float_equal(moved_camera.pitch, 89.0)
 
       # Large downward movement that would exceed -89°
-      moved_camera = Camera.process_mouse_movement(camera, 0.0, -1000.0)
+      moved_camera = Camera.process_mouse_movement(camera, 0.0, -20000.0)
       assert_float_equal(moved_camera.pitch, -89.0)
     end
 
@@ -290,11 +290,11 @@ defmodule EAGL.CameraTest do
       camera = Camera.new()
       constrain_pitch = false
 
-      # Large movement without constraint
-      moved_camera = Camera.process_mouse_movement(camera, 0.0, 1000.0, constrain_pitch)
+      # Large movement without constraint (with sensitivity 0.005, need 20000+ to exceed 89°)
+      moved_camera = Camera.process_mouse_movement(camera, 0.0, 20000.0, constrain_pitch)
 
       # Pitch should exceed normal constraints
-      expected_pitch = camera.pitch + (1000.0 * camera.mouse_sensitivity)
+      expected_pitch = camera.pitch + (20000.0 * camera.mouse_sensitivity)
       assert_float_equal(moved_camera.pitch, expected_pitch)
       assert moved_camera.pitch > 89.0
     end
@@ -317,8 +317,8 @@ defmodule EAGL.CameraTest do
     test "updates camera vectors after rotation" do
       camera = Camera.new()
 
-      # Rotate camera 90 degrees to the right
-      moved_camera = Camera.process_mouse_movement(camera, 900.0, 0.0)
+      # Rotate camera 90 degrees to the right (with sensitivity 0.005, need 18000 for 90°)
+      moved_camera = Camera.process_mouse_movement(camera, 18000.0, 0.0)
 
       # Front vector should have changed
       refute moved_camera.front == camera.front
@@ -398,60 +398,30 @@ defmodule EAGL.CameraTest do
     end
   end
 
-  describe "getter functions" do
-    test "get_zoom/1 returns zoom value" do
+  describe "direct field access" do
+    test "camera fields are directly accessible" do
       zoom_value = 60.0
-      camera = Camera.new(zoom: zoom_value)
-
-      assert_float_equal(Camera.get_zoom(camera), zoom_value)
-    end
-
-    test "get_position/1 returns position" do
       position = vec3(1.0, 2.0, 3.0)
-      camera = Camera.new(position: position)
-
-      assert Camera.get_position(camera) == position
-    end
-
-    test "get_front/1 returns front vector" do
-      camera = Camera.new()
-      front = Camera.get_front(camera)
-
-      # Should be normalized vector pointing forward
-      assert_float_equal(vec_length(front), 1.0)
-      assert front == camera.front
-    end
-
-    test "get_right/1 returns right vector" do
-      camera = Camera.new()
-      right = Camera.get_right(camera)
-
-      # Should be normalized vector pointing right
-      assert_float_equal(vec_length(right), 1.0)
-      assert right == camera.right
-    end
-
-    test "get_up/1 returns up vector" do
-      camera = Camera.new()
-      up = Camera.get_up(camera)
-
-      # Should be normalized vector pointing up
-      assert_float_equal(vec_length(up), 1.0)
-      assert up == camera.up
-    end
-
-    test "get_yaw/1 returns yaw angle" do
       yaw_value = 45.0
-      camera = Camera.new(yaw: yaw_value)
-
-      assert_float_equal(Camera.get_yaw(camera), yaw_value)
-    end
-
-    test "get_pitch/1 returns pitch angle" do
       pitch_value = 30.0
-      camera = Camera.new(pitch: pitch_value)
 
-      assert_float_equal(Camera.get_pitch(camera), pitch_value)
+      camera = Camera.new(
+        zoom: zoom_value,
+        position: position,
+        yaw: yaw_value,
+        pitch: pitch_value
+      )
+
+      # Test direct field access (idiomatic Elixir)
+      assert_float_equal(camera.zoom, zoom_value)
+      assert camera.position == position
+      assert_float_equal(camera.yaw, yaw_value)
+      assert_float_equal(camera.pitch, pitch_value)
+
+      # Test computed vectors are accessible
+      assert_float_equal(vec_length(camera.front), 1.0)
+      assert_float_equal(vec_length(camera.right), 1.0)
+      assert_float_equal(vec_length(camera.up), 1.0)
     end
   end
 

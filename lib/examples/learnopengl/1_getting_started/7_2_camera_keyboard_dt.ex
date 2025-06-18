@@ -236,7 +236,7 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.CameraKeyboardDt do
       view = mat4_look_at(camera_pos, target_pos, camera_up)
 
       # Default projection matrix (will be updated on first render with proper aspect ratio)
-      projection = mat4_perspective(radians(45.0), 4.0 / 3.0, 0.1, 100.0)
+      projection = mat4_perspective(radians(45.0), 4.0 / 3.0, 0.1, 20.0)
 
       {:ok,
        %{
@@ -283,7 +283,7 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.CameraKeyboardDt do
 
     # Update projection matrix based on current viewport (in case window was resized)
     current_aspect_ratio = viewport_width / viewport_height
-    projection = mat4_perspective(radians(45.0), current_aspect_ratio, 0.1, 100.0)
+    projection = mat4_perspective(radians(45.0), current_aspect_ratio, 0.1, 20.0)
 
     # Set matrices: view is pre-calculated in state when camera moves, projection calculated for current viewport
     set_uniform(state.program, "view", state.view)
