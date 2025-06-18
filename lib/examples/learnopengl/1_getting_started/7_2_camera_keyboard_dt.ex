@@ -47,6 +47,7 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.CameraKeyboardDt do
   - Smooth, continuous movement while keys are held
   - Consistent movement speed regardless of frame rate
   - Free camera movement through 3D space
+  - 10 cubes with static rotations based on their index (20 degrees × index)
 
   ## Usage
 
@@ -179,6 +180,7 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.CameraKeyboardDt do
     - Camera always looks down negative Z-axis (forward direction)
     - Movement vectors calculated from camera orientation
     - Multiple keys can be pressed for diagonal movement
+    - 10 cubes positioned in 3D space with static rotations (matches original C++)
 
     Learning Progression:
     - Builds on 7.1 camera concepts with user interaction
@@ -296,18 +298,11 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.CameraKeyboardDt do
     @cube_positions
     |> Enum.with_index()
     |> Enum.each(fn {position, index} ->
-      # Create model matrix for this cube
+      # Create model matrix for this cube (matches original C++ tutorial)
       model =
         mat4_identity()
         |> mat4_mul(mat4_translate(position))
-        |> mat4_mul(
-          # Some cubes rotate for visual interest
-          if rem(index, 3) == 0 do
-            mat4_rotate(vec3(1.0, 0.3, 0.5), state.current_time * radians(20.0))
-          else
-            mat4_identity()
-          end
-        )
+        |> mat4_mul(mat4_rotate(vec3(1.0, 0.3, 0.5), radians(20.0 * index)))
 
       set_uniform(state.program, "model", model)
       :gl.drawArrays(@gl_triangles, 0, 36)
@@ -390,8 +385,8 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.CameraKeyboardDt do
     # Calculate movement velocity based on delta time
     velocity = @camera_speed * delta_time
 
-    # Calculate right vector (perpendicular to front and up)
-    camera_right = normalize(cross(camera_front, vec3(0.0, 1.0, 0.0)))
+    # World up vector for calculating right vector
+    camera_up = vec3(0.0, 1.0, 0.0)
 
     # Process each movement key
     new_pos =
@@ -408,10 +403,14 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.CameraKeyboardDt do
 
           # A key - strafe left
           key when key == @key_a_upper or key == @key_a_lower ->
+            # Calculate and normalize right vector, then scale by velocity
+            camera_right = normalize(cross(camera_front, camera_up))
             vec_sub(pos, vec_scale(camera_right, velocity))
 
           # D key - strafe right
           key when key == @key_d_upper or key == @key_d_lower ->
+            # Calculate and normalize right vector, then scale by velocity
+            camera_right = normalize(cross(camera_front, camera_up))
             vec_add(pos, vec_scale(camera_right, velocity))
 
           # Ignore other keys
