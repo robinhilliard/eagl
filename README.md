@@ -25,7 +25,7 @@ The following are non-goals:
 
 ```elixir
 # Add to mix.exs
-{:eagl, "~> 0.7.0"}
+{:eagl, "~> 0.9.0"}
 ```
 
 EAGL includes several examples to demonstrate its capabilities. Use the unified examples runner:
@@ -78,6 +78,7 @@ EAGL provides a comprehensive 3D math library based on GLM supporting:
 - **Utilities**: Trigonometry, interpolation, clamping, and geometric functions
 - **OpenGL Integration**: All functions work with the tuple-in-list format required by Erlang's OpenGL bindings
 - **Coordinate System**: Consistent right-handed coordinate system for proper OpenGL compatibility
+- **GLM Compatibility**: `mat4_look_at` now exactly matches GLM's `lookAtRH` matrix layout (fixed in v0.8.0)
 - **Sigils**: Compile-time validated literals for matrices (`~m`), vertices (`~v`), and indices (`~i`)
 
 #### Sigil Literals
@@ -154,128 +155,76 @@ EAGL provides a comprehensive first-person camera system based on the LearnOpenG
 import EAGL.Camera
 import EAGL.Math
 
-# Create a camera at the origin looking down negative Z-axis
+# Create camera with default settings (origin, looking down -Z)
 camera = Camera.new()
 
-# Create a camera at specific position with custom settings
+# Create camera with custom position and settings
 camera = Camera.new(
   position: vec3(0.0, 5.0, 10.0),
-  yaw: 180.0,           # Face toward origin
-  pitch: -30.0,         # Look down 30 degrees
-  movement_speed: 5.0,  # Faster movement
-  mouse_sensitivity: 0.01,  # Adjusted for natural feel (default: 0.005)
-  zoom: 60.0           # Wider field of view
+  yaw: 180.0,
+  pitch: -30.0,
+  movement_speed: 5.0
 )
 
-# Get view matrix for rendering (use in shaders)
-view_matrix = Camera.get_view_matrix(camera)
-projection_matrix = mat4_perspective(
-  radians(Camera.get_zoom(camera)), 
-  aspect_ratio, 
-  0.1, 
-  100.0
-)
+# Get view and projection matrices for rendering
+view = Camera.get_view_matrix(camera)
+projection = mat4_perspective(radians(camera.zoom), aspect_ratio, 0.1, 100.0)
 
-# In your window event handler - keyboard movement (WASD)
+# Handle keyboard movement (WASD) in event handler
 def handle_event({:key, key_code}, %{camera: camera, delta_time: dt} = state) do
   updated_camera = case key_code do
-    ?W -> Camera.process_keyboard(camera, :forward, dt)   # W - forward
-    ?S -> Camera.process_keyboard(camera, :backward, dt)  # S - backward  
-    ?A -> Camera.process_keyboard(camera, :left, dt)      # A - strafe left
-    ?D -> Camera.process_keyboard(camera, :right, dt)     # D - strafe right
+    ?W -> Camera.process_keyboard(camera, :forward, dt)
+    ?S -> Camera.process_keyboard(camera, :backward, dt)  
+    ?A -> Camera.process_keyboard(camera, :left, dt)
+    ?D -> Camera.process_keyboard(camera, :right, dt)
     _ -> camera
   end
-  
   {:ok, %{state | camera: updated_camera}}
 end
 
-# Mouse look around (first-person camera)
+# Handle mouse look and scroll zoom
 def handle_event({:mouse_motion, x, y}, %{camera: camera, last_mouse: {last_x, last_y}} = state) do
-  x_offset = x - last_x
-  y_offset = last_y - y  # Reversed since y-coordinates range bottom to top
-  
-  updated_camera = Camera.process_mouse_movement(camera, x_offset, y_offset)
-  
-  {:ok, %{state | camera: updated_camera, last_mouse: {x, y}}}
+  camera = Camera.process_mouse_movement(camera, x - last_x, last_y - y)
+  {:ok, %{state | camera: camera, last_mouse: {x, y}}}
 end
 
-# Scroll wheel zoom (field of view)
-def handle_event({:mouse_wheel, _x, _y, _wheel_rotation, wheel_delta}, %{camera: camera} = state) do
-  updated_camera = Camera.process_mouse_scroll(camera, wheel_delta)
-  {:ok, %{state | camera: updated_camera}}
+def handle_event({:mouse_wheel, _, _, _, wheel_delta}, %{camera: camera} = state) do
+  camera = Camera.process_mouse_scroll(camera, wheel_delta)
+  {:ok, %{state | camera: camera}}
 end
-
-# In your render function
-def render(width, height, %{camera: camera} = state) do
-  # Get matrices from camera
-  view = Camera.get_view_matrix(camera)
-  projection = mat4_perspective(
-    radians(Camera.get_zoom(camera)),
-    width / height,
-    0.1,
-    100.0
-  )
-  
-  # Set shader uniforms
-  set_uniform(shader_program, "view", view)
-  set_uniform(shader_program, "projection", projection)
-  
-  # Render your scene...
-  :ok
-end
-
-# Access camera properties
-position = Camera.get_position(camera)      # Current world position
-front = Camera.get_front(camera)           # Forward direction vector  
-right = Camera.get_right(camera)           # Right direction vector
-up = Camera.get_up(camera)                 # Up direction vector
-yaw = Camera.get_yaw(camera)               # Horizontal rotation (degrees)
-pitch = Camera.get_pitch(camera)           # Vertical rotation (degrees)
-zoom = Camera.get_zoom(camera)             # Current field of view (degrees)
 ```
 
-**Integration with Window System:**
+**Complete Window Integration:**
 
 ```elixir
 defmodule CameraExample do
   use EAGL.Window
   import EAGL.Camera
-  import EAGL.Math
   
-  def run do
-    # Enable mouse capture for FPS-style camera controls
-    EAGL.Window.run(__MODULE__, "Camera Demo", 
-      depth_testing: true,
-      mouse_capture: true  # Hides cursor and captures mouse movement
-    )
+  def run_example do
+    EAGL.Window.run(__MODULE__, "Camera Demo", depth_testing: true, mouse_capture: true)
   end
   
   @impl true
   def setup do
-    camera = Camera.new(position: vec3(0.0, 0.0, 3.0))
-    
-    # Initialize timing for frame-rate independent movement
-    last_frame = :erlang.monotonic_time(:millisecond)
-    
     {:ok, %{
-      camera: camera,
-      last_frame: last_frame,
-      last_mouse: {512, 384},  # Start at screen center
-      first_mouse: true        # Handle initial mouse movement
+      camera: Camera.new(position: vec3(0.0, 0.0, 3.0)),
+      last_frame: :erlang.monotonic_time(:millisecond),
+      last_mouse: {512, 384}
     }}
   end
   
-  @impl true
-  def handle_event(:tick, %{last_frame: last_frame} = state) do
-    # Calculate delta time for smooth movement
-    current_frame = :erlang.monotonic_time(:millisecond)
-    delta_time = (current_frame - last_frame) / 1000.0
-    
-    {:ok, %{state | last_frame: current_frame, delta_time: delta_time}}
-  end
-  
-  # ... handle keyboard and mouse events as shown above
+  # Calculate delta time and handle WASD/mouse events as shown above
 end
+```
+
+**Camera Properties** (all struct fields are directly accessible):
+```elixir
+position = camera.position  # vec3 - current world position
+front = camera.front       # vec3 - forward direction vector
+yaw = camera.yaw           # float - horizontal rotation (degrees)
+pitch = camera.pitch       # float - vertical rotation (degrees)  
+zoom = camera.zoom         # float - field of view (degrees)
 ```
 
 **Key Features:**
@@ -284,7 +233,9 @@ end
 - **Smooth Controls**: Delta time support ensures consistent movement across frame rates
 - **Pitch Constraints**: Prevents gimbal lock by limiting vertical rotation to ±89°
 - **Zoom Constraints**: Field of view clamped between 1° and 45° for usable zoom range
+- **Mouse Sensitivity**: Adapted sensitivity (0.005) for natural first-person camera feel
 - **LearnOpenGL Compatible**: Direct port of the OpenGL tutorial camera with identical behavior
+- **Coordinate System Fix**: Uses corrected `mat4_look_at` implementation for proper camera rotation
 
 ### Shader Management
 
@@ -299,8 +250,8 @@ The uniform helpers (from Wings3D) automatically detect the type of EAGL.Math va
 import EAGL.Shader
 
       # Compile and link shaders with type-safe shader types
-      {:ok, vertex} = create_shader(@gl_vertex_shader, "vertex.glsl")
-      {:ok, fragment} = create_shader(@gl_fragment_shader, "fragment.glsl")
+      {:ok, vertex} = create_shader(:vertex, "vertex.glsl")
+      {:ok, fragment} = create_shader(:fragment, "fragment.glsl")
       {:ok, program} = create_attach_link([vertex, fragment])
 
 # Set uniforms with automatic type detection
