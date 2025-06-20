@@ -229,14 +229,16 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.CameraExercise2 do
     ]
 
     # Create camera
-    camera = Camera.new(
-      position: vec3(0.0, 0.0, 3.0),
-      yaw: -90.0,
-      pitch: 0.0,
-      movement_speed: 2.5,
-      mouse_sensitivity: 0.1,  # Reduced for natural first-person feel
-      zoom: 45.0
-    )
+    camera =
+      Camera.new(
+        position: vec3(0.0, 0.0, 3.0),
+        yaw: -90.0,
+        pitch: 0.0,
+        movement_speed: 2.5,
+        # Reduced for natural first-person feel
+        mouse_sensitivity: 0.1,
+        zoom: 45.0
+      )
 
     current_time = :erlang.monotonic_time(:millisecond) / 1000.0
 
@@ -286,12 +288,14 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.CameraExercise2 do
 
     # Create projection matrix
     aspect_ratio = viewport_width / viewport_height
-    projection = mat4_perspective(
-      radians(state.camera.zoom),
-      aspect_ratio,
-      0.1,
-      20.0
-    )
+
+    projection =
+      mat4_perspective(
+        radians(state.camera.zoom),
+        aspect_ratio,
+        0.1,
+        20.0
+      )
 
     # Set matrices
     set_uniform(state.program, "view", view)
@@ -303,7 +307,10 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.CameraExercise2 do
     # Render cubes
     Enum.with_index(state.cube_positions, fn cube_pos, i ->
       angle = 20.0 * i
-      model = mat4_translate(cube_pos) |> mat4_mul(mat4_rotate(vec3(1.0, 0.3, 0.5), radians(angle)))
+
+      model =
+        mat4_translate(cube_pos) |> mat4_mul(mat4_rotate(vec3(1.0, 0.3, 0.5), radians(angle)))
+
       set_uniform(state.program, "model", model)
       :gl.drawArrays(@gl_triangles, 0, 36)
     end)
@@ -351,10 +358,14 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.CameraExercise2 do
   # Handle keyboard input
   def handle_event({:key, key_code}, state) do
     case key_code do
-      87 -> {:ok, %{state | keys_pressed: Map.put(state.keys_pressed, :w, true)}}   # W
-      83 -> {:ok, %{state | keys_pressed: Map.put(state.keys_pressed, :s, true)}}   # S
-      65 -> {:ok, %{state | keys_pressed: Map.put(state.keys_pressed, :a, true)}}   # A
-      68 -> {:ok, %{state | keys_pressed: Map.put(state.keys_pressed, :d, true)}}   # D
+      # W
+      87 -> {:ok, %{state | keys_pressed: Map.put(state.keys_pressed, :w, true)}}
+      # S
+      83 -> {:ok, %{state | keys_pressed: Map.put(state.keys_pressed, :s, true)}}
+      # A
+      65 -> {:ok, %{state | keys_pressed: Map.put(state.keys_pressed, :a, true)}}
+      # D
+      68 -> {:ok, %{state | keys_pressed: Map.put(state.keys_pressed, :d, true)}}
       _ -> {:ok, state}
     end
   end
@@ -393,61 +404,87 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.CameraExercise2 do
     {:ok, state}
   end
 
-    # Custom LookAt Function - The core of this exercise
+  # Custom LookAt Function - The core of this exercise
   # This manually implements the mathematics behind view matrix calculation
+  # Following the EXACT approach from LearnOpenGL Camera Exercise 2 C++ source
   defp custom_look_at(eye, center, up) do
-    # Step 1: Calculate the direction vector (from eye to center)
-    direction = normalize(vec_sub(center, eye))
+    # Step 1: Calculate zaxis (from target to eye - this becomes camera's forward direction)
+    # Note: This is OPPOSITE to the direction the camera looks (which is why it's negated later)
+    zaxis = normalize(vec_sub(eye, center))
 
-    # Step 2: Calculate the right vector (perpendicular to direction and up)
-    right = normalize(cross(direction, up))
+    # Step 2: Calculate xaxis (right vector) using cross product of world up and zaxis
+    # This follows the C++ version: glm::cross(glm::normalize(worldUp), zaxis)
+    xaxis = normalize(cross(up, zaxis))
 
-    # Step 3: Recalculate up vector (perpendicular to right and direction)
+    # Step 3: Calculate yaxis (camera up vector) using cross product of zaxis and xaxis
     # This ensures we have a proper orthonormal basis
-    camera_up = normalize(cross(right, direction))
+    yaxis = cross(zaxis, xaxis)
 
-    # Step 4: Extract vector components
+    # Step 4: Extract vector components for matrix construction
     [{eye_x, eye_y, eye_z}] = eye
-    [{right_x, right_y, right_z}] = right
-    [{up_x, up_y, up_z}] = camera_up
-    [{dir_x, dir_y, dir_z}] = direction
+    [{x_x, x_y, x_z}] = xaxis
+    [{y_x, y_y, y_z}] = yaxis
+    [{z_x, z_y, z_z}] = zaxis
 
-    # Step 5: Build the view matrix manually using EAGL matrix format
-    # The view matrix combines rotation and translation in one step
-    # Format: [{m00, m01, m02, m03, m10, m11, m12, m13, m20, m21, m22, m23, m30, m31, m32, m33}]
-    # Where columns are: [right_vector, up_vector, -direction_vector, translation]
+    # Step 5: Build separate translation and rotation matrices, then combine
+    # Following C++ approach: rotation * translation
 
-    # Calculate translation components (dot products with camera basis vectors)
-    tx = -(right_x * eye_x + right_y * eye_y + right_z * eye_z)
-    ty = -(up_x * eye_x + up_y * eye_y + up_z * eye_z)
-    tz = -(-dir_x * eye_x + -dir_y * eye_y + -dir_z * eye_z)  # Note: negative direction
-
-    # Build the combined view matrix in EAGL format (column-major)
-    # mix format: off
-    [
+    # Translation matrix: move world by negative camera position
+    translation = [
       {
-        # Column 0 (right vector)
-        right_x,
-        right_y,
-        right_z,
+        # Column 0
+        1.0,
         0.0,
-        # Column 1 (up vector)
-        up_x,
-        up_y,
-        up_z,
         0.0,
-        # Column 2 (negative direction vector - camera looks down -Z)
-        -dir_x,
-        -dir_y,
-        -dir_z,
         0.0,
-        # Column 3 (translation)
-        tx,
-        ty,
-        tz,
+        # Column 1
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        # Column 2
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        # Column 3: negative camera position
+        -eye_x,
+        -eye_y,
+        -eye_z,
         1.0
       }
     ]
-    # mix format: on
+
+    # Rotation matrix: basis vectors arranged as columns
+    # C++ fills this as: rotation[col][row] = value
+    # Our column-major format: {col0_r0, col0_r1, col0_r2, col0_r3, col1_r0, ...}
+    rotation = [
+      {
+        # Column 0: right vector (xaxis)
+        x_x,
+        x_y,
+        x_z,
+        0.0,
+        # Column 1: up vector (yaxis)
+        y_x,
+        y_y,
+        y_z,
+        0.0,
+        # Column 2: forward vector (zaxis)
+        z_x,
+        z_y,
+        z_z,
+        0.0,
+        # Column 3: no translation
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      }
+    ]
+
+    # Step 6: Combine matrices (rotation * translation)
+    # This matches the C++ version: return rotation * translation
+    mat4_mul(rotation, translation)
   end
 end

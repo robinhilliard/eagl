@@ -255,8 +255,6 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.CoordinateSystemsMultiple do
     :ok
   end
 
-
-
   @impl true
   def cleanup(state) do
     IO.puts("""

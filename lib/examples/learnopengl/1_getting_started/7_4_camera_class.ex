@@ -239,14 +239,15 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.CameraClass do
 
     # Create camera using EAGL.Camera module
     # This encapsulates the manual camera state from example 7.3
-    camera = Camera.new(
-      position: vec3(0.0, 0.0, 3.0),
-      yaw: -90.0,
-      pitch: 0.0,
-      movement_speed: 2.5,
-      mouse_sensitivity: 0.005,  # Reduced for natural first-person feel
-      zoom: 45.0
-    )
+    camera =
+      Camera.new(
+        position: vec3(0.0, 0.0, 3.0),
+        yaw: -90.0,
+        pitch: 0.0,
+        movement_speed: 2.5,
+        mouse_sensitivity: 0.05,
+        zoom: 45.0
+      )
 
     # Initialize timing for delta time calculation
     current_time = :erlang.monotonic_time(:millisecond) / 1000.0
@@ -288,15 +289,17 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.CameraClass do
     # Use the shader program
     :gl.useProgram(state.program)
 
-          # Get matrices from camera - much cleaner than manual calculation
+    # Get matrices from camera - much cleaner than manual calculation
     view = Camera.get_view_matrix(state.camera)
     aspect_ratio = viewport_width / viewport_height
-    projection = mat4_perspective(
-      radians(state.camera.zoom),
-      aspect_ratio,
-      0.1,
-      20.0
-    )
+
+    projection =
+      mat4_perspective(
+        radians(state.camera.zoom),
+        aspect_ratio,
+        0.1,
+        20.0
+      )
 
     # Set matrices
     set_uniform(state.program, "view", view)

@@ -88,7 +88,7 @@ defmodule EAGL.Camera do
   @default_yaw -90.0
   @default_pitch 0.0
   @default_movement_speed 2.5
-  @default_mouse_sensitivity 0.1  # Adapted from LearnOpenGL's 0.1f for natural feel
+  @default_mouse_sensitivity 0.005
   @default_zoom 45.0
 
   @type movement_direction :: :forward | :backward | :left | :right
@@ -162,7 +162,7 @@ defmodule EAGL.Camera do
     update_camera_vectors(camera)
   end
 
-    @doc """
+  @doc """
   Get the view matrix for this camera.
 
   The view matrix transforms world coordinates to camera/view space,
@@ -215,10 +215,13 @@ defmodule EAGL.Camera do
       case direction do
         :forward ->
           vec_add(camera.position, vec_scale(camera.front, velocity))
+
         :backward ->
           vec_sub(camera.position, vec_scale(camera.front, velocity))
+
         :left ->
           vec_sub(camera.position, vec_scale(camera.right, velocity))
+
         :right ->
           vec_add(camera.position, vec_scale(camera.right, velocity))
       end

@@ -50,7 +50,8 @@ defmodule EAGL.CameraTest do
 
       # Default settings
       assert_float_equal(camera.movement_speed, 2.5)
-      assert_float_equal(camera.mouse_sensitivity, 0.1)  # Default mouse sensitivity
+      # Default mouse sensitivity
+      assert_float_equal(camera.mouse_sensitivity, 0.1)
       assert_float_equal(camera.zoom, 45.0)
 
       # Default world up
@@ -81,8 +82,10 @@ defmodule EAGL.CameraTest do
       # Front vector should be recalculated
       # For yaw=0, pitch=30: front should point roughly in +X direction with upward tilt
       [{fx, fy, _fz}] = camera.front
-      assert fx > 0.8  # Should be mostly in +X direction for yaw=0
-      assert fy > 0.4  # Should have upward component for pitch=30
+      # Should be mostly in +X direction for yaw=0
+      assert fx > 0.8
+      # Should have upward component for pitch=30
+      assert fy > 0.4
     end
 
     test "creates camera with all custom parameters" do
@@ -226,7 +229,7 @@ defmodule EAGL.CameraTest do
       assert_vec3_equal(moved_camera.position, expected_position)
     end
 
-        test "movement scales with delta time" do
+    test "movement scales with delta time" do
       camera = Camera.new()
 
       # Movement with different delta times should scale proportionally
@@ -252,7 +255,7 @@ defmodule EAGL.CameraTest do
       moved_camera = Camera.process_mouse_movement(camera, x_offset, y_offset)
 
       # Yaw should increase by x_offset * sensitivity
-      expected_yaw = camera.yaw + (x_offset * camera.mouse_sensitivity)
+      expected_yaw = camera.yaw + x_offset * camera.mouse_sensitivity
       assert_float_equal(moved_camera.yaw, expected_yaw)
 
       # Pitch should remain unchanged
@@ -267,7 +270,7 @@ defmodule EAGL.CameraTest do
       moved_camera = Camera.process_mouse_movement(camera, x_offset, y_offset)
 
       # Pitch should increase by y_offset * sensitivity
-      expected_pitch = camera.pitch + (y_offset * camera.mouse_sensitivity)
+      expected_pitch = camera.pitch + y_offset * camera.mouse_sensitivity
       assert_float_equal(moved_camera.pitch, expected_pitch)
 
       # Yaw should remain unchanged
@@ -294,7 +297,7 @@ defmodule EAGL.CameraTest do
       moved_camera = Camera.process_mouse_movement(camera, 0.0, 20000.0, constrain_pitch)
 
       # Pitch should exceed normal constraints
-      expected_pitch = camera.pitch + (20000.0 * camera.mouse_sensitivity)
+      expected_pitch = camera.pitch + 20000.0 * camera.mouse_sensitivity
       assert_float_equal(moved_camera.pitch, expected_pitch)
       assert moved_camera.pitch > 89.0
     end
@@ -307,8 +310,8 @@ defmodule EAGL.CameraTest do
 
       moved_camera = Camera.process_mouse_movement(camera, x_offset, y_offset)
 
-      expected_yaw = camera.yaw + (x_offset * sensitivity)
-      expected_pitch = camera.pitch + (y_offset * sensitivity)
+      expected_yaw = camera.yaw + x_offset * sensitivity
+      expected_pitch = camera.pitch + y_offset * sensitivity
 
       assert_float_equal(moved_camera.yaw, expected_yaw)
       assert_float_equal(moved_camera.pitch, expected_pitch)
@@ -355,14 +358,16 @@ defmodule EAGL.CameraTest do
       assert_float_equal(scrolled_camera.zoom, expected_zoom)
     end
 
-        test "increases zoom with negative scroll" do
-      camera = Camera.new(zoom: 30.0)  # Start with zoom that can increase
+    test "increases zoom with negative scroll" do
+      # Start with zoom that can increase
+      camera = Camera.new(zoom: 30.0)
       y_offset = -3.0
 
       scrolled_camera = Camera.process_mouse_scroll(camera, y_offset)
 
       # Zoom should increase (wider field of view)
-      expected_zoom = camera.zoom - y_offset  # 30.0 - (-3.0) = 33.0
+      # 30.0 - (-3.0) = 33.0
+      expected_zoom = camera.zoom - y_offset
       assert_float_equal(scrolled_camera.zoom, expected_zoom)
     end
 
@@ -405,12 +410,13 @@ defmodule EAGL.CameraTest do
       yaw_value = 45.0
       pitch_value = 30.0
 
-      camera = Camera.new(
-        zoom: zoom_value,
-        position: position,
-        yaw: yaw_value,
-        pitch: pitch_value
-      )
+      camera =
+        Camera.new(
+          zoom: zoom_value,
+          position: position,
+          yaw: yaw_value,
+          pitch: pitch_value
+        )
 
       # Test direct field access (idiomatic Elixir)
       assert_float_equal(camera.zoom, zoom_value)
@@ -455,7 +461,7 @@ defmodule EAGL.CameraTest do
       assert_float_equal(dot(camera.right, camera.up), 0.0, 1.0e-5)
     end
 
-        test "camera maintains correct handedness" do
+    test "camera maintains correct handedness" do
       camera = Camera.new()
 
       # Right-handed coordinate system: front × up should equal right

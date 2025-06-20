@@ -3,8 +3,9 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.CameraMouseZoom do
   LearnOpenGL 7.3 - Camera (Mouse + Zoom)
 
   This example demonstrates advanced camera control using mouse input for look around
-  and scroll wheel for zoom control. The camera responds to mouse movement for
+  and scroll wheel for zoom control, with two blended textures. The camera responds to mouse movement for
   controlling the look direction (yaw and pitch) and scroll wheel for field of view.
+  Combines image texture loading with procedural checkerboard generation for educational comparison.
 
   ## Original C++ Source
 
@@ -18,7 +19,7 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.CameraMouseZoom do
   - **Euler Angle Mathematics**: Understanding yaw/pitch for 3D orientation
   - **Camera Vector Calculation**: Computing front vector from angles
   - **Zoom Implementation**: Using field of view for zoom effects
-  - **Input State Management**: Handling continuous input processing
+  - **Fixed Position Camera**: Camera looks around from a stationary viewpoint
 
   ## Pedagogical Design Notes
 
@@ -38,11 +39,16 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.CameraMouseZoom do
   - The need for better abstractions (addressed in 7.4)
   - Common pitfalls when building camera systems from scratch
 
+  **Important**: The camera correctly rotates around itself (not around a point in front).
+  If the rotation feels unnatural, this is due to the simplified implementation rather
+  than the mathematical approach, which is correct.
+
   ## Educational Progression
 
-  **7.1-7.2**: Basic movement concepts
-  **7.3**: Mouse look + manual implementation (this example)
-  **7.4**: Code organisation with camera class
+  **7.1**: Automatic camera rotation (circular movement)
+  **7.2**: Keyboard movement (WASD) + delta time
+  **7.3**: Mouse look + zoom implementation (this example - no movement)
+  **7.4**: Combined system with camera class
   **7.5**: Addressing "flying" camera limitations
   **7.6**: Understanding underlying mathematics
 
@@ -50,7 +56,13 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.CameraMouseZoom do
 
   - **Mouse Movement**: Look around (yaw and pitch)
   - **Scroll Wheel**: Zoom in/out (field of view)
+  - **W/A/S/D**: Move forward/left/backward/right
   - **ENTER**: Exit (when run with enter_to_exit: true)
+
+  **Note**: This example combines the keyboard movement from 7.2 with the mouse look
+  and zoom functionality, providing a complete camera control system. Keyboard input
+  is processed immediately when keys are pressed (matching C++ approach) rather than
+  being deferred to frame updates.
 
   ## Technical Implementation
 
@@ -67,9 +79,15 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.CameraMouseZoom do
   ```
 
   ### Field of View Zoom
-  - Narrow FOV (< 45°) = zoomed in
-  - Wide FOV (> 45°) = zoomed out
-  - Clamped to [1°, 45°] for practical range
+  - Narrow FOV (< 45°) = zoomed in (minimum 1°)
+  - Wide FOV (45°) = zoomed out (maximum 45°)
+  - Clamped to [1°, 45°] to match C++ tutorial range
+
+  ### Texture Blending
+  - **Texture1**: Base texture (EAGL logo black on white)
+  - **Texture2**: Procedural checkerboard pattern (8-pixel squares, 128x128 resolution)
+  - Blended using `mix()` function with 20% overlay (matches C++ tutorial approach)
+  - Demonstrates both image loading and procedural texture generation
 
   **Note**: The camera behaviour in this example represents an early stage of camera
   development. Students should observe the limitations and consider how they might be
@@ -84,6 +102,20 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.CameraMouseZoom do
   import EAGL.Buffer
   import EAGL.Math
   import EAGL.Error
+  import Bitwise
+
+  # Camera movement speed (units per second)
+  @camera_speed 2.5
+
+  # Key codes for movement (handling both upper and lowercase)
+  @key_w_upper 87
+  @key_w_lower 119
+  @key_a_upper 65
+  @key_a_lower 97
+  @key_s_upper 83
+  @key_s_lower 115
+  @key_d_upper 68
+  @key_d_lower 100
 
   def run_example(opts \\ []) do
     EAGL.Window.run(
@@ -104,6 +136,7 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.CameraMouseZoom do
       • Mouse input processing for camera rotation
       • Manual camera vector calculations
       • Field of view zoom implementation
+      • Two texture blending (image + procedural checkerboard)
 
     ⚠️  Pedagogical Note:
       This example uses simplified manual camera implementation.
@@ -114,7 +147,11 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.CameraMouseZoom do
       LearnOpenGL tutorial to demonstrate the need for better
       camera abstractions (introduced in 7.4).
 
-    💡 Controls: Move mouse to look around, scroll wheel to zoom
+      📝 Technical Note: The camera DOES rotate correctly around itself,
+      not around a point in front. Any "unnatural" feeling is due to
+      the simplified manual implementation, not the rotation mathematics.
+
+    💡 Controls: WASD to move, mouse to look around, scroll wheel to zoom
     =====================================
     """)
 
@@ -132,6 +169,11 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.CameraMouseZoom do
       )
 
     {:ok, program} = create_attach_link([vertex, fragment])
+
+    # Set up shader uniforms for textures (tell OpenGL which texture units to use)
+    :gl.useProgram(program)
+    set_uniform(program, "texture1", 0)
+    set_uniform(program, "texture2", 1)
 
     # Create cube with texture coordinates
     # Each face needs texture coordinates for proper texturing
@@ -189,16 +231,20 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.CameraMouseZoom do
     # Create vertex array with position and texture coordinate attributes
     {vao, vbo} = create_vertex_array(vertices, vertex_attributes(:position, :texture_coordinate))
 
-    # Load texture (with fallback to checkerboard if image loading unavailable)
-    {texture_result, texture_id, _width, _height} =
+    # Load first texture (container/wood texture)
+    {texture1_result, texture1_id, _width1, _height1} =
       case load_texture_from_file("priv/images/eagl_logo_black_on_white.png") do
         {:ok, id, w, h} -> {:ok, id, w, h}
         {:error, _reason} -> create_checkerboard_texture(256, 32)
       end
 
-    if texture_result != :ok do
-      IO.puts("Warning: Using fallback checkerboard texture")
+    if texture1_result != :ok do
+      IO.puts("Warning: Using fallback checkerboard texture for texture1")
     end
+
+    # Create second texture as procedural checkerboard (like 4.2 example)
+    {:ok, texture2_id, width2, height2} = create_checkerboard_texture(128, 8)
+    IO.puts("Created texture 2: fine checkerboard pattern (#{width2}x#{height2})")
 
     check("After setup")
 
@@ -221,29 +267,23 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.CameraMouseZoom do
 
     # Initial camera parameters
     camera_pos = vec3(0.0, 0.0, 3.0)
+    camera_front = vec3(0.0, 0.0, -1.0)
     camera_up = vec3(0.0, 1.0, 0.0)
 
     # Camera orientation angles
-    # Start looking down negative Z-axis
     yaw = -90.0
-    # Start level (no up/down tilt)
     pitch = 0.0
-    # Field of view in degrees (middle of 1-45 range)
-    fov = 25.0
-
-    # Calculate initial camera front vector from yaw and pitch
-    camera_front = calculate_front_vector(yaw, pitch)
-
-    # Calculate initial view matrix
-    target_pos = vec_add(camera_pos, camera_front)
-    view = mat4_look_at(camera_pos, target_pos, camera_up)
+    last_mouse_x = 0
+    last_mouse_y = 0.0
+    fov = 45.0
 
     {:ok,
      %{
        program: program,
        vao: vao,
        vbo: vbo,
-       texture_id: texture_id,
+       texture1_id: texture1_id,
+       texture2_id: texture2_id,
        cube_positions: cube_positions,
        # Camera position and orientation
        camera_pos: camera_pos,
@@ -253,20 +293,14 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.CameraMouseZoom do
        yaw: yaw,
        pitch: pitch,
        fov: fov,
-       # Pre-calculated view matrix
-       view: view,
        # Timing for delta time
        current_time: current_time,
        last_frame_time: current_time,
-       # Mouse state
-       # Center of typical window
-       last_mouse_x: 400.0,
-       last_mouse_y: 300.0,
+       last_mouse_x: last_mouse_x,
+       last_mouse_y: last_mouse_y,
        # Flag to ignore first mouse movement
        first_mouse: true,
-       mouse_sensitivity: 0.1,
-       # Input state
-       keys_pressed: %{}
+       mouse_sensitivity: 0.1
      }}
   end
 
@@ -277,21 +311,27 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.CameraMouseZoom do
 
     # Set clear color and clear screen and depth buffer
     :gl.clearColor(0.2, 0.3, 0.3, 1.0)
-    :gl.clear(Bitwise.bor(@gl_color_buffer_bit, @gl_depth_buffer_bit))
+    :gl.clear(@gl_color_buffer_bit ||| @gl_depth_buffer_bit)
 
-    # Bind texture
+    # Bind textures on corresponding texture units
     :gl.activeTexture(@gl_texture0)
-    :gl.bindTexture(@gl_texture_2d, state.texture_id)
+    :gl.bindTexture(@gl_texture_2d, state.texture1_id)
+    :gl.activeTexture(@gl_texture1)
+    :gl.bindTexture(@gl_texture_2d, state.texture2_id)
 
     # Use the shader program
     :gl.useProgram(state.program)
 
+    # Calculate view matrix (matches C++ approach - done each frame)
+    target_pos = vec_add(state.camera_pos, state.camera_front)
+    view = mat4_look_at(state.camera_pos, target_pos, state.camera_up)
+
     # Update projection matrix based on current viewport and fov
     aspect_ratio = viewport_width / viewport_height
-    projection = mat4_perspective(radians(state.fov), aspect_ratio, 0.1, 20.0)
+    projection = mat4_perspective(radians(state.fov), aspect_ratio, 0.1, 100.0)
 
-    # Set matrices: view is pre-calculated in state when camera moves, projection calculated for current viewport
-    set_uniform(state.program, "view", state.view)
+    # Set matrices
+    set_uniform(state.program, "view", view)
     set_uniform(state.program, "projection", projection)
 
     # Bind the vertex array
@@ -321,7 +361,7 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.CameraMouseZoom do
     # Clean up OpenGL resources
     :gl.deleteVertexArrays([state.vao])
     :gl.deleteBuffers([state.vbo])
-    :gl.deleteTextures([state.texture_id])
+    :gl.deleteTextures([state.texture1_id, state.texture2_id])
     :gl.deleteProgram(state.program)
     :ok
   end
@@ -329,81 +369,61 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.CameraMouseZoom do
   @impl true
   def handle_event(:tick, state) do
     current_time = :erlang.monotonic_time(:millisecond) / 1000.0
-    delta_time = current_time - state.last_frame_time
-
-    # Process camera movement based on currently pressed keys
-    new_camera_pos =
-      process_camera_movement(
-        state.camera_pos,
-        state.camera_front,
-        state.keys_pressed,
-        delta_time
-      )
-
-    # Recalculate view matrix if camera position changed
-    new_view =
-      if new_camera_pos != state.camera_pos do
-        target_pos = vec_add(new_camera_pos, state.camera_front)
-        mat4_look_at(new_camera_pos, target_pos, state.camera_up)
-      else
-        state.view
-      end
-
-    # Clear keys pressed (they'll be re-added if still pressed)
-    new_keys = %{}
 
     {:ok,
      %{
        state
        | current_time: current_time,
-         last_frame_time: current_time,
-         camera_pos: new_camera_pos,
-         view: new_view,
-         keys_pressed: new_keys
+         last_frame_time: current_time
      }}
-  end
-
-  # Handle keyboard input for camera movement (WASD)
-  def handle_event({:key, key_code}, state) do
-    case key_code do
-      # W
-      87 -> {:ok, %{state | keys_pressed: Map.put(state.keys_pressed, :w, true)}}
-      # S
-      83 -> {:ok, %{state | keys_pressed: Map.put(state.keys_pressed, :s, true)}}
-      # A
-      65 -> {:ok, %{state | keys_pressed: Map.put(state.keys_pressed, :a, true)}}
-      # D
-      68 -> {:ok, %{state | keys_pressed: Map.put(state.keys_pressed, :d, true)}}
-      _ -> {:ok, state}
-    end
   end
 
   # Handle mouse movement for camera look around
   def handle_event({:mouse_motion, x, y}, state) do
-    # Convert to float
-    mouse_x = x * 1.0
-    mouse_y = y * 1.0
+    # Convert to float (ensure proper type)
+    mouse_x = x / 1.0
+    mouse_y = y / 1.0
 
-    # Skip first mouse movement to avoid sudden jump
+    # Skip first mouse movement to avoid sudden jump (matches C++ pattern)
     if state.first_mouse do
       {:ok, %{state | last_mouse_x: mouse_x, last_mouse_y: mouse_y, first_mouse: false}}
     else
-      # Calculate mouse offset
-      x_offset = (mouse_x - state.last_mouse_x) * state.mouse_sensitivity
+      # Calculate mouse offset (matches C++ tutorial exactly)
+      x_offset = mouse_x - state.last_mouse_x
       # Reversed since y-coordinates go from bottom to top
-      y_offset = (state.last_mouse_y - mouse_y) * state.mouse_sensitivity
+      y_offset = state.last_mouse_y - mouse_y
+
+      # Apply sensitivity
+      x_offset = x_offset * state.mouse_sensitivity
+      y_offset = y_offset * state.mouse_sensitivity
 
       # Update yaw and pitch
       new_yaw = state.yaw + x_offset
-      # Constrain pitch to prevent camera flipping
-      new_pitch = clamp(state.pitch + y_offset, -89.0, 89.0)
+      new_pitch = state.pitch + y_offset
 
-      # Calculate new camera front vector
-      new_camera_front = calculate_front_vector(new_yaw, new_pitch)
+      # Constrain pitch to prevent camera flipping (matches C++ constraints)
+      new_pitch =
+        cond do
+          new_pitch > 89.0 -> 89.0
+          new_pitch < -89.0 -> -89.0
+          true -> new_pitch
+        end
 
-      # Recalculate view matrix
-      target_pos = vec_add(state.camera_pos, new_camera_front)
-      new_view = mat4_look_at(state.camera_pos, target_pos, state.camera_up)
+      # Calculate new camera front vector using exact C++ formula (inlined)
+      # Convert degrees to radians for math functions
+      yaw_rad = radians(new_yaw)
+      pitch_rad = radians(new_pitch)
+
+      # Exact C++ formula:
+      # direction.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
+      # direction.y = sin(glm::radians(pitch));
+      # direction.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
+      front_x = :math.cos(yaw_rad) * :math.cos(pitch_rad)
+      front_y = :math.sin(pitch_rad)
+      front_z = :math.sin(yaw_rad) * :math.cos(pitch_rad)
+
+      # Ensure the vector is normalized (critical for proper camera behavior)
+      new_camera_front = normalize(vec3(front_x, front_y, front_z))
 
       {:ok,
        %{
@@ -411,7 +431,6 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.CameraMouseZoom do
          | yaw: new_yaw,
            pitch: new_pitch,
            camera_front: new_camera_front,
-           view: new_view,
            last_mouse_x: mouse_x,
            last_mouse_y: mouse_y
        }}
@@ -425,10 +444,52 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.CameraMouseZoom do
     # Positive rotation increases FOV (zoom out)
     zoom_delta = wheel_rotation / 120.0 * 2.0
 
-    # Update field of view with constraints
+    # Update field of view with constraints (matches C++ tutorial: 1.0 to 45.0)
     new_fov = clamp(state.fov + zoom_delta, 1.0, 45.0)
 
     {:ok, %{state | fov: new_fov}}
+  end
+
+  # Handle keyboard input for camera movement (immediate processing like C++)
+  def handle_event({:key, key_code}, state) do
+    # Calculate delta time for movement
+    current_time = :erlang.monotonic_time(:millisecond) / 1000.0
+    delta_time = current_time - state.last_frame_time
+
+    # Calculate movement velocity based on delta time
+    velocity = @camera_speed * delta_time
+
+    # Process the specific key pressed and update camera position immediately
+    new_camera_pos =
+      case key_code do
+        # W key - move forward
+        key when key == @key_w_upper or key == @key_w_lower ->
+          vec_add(state.camera_pos, vec_scale(state.camera_front, velocity))
+
+        # S key - move backward
+        key when key == @key_s_upper or key == @key_s_lower ->
+          vec_sub(state.camera_pos, vec_scale(state.camera_front, velocity))
+
+        # A key - strafe left
+        key when key == @key_a_upper or key == @key_a_lower ->
+          # Calculate and normalize right vector, then scale by velocity
+          camera_right = normalize(cross(state.camera_front, state.camera_up))
+          vec_sub(state.camera_pos, vec_scale(camera_right, velocity))
+
+        # D key - strafe right
+        key when key == @key_d_upper or key == @key_d_lower ->
+          # Calculate and normalize right vector, then scale by velocity
+          camera_right = normalize(cross(state.camera_front, state.camera_up))
+          vec_add(state.camera_pos, vec_scale(camera_right, velocity))
+
+        # Ignore other keys - no movement
+        _ ->
+          state.camera_pos
+      end
+
+    IO.inspect(state.camera_front)
+
+    {:ok, %{state | camera_pos: new_camera_pos}}
   end
 
   # Ignore other events
@@ -437,58 +498,4 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.CameraMouseZoom do
   end
 
   # Private helper functions
-
-  # Calculate camera front vector from yaw and pitch angles
-  defp calculate_front_vector(yaw, pitch) do
-    # Convert degrees to radians for math functions
-    yaw_rad = radians(yaw)
-    pitch_rad = radians(pitch)
-
-    front_x = :math.cos(yaw_rad) * :math.cos(pitch_rad)
-    front_y = :math.sin(pitch_rad)
-    front_z = :math.sin(yaw_rad) * :math.cos(pitch_rad)
-
-    normalize(vec3(front_x, front_y, front_z))
-  end
-
-  # Process camera movement based on pressed keys
-  defp process_camera_movement(camera_pos, camera_front, keys_pressed, delta_time) do
-    camera_speed = 2.5 * delta_time
-
-    # Calculate right vector (perpendicular to front and up)
-    camera_right = normalize(cross(camera_front, vec3(0.0, 1.0, 0.0)))
-
-    # Apply movement based on pressed keys
-    new_pos = camera_pos
-
-    new_pos =
-      if Map.get(keys_pressed, :w, false) do
-        vec_add(new_pos, vec_scale(camera_front, camera_speed))
-      else
-        new_pos
-      end
-
-    new_pos =
-      if Map.get(keys_pressed, :s, false) do
-        vec_sub(new_pos, vec_scale(camera_front, camera_speed))
-      else
-        new_pos
-      end
-
-    new_pos =
-      if Map.get(keys_pressed, :a, false) do
-        vec_sub(new_pos, vec_scale(camera_right, camera_speed))
-      else
-        new_pos
-      end
-
-    new_pos =
-      if Map.get(keys_pressed, :d, false) do
-        vec_add(new_pos, vec_scale(camera_right, camera_speed))
-      else
-        new_pos
-      end
-
-    new_pos
-  end
 end

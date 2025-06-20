@@ -209,7 +209,8 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.CameraExercise1 do
     # Cube positions
     cube_positions = [
       vec3(0.0, 0.0, 0.0),
-      vec3(2.0, 0.0, -15.0),    # Keep cubes at ground level
+      # Keep cubes at ground level
+      vec3(2.0, 0.0, -15.0),
       vec3(-1.5, 0.0, -2.5),
       vec3(-3.8, 0.0, -12.3),
       vec3(2.4, 0.0, -3.5),
@@ -221,14 +222,17 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.CameraExercise1 do
     ]
 
     # Create FPS camera at ground level
-    camera = Camera.new(
-      position: vec3(0.0, 1.5, 3.0),  # 1.5 units above ground (eye level)
-      yaw: -90.0,
-      pitch: 0.0,
-      movement_speed: 3.0,
-      mouse_sensitivity: 0.1,  # Reduced for natural first-person feel
-      zoom: 45.0
-    )
+    camera =
+      Camera.new(
+        # 1.5 units above ground (eye level)
+        position: vec3(0.0, 1.5, 3.0),
+        yaw: -90.0,
+        pitch: 0.0,
+        movement_speed: 3.0,
+        # Reduced for natural first-person feel
+        mouse_sensitivity: 0.1,
+        zoom: 45.0
+      )
 
     # Track the ground level for FPS constraint
     ground_level = 1.5
@@ -243,7 +247,8 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.CameraExercise1 do
        texture_id: texture_id,
        cube_positions: cube_positions,
        camera: camera,
-       ground_level: ground_level,  # FPS constraint
+       # FPS constraint
+       ground_level: ground_level,
        current_time: current_time,
        last_frame_time: current_time,
        last_mouse_x: 400.0,
@@ -259,7 +264,8 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.CameraExercise1 do
     :gl.viewport(0, 0, trunc(viewport_width), trunc(viewport_height))
 
     # Clear screen
-    :gl.clearColor(0.1, 0.1, 0.2, 1.0)  # Darker for ground-level feel
+    # Darker for ground-level feel
+    :gl.clearColor(0.1, 0.1, 0.2, 1.0)
     :gl.clear(Bitwise.bor(@gl_color_buffer_bit, @gl_depth_buffer_bit))
 
     # Bind texture
@@ -272,12 +278,14 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.CameraExercise1 do
     # Get matrices from camera
     view = Camera.get_view_matrix(state.camera)
     aspect_ratio = viewport_width / viewport_height
-    projection = mat4_perspective(
-      radians(state.camera.zoom),
-      aspect_ratio,
-      0.1,
-      20.0
-    )
+
+    projection =
+      mat4_perspective(
+        radians(state.camera.zoom),
+        aspect_ratio,
+        0.1,
+        20.0
+      )
 
     # Set matrices
     set_uniform(state.program, "view", view)
@@ -289,7 +297,10 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.CameraExercise1 do
     # Render cubes
     Enum.with_index(state.cube_positions, fn cube_pos, i ->
       angle = 20.0 * i
-      model = mat4_translate(cube_pos) |> mat4_mul(mat4_rotate(vec3(1.0, 0.3, 0.5), radians(angle)))
+
+      model =
+        mat4_translate(cube_pos) |> mat4_mul(mat4_rotate(vec3(1.0, 0.3, 0.5), radians(angle)))
+
       set_uniform(state.program, "model", model)
       :gl.drawArrays(@gl_triangles, 0, 36)
     end)
@@ -337,10 +348,14 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.CameraExercise1 do
   # Handle keyboard input
   def handle_event({:key, key_code}, state) do
     case key_code do
-      87 -> {:ok, %{state | keys_pressed: Map.put(state.keys_pressed, :w, true)}}   # W
-      83 -> {:ok, %{state | keys_pressed: Map.put(state.keys_pressed, :s, true)}}   # S
-      65 -> {:ok, %{state | keys_pressed: Map.put(state.keys_pressed, :a, true)}}   # A
-      68 -> {:ok, %{state | keys_pressed: Map.put(state.keys_pressed, :d, true)}}   # D
+      # W
+      87 -> {:ok, %{state | keys_pressed: Map.put(state.keys_pressed, :w, true)}}
+      # S
+      83 -> {:ok, %{state | keys_pressed: Map.put(state.keys_pressed, :s, true)}}
+      # A
+      65 -> {:ok, %{state | keys_pressed: Map.put(state.keys_pressed, :a, true)}}
+      # D
+      68 -> {:ok, %{state | keys_pressed: Map.put(state.keys_pressed, :d, true)}}
       _ -> {:ok, state}
     end
   end
@@ -398,16 +413,20 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.CameraExercise1 do
     horizontal_right = normalize(vec3(right_x, 0.0, right_z))
 
     # Calculate new position based on direction
-    new_position = case direction do
-      :forward ->
-        vec_add(current_pos, vec_scale(horizontal_front, velocity))
-      :backward ->
-        vec_sub(current_pos, vec_scale(horizontal_front, velocity))
-      :left ->
-        vec_sub(current_pos, vec_scale(horizontal_right, velocity))
-      :right ->
-        vec_add(current_pos, vec_scale(horizontal_right, velocity))
-    end
+    new_position =
+      case direction do
+        :forward ->
+          vec_add(current_pos, vec_scale(horizontal_front, velocity))
+
+        :backward ->
+          vec_sub(current_pos, vec_scale(horizontal_front, velocity))
+
+        :left ->
+          vec_sub(current_pos, vec_scale(horizontal_right, velocity))
+
+        :right ->
+          vec_add(current_pos, vec_scale(horizontal_right, velocity))
+      end
 
     # Force Y coordinate to ground level (FPS constraint)
     [{new_x, _new_y, new_z}] = new_position

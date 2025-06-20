@@ -79,7 +79,7 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.HelloTriangleIndexed do
   '''
 
   # Indices for two triangles forming a rectangle
-      # Note: we can reuse vertices
+  # Note: we can reuse vertices
   # First triangle: 0, 1, 3 (top-right, bottom-right, top-left)
   # Second triangle: 1, 2, 3 (bottom-right, bottom-left, top-left)
   @indices ~i'''
