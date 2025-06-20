@@ -1,6 +1,6 @@
 <div align="center">
   <h1>EAGL</h1>
-  <img src="assets/eagl_logo_grey_on_transparent.png" alt="EAGL Logo" title="EAGL Logo" width="200">
+  <img src="assets/eagl_logo.png" alt="EAGL Logo" title="EAGL Logo" width="200">
   <p>
     Make it EAsier to work<br>
     with OpenGL in Elixir.
