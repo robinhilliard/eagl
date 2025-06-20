@@ -59,6 +59,7 @@ EAGL includes several examples to demonstrate its capabilities. Use the unified 
                       164) 6.4 Exercise
 
   Camera:           171) 7.1 Circle    172) 7.2 Keyboard+DT 173) 7.3 Mouse+Zoom
+                    174) 7.4 Camera Class 175) 7.5 Exercise1 (FPS) 176) 7.6 Exercise2 (Custom LookAt)
 
 ════════════════════════════════════════════════════════════════
 Enter code (01, 02, 111-153), 'q' to quit, 'r' to refresh:
@@ -76,6 +77,7 @@ EAGL provides a comprehensive 3D math library based on GLM supporting:
 - **Quaternions**: Rotation representation, SLERP, and conversion functions
 - **Utilities**: Trigonometry, interpolation, clamping, and geometric functions
 - **OpenGL Integration**: All functions work with the tuple-in-list format required by Erlang's OpenGL bindings
+- **Coordinate System**: Consistent right-handed coordinate system for proper OpenGL compatibility
 - **Sigils**: Compile-time validated literals for matrices (`~m`), vertices (`~v`), and indices (`~i`)
 
 #### Sigil Literals
@@ -161,7 +163,7 @@ camera = Camera.new(
   yaw: 180.0,           # Face toward origin
   pitch: -30.0,         # Look down 30 degrees
   movement_speed: 5.0,  # Faster movement
-  mouse_sensitivity: 0.2,
+  mouse_sensitivity: 0.01,  # Adjusted for natural feel (default: 0.005)
   zoom: 60.0           # Wider field of view
 )
 
@@ -713,7 +715,7 @@ The current focus is to:
   - ✅ Textures (4.1-4.6): 6 examples
   - ✅ Transformations (5.1-5.2): 3 examples
   - ✅ Coordinate Systems (6.1-6.4): 4 examples
-  - ✅ Camera (7.1-7.3): 3 examples completed
+  - ✅ Camera (7.1-7.6): 6 examples completed
 - [ ] Continue with "Lighting" chapter examples
 - [ ] Load common model types like GLTF
 

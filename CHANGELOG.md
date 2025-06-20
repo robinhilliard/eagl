@@ -7,6 +7,78 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.0] - 2024-12-30
+
+### Fixed
+- **🔧 Critical Math Library Bug**: Fixed fundamental coordinate system issue in `mat4_look_at` function
+  - **Root Cause**: Matrix layout mismatch between EAGL implementation and GLM's `lookAtRH` specification
+  - **Symptoms**: Camera rotation appeared to center around wrong point (6-unit offset from expected position)
+  - **Solution**: Corrected matrix layout to store vector components across columns instead of complete vectors as columns
+  - **Impact**: Resolves camera rotation issues affecting all EAGL applications using camera systems
+  - **Technical Details**: 
+    - Before: Column vectors `[sx,sy,sz,0]`, `[ux,uy,uz,0]`, `[-fx,-fy,-fz,0]` (incorrect)
+    - After: Component vectors `[sx,ux,-fx,0]`, `[sy,uy,-fy,0]`, `[sz,uz,-fz,0]` (correct GLM layout)
+    - Ensures consistent right-handed coordinate system for proper OpenGL compatibility
+
+### Added
+- **Complete LearnOpenGL Camera System**: Added remaining camera examples to finish Getting Started series (7.4-7.6)
+  - **7.4 Camera Class**: Reusable camera object abstraction and state management
+    - Clean camera encapsulation with position, orientation, and movement methods
+    - Demonstrates proper separation of camera logic from rendering code
+    - Foundation for scalable camera systems in larger applications
+  - **7.5 Camera Exercise 1**: Exercise solution implementing FPS-style camera controls
+    - Complete first-person camera with smooth WASD movement and mouse look
+    - Proper constraint handling (pitch clamping, field-of-view limits)
+    - Educational focus on camera behavior and control feel
+  - **7.6 Camera Exercise 2**: Custom LookAt matrix implementation exercise
+    - Manual implementation of view matrix calculation mathematics
+    - Step-by-step demonstration of camera coordinate system construction
+    - **Educational Accuracy**: Fixed to exactly match original LearnOpenGL C++ source code
+    - Proper zaxis calculation (from target to eye) and cross product order
+
+### Enhanced  
+- **Camera System Robustness**: All camera examples now use consistent coordinate system
+  - Mouse sensitivity properly calibrated for natural camera feel (default: 0.005)
+  - Smooth movement with proper delta time handling across all examples
+  - Consistent camera behavior patterns throughout the tutorial series
+- **Documentation Accuracy**: Updated README.md to reflect complete example coverage
+  - **Examples Menu**: Added missing camera examples 7.4, 7.5, 7.6 to documentation
+  - **Default Values**: Corrected mouse sensitivity documentation to match implementation
+  - **Coordinate System**: Added note about consistent right-handed coordinate system
+  - **Progress Tracking**: Updated roadmap to show all 6 camera examples completed
+- **Test Suite**: Fixed camera tests to match actual implementation defaults
+  - Corrected mouse sensitivity expectation from 0.1 to 0.005
+  - Ensures test suite accurately validates current camera behavior
+
+### Technical Improvements
+- **Coordinate System Consistency**: Verified right-handed coordinate system throughout math library
+  - All matrix operations follow OpenGL's right-handed convention
+  - Perspective projection correctly uses `-1.0` perspective divide factor
+  - View matrix calculations properly handle right-handed basis vectors
+- **Educational Value**: Camera Exercise 7.6 now provides accurate learning experience
+  - **Before**: Used incorrect direction vector calculation and cross product order
+  - **After**: Exact match to LearnOpenGL C++ tutorial mathematics
+  - Students learn correct manual LookAt construction methods
+  - Proper separation of translation and rotation matrix construction
+
+### Milestone Achievement
+- **🎉 Complete LearnOpenGL Getting Started Series**: All camera examples now implemented
+  - Hello Window (1.1-1.2): 2 examples ✅
+  - Hello Triangle (2.1-2.5): 5 examples ✅  
+  - Shaders (3.1-3.6): 6 examples ✅
+  - Textures (4.1-4.6): 6 examples ✅
+  - Transformations (5.1-5.2): 3 examples ✅
+  - Coordinate Systems (6.1-6.4): 4 examples ✅
+  - Camera (7.1-7.6): **6 examples ✅** (was 3/6, now complete)
+    - ✅ 7.1 Camera Circle: Automatic camera rotation around scene center
+    - ✅ 7.2 Camera Keyboard + Delta Time: WASD movement with frame-rate independence  
+    - ✅ 7.3 Camera Mouse + Zoom: Mouse look and scroll zoom
+    - ✅ 7.4 Camera Class: Reusable camera object abstraction
+    - ✅ 7.5 Camera Exercise 1: FPS-style camera implementation
+    - ✅ 7.6 Camera Exercise 2: Custom LookAt function implementation
+- **Examples Statistics**: **29 of 29** LearnOpenGL Getting Started examples + 2 original examples = **31 total examples**
+- **Series Completion**: First complete implementation of LearnOpenGL Getting Started series in Elixir
+
 ## [0.7.0] - 2024-12-29
 
 ### Added
