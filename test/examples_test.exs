@@ -144,7 +144,7 @@ defmodule ExamplesTest do
 
       assert result == :ok
       # Math example completes immediately, doesn't timeout
-      assert String.contains?(output, "Math demo completed successfully!")
+      assert String.contains?(output, "Math demo completed successfully.")
       refute String.contains?(output, "Error")
       # Math example doesn't use the window system, so no timeout message
       refute String.contains?(output, "EAGL_TIMEOUT")

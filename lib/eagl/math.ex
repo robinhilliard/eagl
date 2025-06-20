@@ -1055,32 +1055,19 @@ defmodule EAGL.Math do
   def mat4_translate(v) do
     [{x, y, z}] = v
 
-    # mix format: off
+        # mix format: off
     [
       {
-        # Column 0
-        1.0,
-        0.0,
-        0.0,
-        0.0,
-        # Column 1
-        0.0,
-        1.0,
-        0.0,
-        0.0,
-        # Column 2
-        0.0,
-        0.0,
-        1.0,
-        0.0,
-        # Column 3 (translation)
-        x,
-        y,
-        z,
-        1.0
+        # Matrix: [ 1.0  0.0  0.0   x  ]   (stored column-major for OpenGL)
+        #         [ 0.0  1.0  0.0   y  ]   Col0: [1,0,0,0]  Col1: [0,1,0,0]
+        #         [ 0.0  0.0  1.0   z  ]   Col2: [0,0,1,0]  Col3: [x,y,z,1]
+        #         [ 0.0  0.0  0.0  1.0 ]
+        1.0, 0.0, 0.0, 0.0,  # Column 0
+        0.0, 1.0, 0.0, 0.0,  # Column 1
+        0.0, 0.0, 1.0, 0.0,  # Column 2
+        x, y, z, 1.0         # Column 3 (translation)
       }
     ]
-
     # mix format: on
   end
 
@@ -1095,29 +1082,16 @@ defmodule EAGL.Math do
     # mix format: off
     [
       {
-        # Column 0 (X scale)
-        x,
-        0.0,
-        0.0,
-        0.0,
-        # Column 1 (Y scale)
-        0.0,
-        y,
-        0.0,
-        0.0,
-        # Column 2 (Z scale)
-        0.0,
-        0.0,
-        z,
-        0.0,
-        # Column 3
-        0.0,
-        0.0,
-        0.0,
-        1.0
+        # Matrix: [  x   0.0  0.0  0.0 ]   (stored column-major for OpenGL)
+        #         [ 0.0   y   0.0  0.0 ]   Col0: [x,0,0,0]   Col1: [0,y,0,0]
+        #         [ 0.0  0.0   z   0.0 ]   Col2: [0,0,z,0]   Col3: [0,0,0,1]
+        #         [ 0.0  0.0  0.0  1.0 ]
+        x, 0.0, 0.0, 0.0,    # Column 0 (X scale)
+        0.0, y, 0.0, 0.0,    # Column 1 (Y scale)
+        0.0, 0.0, z, 0.0,    # Column 2 (Z scale)
+        0.0, 0.0, 0.0, 1.0   # Column 3
       }
     ]
-
     # mix format: on
   end
 
@@ -1371,29 +1345,16 @@ defmodule EAGL.Math do
     # mix format: off
     [
       {
-        # Column 0
-        1.0 / (aspect_ratio * tan_half_fov),
-        0.0,
-        0.0,
-        0.0,
-        # Column 1
-        0.0,
-        1.0 / tan_half_fov,
-        0.0,
-        0.0,
-        # Column 2
-        0.0,
-        0.0,
-        -(z_far + z_near) / (z_far - z_near),
-        -1.0,
-        # Column 3
-        0.0,
-        0.0,
-        -(2.0 * z_far * z_near) / (z_far - z_near),
-        0.0
+        # Matrix: [ 1/(aspect*tan_fov)    0               0                    0          ]   (column-major)
+        #         [        0         1/tan_fov          0                    0          ]
+        #         [        0              0      -(far+near)/(far-near)     -1         ]
+        #         [        0              0      -2*far*near/(far-near)      0         ]
+        1.0 / (aspect_ratio * tan_half_fov), 0.0, 0.0, 0.0,                              # Column 0
+        0.0, 1.0 / tan_half_fov, 0.0, 0.0,                                               # Column 1
+        0.0, 0.0, -(z_far + z_near) / (z_far - z_near), -1.0,                           # Column 2
+        0.0, 0.0, -(2.0 * z_far * z_near) / (z_far - z_near), 0.0                       # Column 3
       }
     ]
-
     # mix format: on
   end
 
@@ -1406,29 +1367,17 @@ defmodule EAGL.Math do
     # mix format: off
     [
       {
-        # Column 0
-        2.0 / (right - left),
-        0.0,
-        0.0,
-        0.0,
-        # Column 1
-        0.0,
-        2.0 / (top - bottom),
-        0.0,
-        0.0,
-        # Column 2
-        0.0,
-        0.0,
-        -2.0 / (z_far - z_near),
-        0.0,
-        # Column 3
-        -(right + left) / (right - left),
-        -(top + bottom) / (top - bottom),
-        -(z_far + z_near) / (z_far - z_near),
-        1.0
+        # Matrix: [   2/(r-l)       0          0       -(r+l)/(r-l)  ]   (column-major)
+        #         [      0      2/(t-b)       0       -(t+b)/(t-b)  ]
+        #         [      0         0     -2/(f-n)    -(f+n)/(f-n)  ]
+        #         [      0         0         0             1       ]
+        2.0 / (right - left), 0.0, 0.0, 0.0,                                         # Column 0
+        0.0, 2.0 / (top - bottom), 0.0, 0.0,                                         # Column 1
+        0.0, 0.0, -2.0 / (z_far - z_near), 0.0,                                      # Column 2
+        -(right + left) / (right - left), -(top + bottom) / (top - bottom),          # Column 3
+        -(z_far + z_near) / (z_far - z_near), 1.0
       }
     ]
-
     # mix format: on
   end
 
@@ -1449,29 +1398,16 @@ defmodule EAGL.Math do
     # mix format: off
     [
       {
-        # Column 0 (right vector)
-        sx,
-        sy,
-        sz,
-        0.0,
-        # Column 1 (up vector)
-        ux,
-        uy,
-        uz,
-        0.0,
-        # Column 2 (forward vector, negated)
-        -fx,
-        -fy,
-        -fz,
-        0.0,
-        # Column 3 (translation)
-        -dot(s, eye),
-        -dot(u, eye),
-        dot(f, eye),
-        1.0
+        # Matrix: [ sx   ux  -fx  -dot(s,eye) ]   (column-major)
+        #         [ sy   uy  -fy  -dot(u,eye) ]
+        #         [ sz   uz  -fz   dot(f,eye) ]
+        #         [ 0.0  0.0  0.0      1.0    ]
+        sx, sy, sz, 0.0,                        # Column 0 (right vector)
+        ux, uy, uz, 0.0,                        # Column 1 (up vector)
+        -fx, -fy, -fz, 0.0,                     # Column 2 (forward vector, negated)
+        -dot(s, eye), -dot(u, eye), dot(f, eye), 1.0  # Column 3 (translation)
       }
     ]
-
     # mix format: on
   end
 
