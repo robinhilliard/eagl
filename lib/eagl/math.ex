@@ -34,6 +34,8 @@ defmodule EAGL.Math do
       set_uniform(program, "projection", projection)
   """
 
+  # NOTE: This file is excluded from mix format to protect matrix readability
+
   # ============================================================================
   # TYPE DEFINITIONS
   # ============================================================================
@@ -44,16 +46,21 @@ defmodule EAGL.Math do
   @type quat :: [{float(), float(), float(), float()}]
 
   @type mat2 :: [
-          {float(), float(), float(), float()}
+          {float(), float(),
+           float(), float()}
         ]
 
   @type mat3 :: [
-          {float(), float(), float(), float(), float(), float(), float(), float(), float()}
+          {float(), float(), float(),
+           float(), float(), float(),
+           float(), float(), float()}
         ]
 
   @type mat4 :: [
-          {float(), float(), float(), float(), float(), float(), float(), float(), float(),
-           float(), float(), float(), float(), float(), float(), float()}
+          {float(), float(), float(), float(),
+           float(), float(), float(), float(),
+           float(), float(), float(), float(),
+           float(), float(), float(), float()}
         ]
 
   # ============================================================================
@@ -63,43 +70,46 @@ defmodule EAGL.Math do
   @doc """
   Create a 2x2 matrix.
   """
-  @spec mat2(float(), float(), float(), float()) :: mat2()
-  def mat2(a, b, c, d) do
-    [{a, b, c, d}]
+  @spec mat2(
+    float(), float(),
+    float(), float()) :: mat2()
+  def mat2(a, b,
+           c, d) do
+    [{a, b,
+      c, d}]
   end
 
   @doc """
   Create a 3x3 matrix.
   """
-  @spec mat3(float(), float(), float(), float(), float(), float(), float(), float(), float()) ::
-          mat3()
-  def mat3(a, b, c, d, e, f, g, h, i) do
-    [{a, b, c, d, e, f, g, h, i}]
+  @spec mat3(
+    float(), float(), float(),
+    float(), float(), float(),
+    float(), float(), float()) :: mat3()
+  def mat3(a, b, c,
+           d, e, f,
+           g, h, i) do
+    [{a, b, c,
+      d, e, f,
+      g, h, i}]
   end
 
   @doc """
   Create a 4x4 matrix.
   """
   @spec mat4(
-          float(),
-          float(),
-          float(),
-          float(),
-          float(),
-          float(),
-          float(),
-          float(),
-          float(),
-          float(),
-          float(),
-          float(),
-          float(),
-          float(),
-          float(),
-          float()
-        ) :: mat4()
-  def mat4(a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p) do
-    [{a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p}]
+    float(), float(), float(), float(),
+    float(), float(), float(), float(),
+    float(), float(), float(), float(),
+    float(), float(), float(), float() ) :: mat4()
+  def mat4(a, b, c, d,
+           e, f, g, h,
+           i, j, k, l,
+           m, n, o, p) do
+    [{a, b, c, d,
+      e, f, g, h,
+      i, j, k, l,
+      m, n, o, p}]
   end
 
   @doc ~S"""
@@ -329,25 +339,19 @@ defmodule EAGL.Math do
   Create a 2D vector.
   """
   @spec vec2(float(), float()) :: vec2()
-  def vec2(x, y) do
-    [{x, y}]
-  end
+  def vec2(x, y), do: [{x, y}]
 
   @doc """
   Create a 3D vector.
   """
   @spec vec3(float(), float(), float()) :: vec3()
-  def vec3(x, y, z) do
-    [{x, y, z}]
-  end
+  def vec3(x, y, z), do: [{x, y, z}]
 
   @doc """
   Create a 4D vector.
   """
   @spec vec4(float(), float(), float(), float()) :: vec4()
-  def vec4(x, y, z, w) do
-    [{x, y, z, w}]
-  end
+  def vec4(x, y, z, w), do: [{x, y, z, w}]
 
   # ============================================================================
   # QUATERNION CONSTRUCTORS
@@ -359,17 +363,13 @@ defmodule EAGL.Math do
   This follows the (x, y, z, w) convention commonly used in graphics programming.
   """
   @spec quat(float(), float(), float(), float()) :: quat()
-  def quat(x, y, z, w) do
-    [{x, y, z, w}]
-  end
+  def quat(x, y, z, w), do: [{x, y, z, w}]
 
   @doc """
   Create an identity quaternion (no rotation).
   """
   @spec quat_identity() :: quat()
-  def quat_identity() do
-    [{0.0, 0.0, 0.0, 1.0}]
-  end
+  def quat_identity(), do: [{0.0, 0.0, 0.0, 1.0}]
 
   # ============================================================================
   # COMMON VECTOR CONSTRUCTORS
@@ -379,57 +379,43 @@ defmodule EAGL.Math do
   Create a zero vector (2D).
   """
   @spec vec2_zero() :: vec2()
-  def vec2_zero() do
-    [{0.0, 0.0}]
-  end
+  def vec2_zero(), do: [{0.0, 0.0}]
 
   @doc """
   Create a zero vector (3D).
   """
   @spec vec3_zero() :: vec3()
-  def vec3_zero() do
-    [{0.0, 0.0, 0.0}]
-  end
+  def vec3_zero(), do: [{0.0, 0.0, 0.0}]
 
   @doc """
   Create a zero vector (4D).
   """
   @spec vec4_zero() :: vec4()
-  def vec4_zero() do
-    [{0.0, 0.0, 0.0, 0.0}]
-  end
+  def vec4_zero(), do: [{0.0, 0.0, 0.0, 0.0}]
 
   @doc """
   Create a 3D vector with all components set to 1.
   """
   @spec vec3_one() :: vec3()
-  def vec3_one() do
-    [{1.0, 1.0, 1.0}]
-  end
+  def vec3_one(), do: [{1.0, 1.0, 1.0}]
 
   @doc """
   Create the X unit vector (1, 0, 0).
   """
   @spec vec3_unit_x() :: vec3()
-  def vec3_unit_x() do
-    [{1.0, 0.0, 0.0}]
-  end
+  def vec3_unit_x(), do: [{1.0, 0.0, 0.0}]
 
   @doc """
   Create the Y unit vector (0, 1, 0).
   """
   @spec vec3_unit_y() :: vec3()
-  def vec3_unit_y() do
-    [{0.0, 1.0, 0.0}]
-  end
+  def vec3_unit_y(), do: [{0.0, 1.0, 0.0}]
 
   @doc """
   Create the Z unit vector (0, 0, 1).
   """
   @spec vec3_unit_z() :: vec3()
-  def vec3_unit_z() do
-    [{0.0, 0.0, 1.0}]
-  end
+  def vec3_unit_z(), do: [{0.0, 0.0, 1.0}]
 
   # ============================================================================
   # COMMON MATRIX CONSTRUCTORS
@@ -755,18 +741,9 @@ defmodule EAGL.Math do
 
     [
       {
-        # Column 0
-        1.0 - (yy + zz),
-        xy + wz,
-        xz - wy,
-        # Column 1
-        xy - wz,
-        1.0 - (xx + zz),
-        yz + wx,
-        # Column 2
-        xz + wy,
-        yz - wx,
-        1.0 - (xx + yy)
+        1.0 - (yy + zz),  xy + wz,          xz - wy,
+        xy - wz,          1.0 - (xx + zz),  yz + wx,
+        xz + wy,          yz - wx,          1.0 - (xx + yy)
       }
     ]
   end
@@ -778,34 +755,14 @@ defmodule EAGL.Math do
   @spec quat_to_mat4(quat()) :: mat4()
   def quat_to_mat4(q) do
     [{m00, m01, m02, m10, m11, m12, m20, m21, m22}] = quat_to_mat3(q)
-
-    # mix format: off
     [
       {
-        # Column 0
-        m00,
-        m01,
-        m02,
-        0.0,
-        # Column 1
-        m10,
-        m11,
-        m12,
-        0.0,
-        # Column 2
-        m20,
-        m21,
-        m22,
-        0.0,
-        # Column 3
-        0.0,
-        0.0,
-        0.0,
-        1.0
+        m00, m01, m02, 0.0,
+        m10, m11, m12, 0.0,
+        m20, m21, m22, 0.0,
+        0.0, 0.0, 0.0, 1.0
       }
     ]
-
-    # mix format: on
   end
 
   @doc """
@@ -921,10 +878,15 @@ defmodule EAGL.Math do
   """
   @spec mat4_mul(mat4(), mat4()) :: mat4()
   def mat4_mul(
-        [{a00, a01, a02, a03, a10, a11, a12, a13, a20, a21, a22, a23, a30, a31, a32, a33}],
-        [{b00, b01, b02, b03, b10, b11, b12, b13, b20, b21, b22, b23, b30, b31, b32, b33}]
+        [{a00, a01, a02, a03,
+          a10, a11, a12, a13,
+          a20, a21, a22, a23,
+          a30, a31, a32, a33}],
+        [{b00, b01, b02, b03,
+          b10, b11, b12, b13,
+          b20, b21, b22, b23,
+          b30, b31, b32, b33}]
       ) do
-    # mix format: off
     [
       {
         # Column 0
@@ -949,8 +911,6 @@ defmodule EAGL.Math do
         a30 * b03 + a31 * b13 + a32 * b23 + a33 * b33
       }
     ]
-
-    # mix format: on
   end
 
   @doc """
@@ -959,10 +919,13 @@ defmodule EAGL.Math do
   """
   @spec mat3_mul(mat3(), mat3()) :: mat3()
   def mat3_mul(
-        [{a00, a01, a02, a10, a11, a12, a20, a21, a22}],
-        [{b00, b01, b02, b10, b11, b12, b20, b21, b22}]
+        [{a00, a01, a02,
+          a10, a11, a12,
+          a20, a21, a22}],
+        [{b00, b01, b02,
+          b10, b11, b12,
+          b20, b21, b22}]
       ) do
-    # mix format: off
     [
       {
         # Column 0
@@ -979,8 +942,6 @@ defmodule EAGL.Math do
         a20 * b02 + a21 * b12 + a22 * b22
       }
     ]
-
-    # mix format: on
   end
 
   @doc """
@@ -989,35 +950,19 @@ defmodule EAGL.Math do
   """
   @spec mat4_transpose(mat4()) :: mat4()
   def mat4_transpose([
-        {m00, m01, m02, m03, m10, m11, m12, m13, m20, m21, m22, m23, m30, m31, m32, m33}
+        {m00, m01, m02, m03,
+         m10, m11, m12, m13,
+         m20, m21, m22, m23,
+         m30, m31, m32, m33}
       ]) do
-    # mix format: off
     [
       {
-        # Column 0 (was row 0)
-        m00,
-        m10,
-        m20,
-        m30,
-        # Column 1 (was row 1)
-        m01,
-        m11,
-        m21,
-        m31,
-        # Column 2 (was row 2)
-        m02,
-        m12,
-        m22,
-        m32,
-        # Column 3 (was row 3)
-        m03,
-        m13,
-        m23,
-        m33
+        m00, m10, m20, m30,
+        m01, m11, m21, m31,
+        m02, m12, m22, m32,
+        m03, m13, m23, m33
       }
     ]
-
-    # mix format: on
   end
 
   @doc """
@@ -1025,26 +970,17 @@ defmodule EAGL.Math do
   Input and output matrices are in column-major order for OpenGL compatibility.
   """
   @spec mat3_transpose(mat3()) :: mat3()
-  def mat3_transpose([{m00, m01, m02, m10, m11, m12, m20, m21, m22}]) do
-    # mix format: off
+  def mat3_transpose([
+        {m00, m01, m02,
+         m10, m11, m12,
+         m20, m21, m22}]) do
     [
       {
-        # Column 0 (was row 0)
-        m00,
-        m10,
-        m20,
-        # Column 1 (was row 1)
-        m01,
-        m11,
-        m21,
-        # Column 2 (was row 2)
-        m02,
-        m12,
-        m22
+        m00, m10, m20,
+        m01, m11, m21,
+        m02, m12, m22
       }
     ]
-
-    # mix format: on
   end
 
   @doc """
@@ -1054,34 +990,12 @@ defmodule EAGL.Math do
   @spec mat4_translate(vec3()) :: mat4()
   def mat4_translate(v) do
     [{x, y, z}] = v
-
-    # mix format: off
     [
       {
-        # Matrix: [ 1.0  0.0  0.0   x  ]   (stored column-major for OpenGL)
-        #         [ 0.0  1.0  0.0   y  ]   Col0: [1,0,0,0]  Col1: [0,1,0,0]
-        #         [ 0.0  0.0  1.0   z  ]   Col2: [0,0,1,0]  Col3: [x,y,z,1]
-        #         [ 0.0  0.0  0.0  1.0 ]
-        # Column 0
-        1.0,
-        0.0,
-        0.0,
-        0.0,
-        # Column 1
-        0.0,
-        1.0,
-        0.0,
-        0.0,
-        # Column 2
-        0.0,
-        0.0,
-        1.0,
-        0.0,
-        # Column 3 (translation)
-        x,
-        y,
-        z,
-        1.0
+        1.0, 0.0, 0.0, 0.0,
+        0.0, 1.0, 0.0, 0.0,
+        0.0, 0.0, 1.0, 0.0,
+        x,   y,   z,   1.0
       }
     ]
 
@@ -1095,38 +1009,14 @@ defmodule EAGL.Math do
   @spec mat4_scale(vec3()) :: mat4()
   def mat4_scale(v) do
     [{x, y, z}] = v
-
-    # mix format: off
     [
       {
-        # Matrix: [  x   0.0  0.0  0.0 ]   (stored column-major for OpenGL)
-        #         [ 0.0   y   0.0  0.0 ]   Col0: [x,0,0,0]   Col1: [0,y,0,0]
-        #         [ 0.0  0.0   z   0.0 ]   Col2: [0,0,z,0]   Col3: [0,0,0,1]
-        #         [ 0.0  0.0  0.0  1.0 ]
-        # Column 0 (X scale)
-        x,
-        0.0,
-        0.0,
-        0.0,
-        # Column 1 (Y scale)
-        0.0,
-        y,
-        0.0,
-        0.0,
-        # Column 2 (Z scale)
-        0.0,
-        0.0,
-        z,
-        0.0,
-        # Column 3
-        0.0,
-        0.0,
-        0.0,
-        1.0
+        x,   0.0, 0.0, 0.0,
+        0.0, y,   0.0, 0.0,
+        0.0, 0.0, z,   0.0,
+        0.0, 0.0, 0.0, 1.0
       }
     ]
-
-    # mix format: on
   end
 
   @doc """
@@ -1137,30 +1027,12 @@ defmodule EAGL.Math do
   def mat4_rotate_x(angle) do
     c = :math.cos(angle)
     s = :math.sin(angle)
-
-    # mix format: off
     [
       {
-        # Column 0
-        1.0,
-        0.0,
-        0.0,
-        0.0,
-        # Column 1 (swapped s and -s for column-major)
-        0.0,
-        c,
-        s,
-        0.0,
-        # Column 2
-        0.0,
-        -s,
-        c,
-        0.0,
-        # Column 3
-        0.0,
-        0.0,
-        0.0,
-        1.0
+        1.0,  0.0, 0.0, 0.0,
+        0.0,  c,   s,   0.0,
+        0.0, -s,   c,   0.0,
+        0.0, 0.0,  0.0, 1.0
       }
     ]
 
@@ -1175,34 +1047,14 @@ defmodule EAGL.Math do
   def mat4_rotate_y(angle) do
     c = :math.cos(angle)
     s = :math.sin(angle)
-
-    # mix format: off
     [
       {
-        # Column 0 (swapped s and -s for column-major)
-        c,
-        0.0,
-        -s,
-        0.0,
-        # Column 1
-        0.0,
-        1.0,
-        0.0,
-        0.0,
-        # Column 2
-        s,
-        0.0,
-        c,
-        0.0,
-        # Column 3
-        0.0,
-        0.0,
-        0.0,
-        1.0
+        c,   0.0, -s,   0.0,
+        0.0, 1.0,  0.0, 0.0,
+        s,   0.0,  c,   0.0,
+        0.0, 0.0,  0.0, 1.0
       }
     ]
-
-    # mix format: on
   end
 
   @doc """
@@ -1213,34 +1065,14 @@ defmodule EAGL.Math do
   def mat4_rotate_z(angle) do
     c = :math.cos(angle)
     s = :math.sin(angle)
-
-    # mix format: off
     [
       {
-        # Column 0 (swapped s and -s for column-major)
-        c,
-        s,
-        0.0,
-        0.0,
-        # Column 1
-        -s,
-        c,
-        0.0,
-        0.0,
-        # Column 2
-        0.0,
-        0.0,
-        1.0,
-        0.0,
-        # Column 3
-        0.0,
-        0.0,
-        0.0,
-        1.0
+        c,   s,   0.0, 0.0,
+       -s,   c,   0.0, 0.0,
+        0.0, 0.0, 1.0, 0.0,
+        0.0, 0.0, 0.0, 1.0
       }
     ]
-
-    # mix format: on
   end
 
   @doc """
@@ -1259,7 +1091,12 @@ defmodule EAGL.Math do
   """
   @spec mat4_inverse(mat4()) :: mat4()
   def mat4_inverse([
-        {m00, m01, m02, m03, m10, m11, m12, m13, m20, m21, m22, m23, m30, m31, m32, m33}
+        {
+          m00, m01, m02, m03,
+          m10, m11, m12, m13,
+          m20, m21, m22, m23,
+          m30, m31, m32, m33
+        }
       ]) do
     # Calculate the 2x2 determinants for the first two rows
     s0 = m00 * m11 - m10 * m01
@@ -1282,34 +1119,8 @@ defmodule EAGL.Math do
 
     # Check for non-invertible matrix
     if abs(det) < 1.0e-14 do
-      # Return the original matrix if not invertible
-      # mix format: off
-      [
-        {
-          # Column 0
-          m00,
-          m01,
-          m02,
-          m03,
-          # Column 1
-          m10,
-          m11,
-          m12,
-          m13,
-          # Column 2
-          m20,
-          m21,
-          m22,
-          m23,
-          # Column 3
-          m30,
-          m31,
-          m32,
-          m33
-        }
-      ]
+      raise ArithmeticError, message: "Matrix is not invertible"
 
-      # mix format: on
     else
       invdet = 1.0 / det
 
@@ -1334,33 +1145,14 @@ defmodule EAGL.Math do
       inv32 = (-m30 * s3 + m31 * s1 - m32 * s0) * invdet
       inv33 = (m20 * s3 - m21 * s1 + m22 * s0) * invdet
 
-      # mix format: off
       [
         {
-          # Column 0
-          inv00,
-          inv01,
-          inv02,
-          inv03,
-          # Column 1
-          inv10,
-          inv11,
-          inv12,
-          inv13,
-          # Column 2
-          inv20,
-          inv21,
-          inv22,
-          inv23,
-          # Column 3
-          inv30,
-          inv31,
-          inv32,
-          inv33
+          inv00, inv01, inv02, inv03,
+          inv10, inv11, inv12, inv13,
+          inv20, inv21, inv22, inv23,
+          inv30, inv31, inv32, inv33
         }
       ]
-
-      # mix format: on
     end
   end
 
@@ -1375,38 +1167,14 @@ defmodule EAGL.Math do
   @spec mat4_perspective(float(), float(), float(), float()) :: mat4()
   def mat4_perspective(fov_y, aspect_ratio, z_near, z_far) do
     tan_half_fov = :math.tan(fov_y * 0.5)
-
-    # mix format: off
     [
       {
-        # Matrix: [ 1/(aspect*tan_fov)    0               0                    0          ]   (column-major)
-        #         [        0         1/tan_fov          0                    0          ]
-        #         [        0              0      -(far+near)/(far-near)     -1         ]
-        #         [        0              0      -2*far*near/(far-near)      0         ]
-        # Column 0
-        1.0 / (aspect_ratio * tan_half_fov),
-        0.0,
-        0.0,
-        0.0,
-        # Column 1
-        0.0,
-        1.0 / tan_half_fov,
-        0.0,
-        0.0,
-        # Column 2
-        0.0,
-        0.0,
-        -(z_far + z_near) / (z_far - z_near),
-        -1.0,
-        # Column 3
-        0.0,
-        0.0,
-        -(2.0 * z_far * z_near) / (z_far - z_near),
-        0.0
+        1.0 / (aspect_ratio * tan_half_fov), 0.0,                  0.0,                                        0.0,
+        0.0,                                 1.0 / tan_half_fov,   0.0,                                        0.0,
+        0.0,                                 0.0,                 -(z_far + z_near) / (z_far - z_near),       -1.0,
+        0.0,                                 0.0,                 -(2.0 * z_far * z_near) / (z_far - z_near),  0.0
       }
     ]
-
-    # mix format: on
   end
 
   @doc """
@@ -1415,37 +1183,14 @@ defmodule EAGL.Math do
   """
   @spec mat4_ortho(float(), float(), float(), float(), float(), float()) :: mat4()
   def mat4_ortho(left, right, bottom, top, z_near, z_far) do
-    # mix format: off
     [
       {
-        # Matrix: [   2/(r-l)       0          0       -(r+l)/(r-l)  ]   (column-major)
-        #         [      0      2/(t-b)       0       -(t+b)/(t-b)  ]
-        #         [      0         0     -2/(f-n)    -(f+n)/(f-n)  ]
-        #         [      0         0         0             1       ]
-        # Column 0
-        2.0 / (right - left),
-        0.0,
-        0.0,
-        0.0,
-        # Column 1
-        0.0,
-        2.0 / (top - bottom),
-        0.0,
-        0.0,
-        # Column 2
-        0.0,
-        0.0,
-        -2.0 / (z_far - z_near),
-        0.0,
-        # Column 3
-        -(right + left) / (right - left),
-        -(top + bottom) / (top - bottom),
-        -(z_far + z_near) / (z_far - z_near),
-        1.0
+        2.0 / (right - left),             0.0,                               0.0,                                 0.0,
+        0.0,                              2.0 / (top - bottom),              0.0,                                 0.0,
+        0.0,                              0.0,                              -2.0 / (z_far - z_near),              0.0,
+      -(right + left) / (right - left),  -(top + bottom) / (top - bottom),  -(z_far + z_near) / (z_far - z_near), 1.0
       }
     ]
-
-    # mix format: on
   end
 
   @doc """
@@ -1468,33 +1213,14 @@ defmodule EAGL.Math do
     # Match GLM's lookAtRH matrix layout exactly
     # GLM stores: Result[col][row] = value
     # Our column-major tuple: {col0_r0, col0_r1, col0_r2, col0_r3, col1_r0, ...}
-    # mix format: off
     [
       {
-        # Column 0: right vector components
-        sx,
-        ux,
-        -fx,
-        0.0,
-        # Column 1: up vector components
-        sy,
-        uy,
-        -fy,
-        0.0,
-        # Column 2: forward vector components
-        sz,
-        uz,
-        -fz,
-        0.0,
-        # Column 3: translation
-        -dot(s, eye),
-        -dot(u, eye),
-        dot(f, eye),
-        1.0
+        sx,            ux,          -fx,          0.0,
+        sy,            uy,          -fy,          0.0,
+        sz,            uz,          -fz,          0.0,
+       -dot(s, eye),  -dot(u, eye),  dot(f, eye), 1.0
       }
     ]
-
-    # mix format: on
   end
 
   # ============================================================================
@@ -1507,32 +1233,14 @@ defmodule EAGL.Math do
   """
   @spec mat4_transform_point(mat4(), vec3()) :: vec3()
   def mat4_transform_point(
-        # mix format: off
         [
           {
-            # Column 0
-            m00,
-            m01,
-            m02,
-            m03,
-            # Column 1
-            m10,
-            m11,
-            m12,
-            m13,
-            # Column 2
-            m20,
-            m21,
-            m22,
-            m23,
-            # Column 3
-            m30,
-            m31,
-            m32,
-            m33
+            m00, m01, m02, m03,
+            m10, m11, m12, m13,
+            m20, m21, m22, m23,
+            m30, m31, m32, m33
           }
         ],
-        # mix format: on
         [{x, y, z}]
       ) do
     # Multiply as if the vector has w=1
@@ -1555,32 +1263,14 @@ defmodule EAGL.Math do
   """
   @spec mat4_transform_vector(mat4(), vec3()) :: vec3()
   def mat4_transform_vector(
-        # mix format: off
         [
           {
-            # Column 0
-            m00,
-            m01,
-            m02,
-            _m03,
-            # Column 1
-            m10,
-            m11,
-            m12,
-            _m13,
-            # Column 2
-            m20,
-            m21,
-            m22,
-            _m23,
-            # Column 3 (ignored for direction vectors)
-            _m30,
-            _m31,
-            _m32,
-            _m33
+            m00,  m01,  m02, _m03,
+            m10,  m11,  m12, _m13,
+            m20,  m21,  m22, _m23,
+           _m30, _m31, _m32, _m33
           }
         ],
-        # mix format: on
         [{x, y, z}]
       ) do
     # Multiply as if the vector has w=0 (ignore translation)
@@ -1595,32 +1285,14 @@ defmodule EAGL.Math do
   """
   @spec mat4_transform_vec4(mat4(), vec4()) :: vec4()
   def mat4_transform_vec4(
-        # mix format: off
         [
           {
-            # Column 0
-            m00,
-            m01,
-            m02,
-            m03,
-            # Column 1
-            m10,
-            m11,
-            m12,
-            m13,
-            # Column 2
-            m20,
-            m21,
-            m22,
-            m23,
-            # Column 3
-            m30,
-            m31,
-            m32,
-            m33
+            m00, m01, m02, m03,
+            m10, m11, m12, m13,
+            m20, m21, m22, m23,
+            m30, m31, m32, m33
           }
         ],
-        # mix format: on
         [{x, y, z, w}]
       ) do
     new_x = m00 * x + m10 * y + m20 * z + m30 * w
