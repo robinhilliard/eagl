@@ -67,7 +67,10 @@ defmodule ExamplesTest do
     {EAGL.Examples.LearnOpenGL.GettingStarted.CameraCircle, "7.1 Camera Circle"},
     {EAGL.Examples.LearnOpenGL.GettingStarted.CameraKeyboardDt,
      "7.2 Camera Keyboard + Delta Time"},
-    {EAGL.Examples.LearnOpenGL.GettingStarted.CameraMouseZoom, "7.3 Camera Mouse + Zoom"}
+    {EAGL.Examples.LearnOpenGL.GettingStarted.CameraMouseZoom, "7.3 Camera Mouse + Zoom"},
+
+    # Lighting
+    {EAGL.Examples.LearnOpenGL.Lighting.Colors, "2.1 Colors"}
   ]
 
   # Non-interactive examples that complete immediately

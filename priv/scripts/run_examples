@@ -53,6 +53,10 @@ show_menu() {
     echo -e "  ${YELLOW}Camera:${NC}           ${CYAN}171)${NC} 7.1 Circle    ${CYAN}172)${NC} 7.2 Keyboard+DT ${CYAN}173)${NC} 7.3 Mouse+Zoom"
     echo -e "                    ${CYAN}174)${NC} 7.4 Camera Class ${CYAN}175)${NC} 7.5 FPS Camera  ${CYAN}176)${NC} 7.6 Custom LookAt"
     echo
+    echo -e "${BLUE}2. Learn OpenGL Lighting Examples:${NC}"
+    echo
+    echo -e "  ${YELLOW}Colors:${NC}           ${CYAN}211)${NC} 1.1 Colors"
+    echo
     echo -e "${PURPLE}════════════════════════════════════════════════════════════════${NC}"
 }
 
@@ -164,11 +168,15 @@ run_example() {
         176)
             module="EAGL.Examples.LearnOpenGL.GettingStarted.CameraExercise2"
             ;;
+        211)
+            module="EAGL.Examples.LearnOpenGL.Lighting.Colors"
+            ;;
         *)
             echo -e "${RED}Invalid choice: $choice${NC}"
             echo -e "${YELLOW}Available examples:${NC}"
             echo -e "${YELLOW}- Non-Learn OpenGL: 01, 02${NC}"
             echo -e "${YELLOW}- Learn OpenGL Getting Started: 111, 112, 121-125, 131-136, 141-146, 151-153, 161-164, 171-176${NC}"
+            echo -e "${YELLOW}- Learn OpenGL Lighting: 211${NC}"
             return 1
             ;;
     esac
@@ -199,7 +207,7 @@ while true; do
         r|R|refresh)
             continue
             ;;
-        01|02|111|112|121|122|123|124|125|131|132|133|134|135|136|141|142|143|144|145|146|151|152|153|161|162|163|164|171|172|173|174|175|176)
+        01|02|111|112|121|122|123|124|125|131|132|133|134|135|136|141|142|143|144|145|146|151|152|153|161|162|163|164|171|172|173|174|175|176|211)
             clear
             if run_example "$choice"; then
                 echo
@@ -212,7 +220,7 @@ while true; do
             ;;
         *)
             echo -e "${RED}Invalid input.${NC}"
-            echo -e "${YELLOW}Valid codes: 01, 02, 111, 112, 121-125, 131-136, 141-146, 151-153, 161-164, 171-176${NC}"
+            echo -e "${YELLOW}Valid codes: 01, 02, 111, 112, 121-125, 131-136, 141-146, 151-153, 161-164, 171-176, 211${NC}"
             echo -n "Press ENTER to continue..."
             read -r
             ;;
