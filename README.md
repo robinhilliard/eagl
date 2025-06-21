@@ -141,15 +141,12 @@ projection = mat4_perspective(radians(45.0), 16.0/9.0, 0.1, 100.0)
 
 ### Camera System
 
-EAGL provides a comprehensive first-person camera system based on the LearnOpenGL camera class, offering intuitive FPS-style controls with mouse look, keyboard movement, and scroll zoom functionality.
+EAGL provides a first-person camera system based on the LearnOpenGL camera class.
 
 - **Euler Angle Camera**: Uses yaw and pitch angles for smooth rotation
 - **WASD Movement**: Standard FPS keyboard controls with frame-rate independent movement  
 - **Mouse Look**: Mouse movement for camera rotation with pitch constraints
-- **Scroll Zoom**: Field of view adjustment via scroll wheel (1° to 45°)
-- **View Matrix Generation**: Automatic view matrix creation for rendering pipeline
-- **Delta Time Support**: Frame-rate independent movement for smooth gameplay
-- **Pitch Constraints**: Prevents camera flipping at extreme angles (±89°)
+- **Scroll Zoom**: Field of view adjustment via scroll wheel
 
 ```elixir
 import EAGL.Camera
@@ -193,49 +190,6 @@ def handle_event({:mouse_wheel, _, _, _, wheel_delta}, %{camera: camera} = state
   {:ok, %{state | camera: camera}}
 end
 ```
-
-**Complete Window Integration:**
-
-```elixir
-defmodule CameraExample do
-  use EAGL.Window
-  import EAGL.Camera
-  
-  def run_example do
-    EAGL.Window.run(__MODULE__, "Camera Demo", depth_testing: true, mouse_capture: true)
-  end
-  
-  @impl true
-  def setup do
-    {:ok, %{
-      camera: Camera.new(position: vec3(0.0, 0.0, 3.0)),
-      last_frame: :erlang.monotonic_time(:millisecond),
-      last_mouse: {512, 384}
-    }}
-  end
-  
-  # Calculate delta time and handle WASD/mouse events as shown above
-end
-```
-
-**Camera Properties** (all struct fields are directly accessible):
-```elixir
-position = camera.position  # vec3 - current world position
-front = camera.front       # vec3 - forward direction vector
-yaw = camera.yaw           # float - horizontal rotation (degrees)
-pitch = camera.pitch       # float - vertical rotation (degrees)  
-zoom = camera.zoom         # float - field of view (degrees)
-```
-
-**Key Features:**
-
-- **Orthonormal Vectors**: Camera maintains proper front/right/up vector relationships
-- **Smooth Controls**: Delta time support ensures consistent movement across frame rates
-- **Pitch Constraints**: Prevents gimbal lock by limiting vertical rotation to ±89°
-- **Zoom Constraints**: Field of view clamped between 1° and 45° for usable zoom range
-- **Mouse Sensitivity**: Adapted sensitivity (0.005) for natural first-person camera feel
-- **LearnOpenGL Compatible**: Direct port of the OpenGL tutorial camera with identical behavior
-- **Coordinate System Fix**: Uses corrected `mat4_look_at` implementation for proper camera rotation
 
 ### Shader Management
 
