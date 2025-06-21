@@ -121,6 +121,7 @@ defmodule EAGL.Examples.LearnOpenGL.Lighting.Colors do
 
   # Light position in world space - ORIGINAL C++ TUTORIAL COORDINATES
   @light_pos vec3(1.2, 1.0, 2.0)
+  @light_scale vec3(0.2, 0.2, 0.2)
 
   @spec run_example() :: :ok | {:error, term()}
   def run_example(opts \\ []) do
@@ -296,12 +297,7 @@ defmodule EAGL.Examples.LearnOpenGL.Lighting.Colors do
     set_uniform(state.light_cube_program, "view", view)
 
     # Set model matrix for light cube (translated to light position and scaled down)
-    # Matrix: translate_matrix * scale_matrix (applies scale first, then translate to vertex)
-    light_model =
-      vec3(0.2, 0.2, 0.2)
-      |> mat4_scale()
-      |> mat4_mul(mat4_translate(@light_pos))
-      |> mat4_mul(mat4_identity())
+    light_model = mat4_scale(@light_scale) <~ mat4_translate(@light_pos) <~ mat4_identity()
 
     set_uniform(state.light_cube_program, "model", light_model)
 

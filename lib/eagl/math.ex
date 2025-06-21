@@ -873,6 +873,15 @@ defmodule EAGL.Math do
   # ============================================================================
 
   @doc """
+  Convenience operator for the most common form of matrix multiplication, 4x4
+  The right-to-left arrow reminds us of the order of application
+  """
+  @spec mat4() <~ mat4() :: mat4()
+  def a <~ b do
+    mat4_mul(a, b)
+  end
+
+  @doc """
   Multiply two 4x4 matrices.
   All matrices are in column-major order for OpenGL compatibility.
   """
@@ -911,6 +920,15 @@ defmodule EAGL.Math do
         a30 * b03 + a31 * b13 + a32 * b23 + a33 * b33
       }
     ]
+  end
+
+  @doc """
+  Convenience operator for the less common form of matrix multiplication, 3x3
+  The right-to-left arrow reminds us of the order of application
+  """
+  @spec mat3() <<~ mat3() :: mat3()
+  def a <<~ b do
+    mat3_mul(a, b)
   end
 
   @doc """
