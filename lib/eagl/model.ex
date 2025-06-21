@@ -95,10 +95,10 @@ defmodule EAGL.Model do
       {:ok, model_data} ->
         # Validate model data before creating VAO
         cond do
-          is_nil(model_data.vertices) or length(model_data.vertices) == 0 ->
+          Enum.empty?(model_data.vertices) ->
             {:error, "Invalid model: no vertices found"}
 
-          is_nil(model_data.indices) or length(model_data.indices) == 0 ->
+          Enum.empty?(model_data.indices) ->
             {:error, "Invalid model: no indices found"}
 
           true ->
