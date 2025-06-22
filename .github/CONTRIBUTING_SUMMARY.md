@@ -87,6 +87,7 @@ IO.puts("Learning objectives...")
 - Include practical code examples
 - Document complex algorithms and OpenGL concepts
 - Maintain consistent project structure documentation
+- There is no need to describe changes/improvements to code outside the CHANGELOG.
 
 ## Key Project Patterns
 
