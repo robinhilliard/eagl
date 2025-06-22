@@ -520,7 +520,7 @@ defmodule EAGL.MathTest do
       assert_matrices_equal(product, identity)
     end
 
-    test "mat4_inverse of singular matrix returns original" do
+    test "mat4_inverse of singular matrix raises error" do
       # Create a matrix with zero determinant (all elements zero except last)
       singular =
         mat4(
@@ -542,9 +542,10 @@ defmodule EAGL.MathTest do
           1.0
         )
 
-      result = mat4_inverse(singular)
-      # Should return the original matrix since it's not invertible
-      assert result == singular
+      # Should raise ArithmeticError since the matrix is not invertible
+      assert_raise ArithmeticError, "Matrix is not invertible", fn ->
+        mat4_inverse(singular)
+      end
     end
 
     test "mat4_inverse preserves orthogonal matrices" do
