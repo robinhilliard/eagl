@@ -70,14 +70,10 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.CameraKeyboardDt do
   @camera_speed 2.5
 
   # Key codes for movement (handling both upper and lowercase)
-  @key_w_upper 87
-  @key_w_lower 119
-  @key_a_upper 65
-  @key_a_lower 97
-  @key_s_upper 83
-  @key_s_lower 115
-  @key_d_upper 68
-  @key_d_lower 100
+  @key_w 119
+  @key_a 97
+  @key_s 115
+  @key_d 100
 
   # 3D cube vertex data with positions and texture coordinates
   @vertices ~v'''
@@ -256,9 +252,7 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.CameraKeyboardDt do
          projection: projection,
          # Timing for delta time
          current_time: current_time,
-         last_frame_time: current_time,
-         # Input state
-         keys_pressed: %{}
+         last_frame_time: current_time
        }}
     else
       {:error, reason} ->
@@ -313,24 +307,38 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.CameraKeyboardDt do
   end
 
   @impl true
-  def handle_event({:key, key_code}, state) do
-    # Update keys pressed state based on key events
-    new_keys = Map.put(state.keys_pressed, key_code, true)
-    {:ok, %{state | keys_pressed: new_keys}}
-  end
-
-  @impl true
   def handle_event(:tick, state) do
     current_time = :erlang.monotonic_time(:millisecond) / 1000.0
     delta_time = current_time - state.last_frame_time
+    velocity = @camera_speed * delta_time
+    camera_up = vec3(0.0, 1.0, 0.0)
+    camera_front = state.camera_front
 
-    # Process camera movement based on currently pressed keys
     new_camera_pos =
-      process_camera_movement(
-        state.camera_pos,
-        state.camera_front,
-        state.keys_pressed,
-        delta_time
+      state.camera_pos
+      # W
+      |> vec_add(
+        if :wx_misc.getKeyState(@key_w),
+          do: vec_scale(camera_front, velocity),
+          else: vec3_zero()
+      )
+      # S
+      |> vec_add(
+        if :wx_misc.getKeyState(@key_s),
+          do: vec_scale(camera_front, -velocity),
+          else: vec3_zero()
+      )
+      # A
+      |> vec_add(
+        if :wx_misc.getKeyState(@key_a),
+          do: vec_scale(normalize(cross(camera_front, camera_up)), -velocity),
+          else: vec3_zero()
+      )
+      # D
+      |> vec_add(
+        if :wx_misc.getKeyState(@key_d),
+          do: vec_scale(normalize(cross(camera_front, camera_up)), velocity),
+          else: vec3_zero()
       )
 
     # Update view matrix only if camera position changed
@@ -343,10 +351,6 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.CameraKeyboardDt do
         {state.target_pos, state.view}
       end
 
-    # Clear keys pressed (they'll be re-added if still pressed)
-    # This ensures we only process keys that are actively being pressed
-    new_keys = %{}
-
     {:ok,
      %{
        state
@@ -354,8 +358,7 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.CameraKeyboardDt do
          last_frame_time: current_time,
          camera_pos: new_camera_pos,
          target_pos: new_target_pos,
-         view: new_view,
-         keys_pressed: new_keys
+         view: new_view
      }}
   end
 
@@ -378,47 +381,5 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.CameraKeyboardDt do
 
     check("After cleanup")
     :ok
-  end
-
-  # Private function to process camera movement based on input
-  defp process_camera_movement(camera_pos, camera_front, keys_pressed, delta_time) do
-    # Calculate movement velocity based on delta time
-    velocity = @camera_speed * delta_time
-
-    # World up vector for calculating right vector
-    camera_up = vec3(0.0, 1.0, 0.0)
-
-    # Process each movement key
-    new_pos =
-      keys_pressed
-      |> Enum.reduce(camera_pos, fn {key_code, _pressed}, pos ->
-        case key_code do
-          # W key - move forward
-          key when key == @key_w_upper or key == @key_w_lower ->
-            vec_add(pos, vec_scale(camera_front, velocity))
-
-          # S key - move backward
-          key when key == @key_s_upper or key == @key_s_lower ->
-            vec_sub(pos, vec_scale(camera_front, velocity))
-
-          # A key - strafe left
-          key when key == @key_a_upper or key == @key_a_lower ->
-            # Calculate and normalize right vector, then scale by velocity
-            camera_right = normalize(cross(camera_front, camera_up))
-            vec_sub(pos, vec_scale(camera_right, velocity))
-
-          # D key - strafe right
-          key when key == @key_d_upper or key == @key_d_lower ->
-            # Calculate and normalize right vector, then scale by velocity
-            camera_right = normalize(cross(camera_front, camera_up))
-            vec_add(pos, vec_scale(camera_right, velocity))
-
-          # Ignore other keys
-          _ ->
-            pos
-        end
-      end)
-
-    new_pos
   end
 end
