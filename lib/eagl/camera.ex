@@ -310,6 +310,139 @@ defmodule EAGL.Camera do
     %{camera | zoom: new_zoom}
   end
 
+  @doc """
+  Process all keyboard input for camera movement using direct key state checking.
+
+  This function checks the current state of WASD keys and applies movement
+  accordingly. It uses `:wx_misc.getKeyState()` for reliable input detection,
+  providing the same approach as examples 7.2 and 7.3.
+
+  ## Parameters
+
+  - `camera` - The camera struct
+  - `delta_time` - Time since last frame in seconds
+
+  ## Key Mappings
+
+  - `W` (119) - Move forward
+  - `A` (97) - Strafe left
+  - `S` (115) - Move backward
+  - `D` (100) - Strafe right
+
+  ## Examples
+
+      # Process all keyboard input at once
+      camera = EAGL.Camera.process_keyboard_input(camera, delta_time)
+
+  This approach is simpler and more reliable than individual key event handling,
+  matching the proven pattern from examples 7.2 and 7.3.
+  """
+  def process_keyboard_input(camera, delta_time) do
+    velocity = camera.movement_speed * delta_time
+
+    camera.position
+    # W - forward
+    |> vec_add(
+      if :wx_misc.getKeyState(119),
+        do: vec_scale(camera.front, velocity),
+        else: vec3_zero()
+    )
+    # S - backward
+    |> vec_add(
+      if :wx_misc.getKeyState(115),
+        do: vec_scale(camera.front, -velocity),
+        else: vec3_zero()
+    )
+    # A - strafe left
+    |> vec_add(
+      if :wx_misc.getKeyState(97),
+        do: vec_scale(camera.right, -velocity),
+        else: vec3_zero()
+    )
+    # D - strafe right
+    |> vec_add(
+      if :wx_misc.getKeyState(100),
+        do: vec_scale(camera.right, velocity),
+        else: vec3_zero()
+         )
+     |> then(&%{camera | position: &1})
+   end
+
+  @doc """
+  Process all keyboard input for FPS camera movement using direct key state checking.
+
+  This function provides the same simplified approach as `process_keyboard_input/2` but
+  constrains movement to the XZ plane for realistic first-person shooter camera behavior.
+  Movement vectors are projected horizontally to prevent "flying" when looking up/down.
+
+  ## Parameters
+
+  - `camera` - The camera struct
+  - `delta_time` - Time since last frame in seconds
+  - `ground_level` - Y-coordinate to constrain camera position to
+
+  ## Key Mappings
+
+  - `W` (119) - Move forward (horizontally)
+  - `A` (97) - Strafe left (horizontally)
+  - `S` (115) - Move backward (horizontally)
+  - `D` (100) - Strafe right (horizontally)
+
+  ## Examples
+
+      # Process FPS keyboard input at ground level 1.5
+      camera = EAGL.Camera.process_fps_keyboard_input(camera, delta_time, 1.5)
+
+  This approach maintains the Y-coordinate at the specified ground level regardless
+  of camera pitch, providing natural ground-based navigation.
+  """
+  def process_fps_keyboard_input(camera, delta_time, ground_level) do
+    velocity = camera.movement_speed * delta_time
+
+    # Get camera vectors and create horizontal-only movement vectors (Y = 0)
+    front = camera.front
+    right = camera.right
+
+    [{front_x, _front_y, front_z}] = front
+    [{right_x, _right_y, right_z}] = right
+
+    horizontal_front = normalize(vec3(front_x, 0.0, front_z))
+    horizontal_right = normalize(vec3(right_x, 0.0, right_z))
+
+    new_position =
+      camera.position
+      # W - forward
+      |> vec_add(
+        if :wx_misc.getKeyState(119),
+          do: vec_scale(horizontal_front, velocity),
+          else: vec3_zero()
+      )
+      # S - backward
+      |> vec_add(
+        if :wx_misc.getKeyState(115),
+          do: vec_scale(horizontal_front, -velocity),
+          else: vec3_zero()
+      )
+      # A - strafe left
+      |> vec_add(
+        if :wx_misc.getKeyState(97),
+          do: vec_scale(horizontal_right, -velocity),
+          else: vec3_zero()
+      )
+      # D - strafe right
+      |> vec_add(
+        if :wx_misc.getKeyState(100),
+          do: vec_scale(horizontal_right, velocity),
+          else: vec3_zero()
+      )
+
+    # Force Y coordinate to ground level (FPS constraint)
+    [{new_x, _new_y, new_z}] = new_position
+    constrained_position = vec3(new_x, ground_level, new_z)
+
+    %{camera | position: constrained_position}
+  end
+
   # Private function to recalculate camera vectors from Euler angles
   defp update_camera_vectors(camera) do
     # Convert degrees to radians

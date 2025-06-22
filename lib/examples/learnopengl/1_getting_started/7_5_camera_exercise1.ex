@@ -229,8 +229,6 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.CameraExercise1 do
         yaw: -90.0,
         pitch: 0.0,
         movement_speed: 3.0,
-        # Reduced for natural first-person feel
-        mouse_sensitivity: 0.1,
         zoom: 45.0
       )
 
@@ -253,8 +251,7 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.CameraExercise1 do
        last_frame_time: current_time,
        last_mouse_x: 400.0,
        last_mouse_y: 300.0,
-       first_mouse: true,
-       keys_pressed: %{}
+       first_mouse: true
      }}
   end
 
@@ -323,41 +320,16 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.CameraExercise1 do
     current_time = :erlang.monotonic_time(:millisecond) / 1000.0
     delta_time = current_time - state.last_frame_time
 
-    # Process FPS movement - this is the key difference from 7.4
-    updated_camera =
-      Enum.reduce(state.keys_pressed, state.camera, fn {key, _pressed}, camera ->
-        case key do
-          :w -> process_fps_movement(camera, :forward, delta_time, state.ground_level)
-          :s -> process_fps_movement(camera, :backward, delta_time, state.ground_level)
-          :a -> process_fps_movement(camera, :left, delta_time, state.ground_level)
-          :d -> process_fps_movement(camera, :right, delta_time, state.ground_level)
-          _ -> camera
-        end
-      end)
+    # Process FPS movement using simplified keyboard input function
+    updated_camera = Camera.process_fps_keyboard_input(state.camera, delta_time, state.ground_level)
 
     {:ok,
      %{
        state
        | current_time: current_time,
          last_frame_time: current_time,
-         camera: updated_camera,
-         keys_pressed: %{}
+         camera: updated_camera
      }}
-  end
-
-  # Handle keyboard input
-  def handle_event({:key, key_code}, state) do
-    case key_code do
-      # W
-      87 -> {:ok, %{state | keys_pressed: Map.put(state.keys_pressed, :w, true)}}
-      # S
-      83 -> {:ok, %{state | keys_pressed: Map.put(state.keys_pressed, :s, true)}}
-      # A
-      65 -> {:ok, %{state | keys_pressed: Map.put(state.keys_pressed, :a, true)}}
-      # D
-      68 -> {:ok, %{state | keys_pressed: Map.put(state.keys_pressed, :d, true)}}
-      _ -> {:ok, state}
-    end
   end
 
   # Handle mouse movement (unchanged from 7.4)
@@ -394,45 +366,5 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.CameraExercise1 do
     {:ok, state}
   end
 
-  # FPS Movement Helper Function
-  # This is the core of the exercise - movement constrained to XZ plane
-  defp process_fps_movement(camera, direction, delta_time, ground_level) do
-    velocity = camera.movement_speed * delta_time
-    current_pos = camera.position
 
-    # Get camera vectors
-    front = camera.front
-    right = camera.right
-
-    # Create horizontal-only movement vectors (Y = 0)
-    # This ensures movement stays on the XZ plane
-    [{front_x, _front_y, front_z}] = front
-    horizontal_front = normalize(vec3(front_x, 0.0, front_z))
-
-    [{right_x, _right_y, right_z}] = right
-    horizontal_right = normalize(vec3(right_x, 0.0, right_z))
-
-    # Calculate new position based on direction
-    new_position =
-      case direction do
-        :forward ->
-          vec_add(current_pos, vec_scale(horizontal_front, velocity))
-
-        :backward ->
-          vec_sub(current_pos, vec_scale(horizontal_front, velocity))
-
-        :left ->
-          vec_sub(current_pos, vec_scale(horizontal_right, velocity))
-
-        :right ->
-          vec_add(current_pos, vec_scale(horizontal_right, velocity))
-      end
-
-    # Force Y coordinate to ground level (FPS constraint)
-    [{new_x, _new_y, new_z}] = new_position
-    constrained_position = vec3(new_x, ground_level, new_z)
-
-    # Update camera with the constrained position
-    %{camera | position: constrained_position}
-  end
 end

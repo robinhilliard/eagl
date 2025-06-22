@@ -46,7 +46,7 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.CameraClass do
 
   # Camera Class (7.4) - Clean and maintainable
   camera: Camera.new(position: vec3(0.0, 0.0, 3.0))
-  camera = Camera.process_keyboard(camera, :forward, delta_time)
+  camera = Camera.process_keyboard_input(camera, delta_time)
   camera = Camera.process_mouse_movement(camera, x_offset, y_offset)
   view = Camera.get_view_matrix(camera)
   ```
@@ -245,7 +245,6 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.CameraClass do
         yaw: -90.0,
         pitch: 0.0,
         movement_speed: 2.5,
-        mouse_sensitivity: 0.05,
         zoom: 45.0
       )
 
@@ -267,9 +266,7 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.CameraClass do
        # Mouse state for tracking movement
        last_mouse_x: 400.0,
        last_mouse_y: 300.0,
-       first_mouse: true,
-       # Input state
-       keys_pressed: %{}
+       first_mouse: true
      }}
   end
 
@@ -342,45 +339,16 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.CameraClass do
     current_time = :erlang.monotonic_time(:millisecond) / 1000.0
     delta_time = current_time - state.last_frame_time
 
-    # Process camera movement using the Camera module
-    # This demonstrates cleaner code organisation compared to 7.3's manual processing
-    updated_camera =
-      Enum.reduce(state.keys_pressed, state.camera, fn {key, _pressed}, camera ->
-        case key do
-          :w -> Camera.process_keyboard(camera, :forward, delta_time)
-          :s -> Camera.process_keyboard(camera, :backward, delta_time)
-          :a -> Camera.process_keyboard(camera, :left, delta_time)
-          :d -> Camera.process_keyboard(camera, :right, delta_time)
-          _ -> camera
-        end
-      end)
-
-    # Clear keys pressed (they'll be re-added if still pressed)
-    new_keys = %{}
+    # Process camera movement using simplified keyboard input function
+    updated_camera = Camera.process_keyboard_input(state.camera, delta_time)
 
     {:ok,
      %{
        state
        | current_time: current_time,
          last_frame_time: current_time,
-         camera: updated_camera,
-         keys_pressed: new_keys
+         camera: updated_camera
      }}
-  end
-
-  # Handle keyboard input for camera movement (WASD)
-  def handle_event({:key, key_code}, state) do
-    case key_code do
-      # W - forward
-      87 -> {:ok, %{state | keys_pressed: Map.put(state.keys_pressed, :w, true)}}
-      # S - backward
-      83 -> {:ok, %{state | keys_pressed: Map.put(state.keys_pressed, :s, true)}}
-      # A - strafe left
-      65 -> {:ok, %{state | keys_pressed: Map.put(state.keys_pressed, :a, true)}}
-      # D - strafe right
-      68 -> {:ok, %{state | keys_pressed: Map.put(state.keys_pressed, :d, true)}}
-      _ -> {:ok, state}
-    end
   end
 
   # Handle mouse movement for camera look around

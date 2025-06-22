@@ -59,10 +59,9 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.CameraMouseZoom do
   - **W/A/S/D**: Move forward/left/backward/right
   - **ENTER**: Exit (when run with enter_to_exit: true)
 
-  **Note**: This example combines the keyboard movement from 7.2 with the mouse look
+    **Note**: This example combines the keyboard movement from 7.2 with the mouse look
   and zoom functionality, providing a complete camera control system. Keyboard input
-  is processed immediately when keys are pressed (matching C++ approach) rather than
-  being deferred to frame updates.
+  provides continuous movement while keys are held down, matching the C++ behaviour.
 
   ## Technical Implementation
 
@@ -108,14 +107,10 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.CameraMouseZoom do
   @camera_speed 2.5
 
   # Key codes for movement (handling both upper and lowercase)
-  @key_w_upper 87
-  @key_w_lower 119
-  @key_a_upper 65
-  @key_a_lower 97
-  @key_s_upper 83
-  @key_s_lower 115
-  @key_d_upper 68
-  @key_d_lower 100
+  @key_w 119
+  @key_a 97
+  @key_s 115
+  @key_d 100
 
   def run_example(opts \\ []) do
     EAGL.Window.run(
@@ -299,8 +294,7 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.CameraMouseZoom do
        last_mouse_x: last_mouse_x,
        last_mouse_y: last_mouse_y,
        # Flag to ignore first mouse movement
-       first_mouse: true,
-       mouse_sensitivity: 0.1
+       first_mouse: true
      }}
   end
 
@@ -369,12 +363,44 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.CameraMouseZoom do
   @impl true
   def handle_event(:tick, state) do
     current_time = :erlang.monotonic_time(:millisecond) / 1000.0
+    delta_time = current_time - state.last_frame_time
+    velocity = @camera_speed * delta_time
+    camera_up = vec3(0.0, 1.0, 0.0)
+    camera_front = state.camera_front
+
+    new_camera_pos =
+      state.camera_pos
+      # W
+      |> vec_add(
+        if :wx_misc.getKeyState(@key_w),
+          do: vec_scale(camera_front, velocity),
+          else: vec3_zero()
+      )
+      # S
+      |> vec_add(
+        if :wx_misc.getKeyState(@key_s),
+          do: vec_scale(camera_front, -velocity),
+          else: vec3_zero()
+      )
+      # A
+      |> vec_add(
+        if :wx_misc.getKeyState(@key_a),
+          do: vec_scale(normalize(cross(camera_front, camera_up)), -velocity),
+          else: vec3_zero()
+      )
+      # D
+      |> vec_add(
+        if :wx_misc.getKeyState(@key_d),
+          do: vec_scale(normalize(cross(camera_front, camera_up)), velocity),
+          else: vec3_zero()
+      )
 
     {:ok,
      %{
        state
        | current_time: current_time,
-         last_frame_time: current_time
+         last_frame_time: current_time,
+         camera_pos: new_camera_pos
      }}
   end
 
@@ -393,9 +419,10 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.CameraMouseZoom do
       # Reversed since y-coordinates go from bottom to top
       y_offset = state.last_mouse_y - mouse_y
 
-      # Apply sensitivity
-      x_offset = x_offset * state.mouse_sensitivity
-      y_offset = y_offset * state.mouse_sensitivity
+      # Apply mouse sensitivity (using EAGL default of 0.05 for natural feel)
+      mouse_sensitivity = 0.05
+      x_offset = x_offset * mouse_sensitivity
+      y_offset = y_offset * mouse_sensitivity
 
       # Update yaw and pitch
       new_yaw = state.yaw + x_offset
@@ -450,52 +477,12 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.CameraMouseZoom do
     {:ok, %{state | fov: new_fov}}
   end
 
-  # Handle keyboard input for camera movement (immediate processing like C++)
-  def handle_event({:key, key_code}, state) do
-    # Calculate delta time for movement
-    current_time = :erlang.monotonic_time(:millisecond) / 1000.0
-    delta_time = current_time - state.last_frame_time
 
-    # Calculate movement velocity based on delta time
-    velocity = @camera_speed * delta_time
-
-    # Process the specific key pressed and update camera position immediately
-    new_camera_pos =
-      case key_code do
-        # W key - move forward
-        key when key == @key_w_upper or key == @key_w_lower ->
-          vec_add(state.camera_pos, vec_scale(state.camera_front, velocity))
-
-        # S key - move backward
-        key when key == @key_s_upper or key == @key_s_lower ->
-          vec_sub(state.camera_pos, vec_scale(state.camera_front, velocity))
-
-        # A key - strafe left
-        key when key == @key_a_upper or key == @key_a_lower ->
-          # Calculate and normalize right vector, then scale by velocity
-          camera_right = normalize(cross(state.camera_front, state.camera_up))
-          vec_sub(state.camera_pos, vec_scale(camera_right, velocity))
-
-        # D key - strafe right
-        key when key == @key_d_upper or key == @key_d_lower ->
-          # Calculate and normalize right vector, then scale by velocity
-          camera_right = normalize(cross(state.camera_front, state.camera_up))
-          vec_add(state.camera_pos, vec_scale(camera_right, velocity))
-
-        # Ignore other keys - no movement
-        _ ->
-          state.camera_pos
-      end
-
-    IO.inspect(state.camera_front)
-
-    {:ok, %{state | camera_pos: new_camera_pos}}
-  end
 
   # Ignore other events
   def handle_event(_event, state) do
     {:ok, state}
   end
 
-  # Private helper functions
+
 end

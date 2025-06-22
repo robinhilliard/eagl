@@ -231,7 +231,6 @@ defmodule EAGL.Examples.LearnOpenGL.Lighting.Colors do
           yaw: -90.0,
           pitch: 0.0,
           movement_speed: 2.5,
-          mouse_sensitivity: 0.05,
           zoom: 45.0
         )
 
@@ -252,8 +251,7 @@ defmodule EAGL.Examples.LearnOpenGL.Lighting.Colors do
          last_frame_time: current_time,
          last_mouse_x: 400.0,
          last_mouse_y: 300.0,
-         first_mouse: true,
-         keys_pressed: %{}
+         first_mouse: true
        }}
     else
       {:error, reason} ->
@@ -335,41 +333,16 @@ defmodule EAGL.Examples.LearnOpenGL.Lighting.Colors do
     current_time = :erlang.monotonic_time(:millisecond) / 1000.0
     delta_time = current_time - state.last_frame_time
 
-    # Process camera movement
-    updated_camera =
-      Enum.reduce(state.keys_pressed, state.camera, fn {key, _pressed}, camera ->
-        case key do
-          :w -> Camera.process_keyboard(camera, :forward, delta_time)
-          :s -> Camera.process_keyboard(camera, :backward, delta_time)
-          :a -> Camera.process_keyboard(camera, :left, delta_time)
-          :d -> Camera.process_keyboard(camera, :right, delta_time)
-          _ -> camera
-        end
-      end)
+    # Process camera movement using simplified keyboard input function
+    updated_camera = Camera.process_keyboard_input(state.camera, delta_time)
 
     {:ok,
      %{
        state
        | current_time: current_time,
          last_frame_time: current_time,
-         camera: updated_camera,
-         keys_pressed: %{}
+         camera: updated_camera
      }}
-  end
-
-  # Handle keyboard input for camera movement (WASD)
-  def handle_event({:key, key_code}, state) do
-    case key_code do
-      # W - forward
-      87 -> {:ok, %{state | keys_pressed: Map.put(state.keys_pressed, :w, true)}}
-      # S - backward
-      83 -> {:ok, %{state | keys_pressed: Map.put(state.keys_pressed, :s, true)}}
-      # A - strafe left
-      65 -> {:ok, %{state | keys_pressed: Map.put(state.keys_pressed, :a, true)}}
-      # D - strafe right
-      68 -> {:ok, %{state | keys_pressed: Map.put(state.keys_pressed, :d, true)}}
-      _ -> {:ok, state}
-    end
   end
 
   # Handle mouse movement for camera look around
