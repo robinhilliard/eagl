@@ -7,6 +7,50 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.0] - 2024-12-31
+
+### Enhanced
+- **🎮 Simplified Camera Keyboard Handling**: Major improvement to camera input processing across all examples
+  - **New Functions**: Added `Camera.process_keyboard_input()` and `Camera.process_fps_keyboard_input()` 
+  - **Unified Approach**: Single function call replaces complex chained keyboard processing
+  - **Better Performance**: More efficient than functional chaining approaches used previously
+  - **Consistent API**: All camera examples now use the same reliable `:wx_misc.getKeyState()` approach
+  - **FPS Support**: Added dedicated function for ground-based movement with Y-position constraints
+  - **Applied To**: Examples 7.4, 7.5, 7.6, and Lighting 1.1 now use simplified keyboard input
+
+### Changed  
+- **Camera Examples Consistency**: Standardized keyboard handling across entire tutorial series
+  - **7.4 Camera Class**: Replaced complex functional chaining with single `process_keyboard_input()` call
+  - **7.5 Camera Exercise 1**: Now uses `process_fps_keyboard_input()` for clean FPS movement
+  - **7.6 Camera Exercise 2**: Simplified to single keyboard input function while preserving custom LookAt math
+  - **Lighting 1.1 Colors**: Updated to use simplified camera controls for consistency
+  - **Approach Benefits**: Cleaner code, better maintainability, and improved educational value
+
+### Fixed
+- **🧪 Test Suite Corrections**: Fixed incorrect test expectations to match actual implementation
+  - **Math Test**: Updated `mat4_inverse of singular matrix` test to correctly expect `ArithmeticError` 
+  - **Test Accuracy**: Tests now properly validate that inverting non-invertible matrices raises errors
+  - **Mathematical Correctness**: Ensures robust error handling for invalid matrix operations
+
+### Removed
+- **🧹 Project Cleanup**: Removed leftover duplicate files to clean up project structure
+  - **Empty Test File**: Removed empty `test/gl/obj_loader_test.exs` duplicate 
+  - **Proper Location**: Real obj_loader tests remain in `test/eagl/obj_loader_test.exs` (141 lines, 5 comprehensive tests)
+  - **Clean Structure**: Eliminated confusing empty files from project organization
+
+### Documentation
+- **📚 README Updates**: Enhanced documentation to reflect camera system improvements
+  - **Two Approaches**: Documents both simplified keyboard input and individual key processing
+  - **Clear Recommendations**: Shows when to use each approach with practical examples
+  - **FPS Camera**: Added documentation for ground-based movement constraints
+  - **Code Examples**: Updated camera usage examples to show new simplified approach
+
+### Technical Improvements
+- **Keyboard Input Reliability**: All examples now use proven `:wx_misc.getKeyState()` approach
+- **Code Consistency**: Unified input handling patterns across camera and lighting examples
+- **Educational Progression**: Clear evolution from manual implementation (7.2-7.3) to proper abstraction (7.4-7.6)
+- **Maintainability**: Reduced code complexity while preserving all functionality
+
 ## [0.8.0] - 2024-12-30
 
 ### Fixed

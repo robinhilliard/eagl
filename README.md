@@ -145,6 +145,8 @@ EAGL provides a first-person camera system based on the LearnOpenGL camera class
 
 - **Euler Angle Camera**: Uses yaw and pitch angles for smooth rotation
 - **WASD Movement**: Standard FPS keyboard controls with frame-rate independent movement  
+- **Simplified Input**: `process_keyboard_input()` handles all WASD keys in one function call
+- **FPS Constraints**: `process_fps_keyboard_input()` for ground-based movement (Y-locked)
 - **Mouse Look**: Mouse movement for camera rotation with pitch constraints
 - **Scroll Zoom**: Field of view adjustment via scroll wheel
 
@@ -167,7 +169,22 @@ camera = Camera.new(
 view = Camera.get_view_matrix(camera)
 projection = mat4_perspective(radians(camera.zoom), aspect_ratio, 0.1, 100.0)
 
-# Handle keyboard movement (WASD) in event handler
+# Handle keyboard movement (WASD) - two approaches available:
+
+# APPROACH 1: Simplified keyboard input (recommended)
+# Process all WASD keys at once in tick handler for smoother movement
+def handle_event(:tick, %{camera: camera, delta_time: dt} = state) do
+  updated_camera = Camera.process_keyboard_input(camera, dt)
+  {:ok, %{state | camera: updated_camera}}
+end
+
+# For FPS-style ground-based movement (constrains Y position)
+def handle_event(:tick, %{camera: camera, delta_time: dt, ground_level: ground} = state) do
+  updated_camera = Camera.process_fps_keyboard_input(camera, dt, ground)
+  {:ok, %{state | camera: updated_camera}}
+end
+
+# APPROACH 2: Individual key processing (for custom key handling)
 def handle_event({:key, key_code}, %{camera: camera, delta_time: dt} = state) do
   updated_camera = case key_code do
     ?W -> Camera.process_keyboard(camera, :forward, dt)
