@@ -321,7 +321,8 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.CameraExercise1 do
     delta_time = current_time - state.last_frame_time
 
     # Process FPS movement using simplified keyboard input function
-    updated_camera = Camera.process_fps_keyboard_input(state.camera, delta_time, state.ground_level)
+    updated_camera =
+      Camera.process_fps_keyboard_input(state.camera, delta_time, state.ground_level)
 
     {:ok,
      %{
@@ -365,6 +366,4 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.CameraExercise1 do
   def handle_event(_event, state) do
     {:ok, state}
   end
-
-
 end

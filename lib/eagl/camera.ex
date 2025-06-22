@@ -364,9 +364,9 @@ defmodule EAGL.Camera do
       if :wx_misc.getKeyState(100),
         do: vec_scale(camera.right, velocity),
         else: vec3_zero()
-         )
-     |> then(&%{camera | position: &1})
-   end
+    )
+    |> then(&%{camera | position: &1})
+  end
 
   @doc """
   Process all keyboard input for FPS camera movement using direct key state checking.

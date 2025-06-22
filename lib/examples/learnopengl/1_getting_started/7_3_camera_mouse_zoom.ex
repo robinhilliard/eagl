@@ -477,12 +477,8 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.CameraMouseZoom do
     {:ok, %{state | fov: new_fov}}
   end
 
-
-
   # Ignore other events
   def handle_event(_event, state) do
     {:ok, state}
   end
-
-
 end
