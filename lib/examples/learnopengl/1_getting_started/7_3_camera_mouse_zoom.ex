@@ -19,35 +19,13 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.CameraMouseZoom do
   - **Euler Angle Mathematics**: Understanding yaw/pitch for 3D orientation
   - **Camera Vector Calculation**: Computing front vector from angles
   - **Zoom Implementation**: Using field of view for zoom effects
-  - **Fixed Position Camera**: Camera looks around from a stationary viewpoint
-
-  ## Pedagogical Design Notes
-
-  **⚠️ INTENTIONAL LIMITATIONS (For Learning)**
-
-  This example uses a **simplified manual camera implementation** that exhibits
-  some unnatural behaviours that students should notice:
-
-  1. **"World Rotation" Feel**: Camera control may feel like rotating the entire
-     world rather than natural first-person movement
-  2. **Manual State Tracking**: Complex manual management of camera vectors and state
-  3. **Code Duplication**: Repetitive camera calculations spread throughout the code
-
-  **These limitations are pedagogically intentional** and represent the natural
-  progression of camera system development. They demonstrate:
-  - The complexity of manual camera implementation
-  - The need for better abstractions (addressed in 7.4)
-  - Common pitfalls when building camera systems from scratch
-
-  **Important**: The camera correctly rotates around itself (not around a point in front).
-  If the rotation feels unnatural, this is due to the simplified implementation rather
-  than the mathematical approach, which is correct.
+  - **Complete Camera Control**: Combined keyboard movement with mouse look
 
   ## Educational Progression
 
   **7.1**: Automatic camera rotation (circular movement)
   **7.2**: Keyboard movement (WASD) + delta time
-  **7.3**: Mouse look + zoom implementation (this example - no movement)
+  **7.3**: Mouse look + zoom implementation (this example - includes movement)
   **7.4**: Combined system with camera class
   **7.5**: Addressing "flying" camera limitations
   **7.6**: Understanding underlying mathematics
@@ -88,9 +66,8 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.CameraMouseZoom do
   - Blended using `mix()` function with 20% overlay (matches C++ tutorial approach)
   - Demonstrates both image loading and procedural texture generation
 
-  **Note**: The camera behaviour in this example represents an early stage of camera
-  development. Students should observe the limitations and consider how they might be
-  improved - these observations lead naturally to the solutions presented in examples 7.4-7.6.
+  This example demonstrates manual camera implementation with mouse controls and texture
+  blending, showing both image loading and procedural texture generation techniques.
   """
 
   use EAGL.Window
@@ -127,18 +104,10 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.CameraMouseZoom do
       • Field of view zoom implementation
       • Two texture blending (image + procedural checkerboard)
 
-    ⚠️  Pedagogical Note:
-      This example uses simplified manual camera implementation.
-      You may notice the camera feels like 'rotating the world'
-      rather than natural first-person movement.
-
-      This behaviour is intentionally preserved from the original
-      LearnOpenGL tutorial to demonstrate the need for better
-      camera abstractions (introduced in 7.4).
-
-      📝 Technical Note: The camera DOES rotate correctly around itself,
-      not around a point in front. Any "unnatural" feeling is due to
-      the simplified manual implementation, not the rotation mathematics.
+    Technical Implementation:
+      This example demonstrates manual camera implementation with
+      mouse look controls and field of view zoom functionality.
+      Combined with keyboard movement for complete camera control.
 
     💡 Controls: WASD to move, mouse to look around, scroll wheel to zoom
     =====================================
