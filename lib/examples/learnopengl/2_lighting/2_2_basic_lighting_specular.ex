@@ -1,70 +1,77 @@
-defmodule EAGL.Examples.LearnOpenGL.Lighting.BasicLightingDiffuse do
+defmodule EAGL.Examples.LearnOpenGL.Lighting.BasicLightingSpecular do
   @moduledoc """
-  LearnOpenGL 2.1 - Basic Lighting (Diffuse)
+  LearnOpenGL 2.2 - Basic Lighting (Specular)
 
-  This example introduces diffuse lighting by adding proper lighting calculations using
-  surface normals and light direction. It builds upon the basic colours example by
-  implementing the Phong lighting model's ambient and diffuse components.
+  This example completes the Phong lighting model by adding specular highlights,
+  demonstrating how surfaces can appear shiny and reflective based on the viewing angle
+  and light reflection direction.
 
   ## Original C++ Source
 
   This example is based on the original LearnOpenGL C++ tutorial:
-  <https://learnopengl.com/code_viewer_gh.php?code=src/2.lighting/2.1.basic_lighting_diffuse/basic_lighting_diffuse.cpp>
+  <https://learnopengl.com/code_viewer_gh.php?code=src/2.lighting/2.2.basic_lighting_specular/basic_lighting_specular.cpp>
 
   ## Framework Adaptation Notes
 
   This example demonstrates:
-  - Surface normal vectors for realistic lighting calculations
-  - Ambient lighting (constant base illumination)
-  - Diffuse lighting using dot product calculations
-  - Per-fragment lighting computations
-  - Foundation for the Phong lighting model
+  - Complete Phong lighting model (ambient + diffuse + specular)
+  - Specular reflection calculations using reflection vectors
+  - View-dependent lighting effects (highlights change with camera position)
+  - Proper normal transformation with inverse transpose matrix
+  - Per-fragment lighting with camera position uniform
 
   ## Key Learning Points
 
-  - **Surface Normals**: Vectors perpendicular to surfaces that determine lighting angles
-  - **Ambient Lighting**: Constant base lighting that prevents completely dark areas
-  - **Diffuse Lighting**: Light intensity based on angle between surface normal and light direction
-  - **Dot Product**: Mathematical operation to calculate angle between vectors
-  - **Per-Fragment Calculations**: Lighting computed for each pixel rather than per vertex
+  - **Specular Reflection**: Light bounces off surfaces at predictable angles
+  - **View Dependency**: Specular highlights depend on both light and camera position
+  - **Reflection Vector**: Mathematical calculation of perfect light reflection
+  - **Dot Product for Angles**: Measuring alignment between view and reflection directions
+  - **Shininess Factor**: Controls the size and intensity of specular highlights
+  - **Normal Transformation**: Proper handling of normals under model transformations
 
   ## Lighting Theory
 
-  ### Ambient Component
+  ### Complete Phong Model
   ```
-  ambient = ambient_strength * light_colour
-  ```
-  Provides a constant base level of illumination to prevent completely black areas.
-  Typical strength values range from 0.1 to 0.3.
-
-  ### Diffuse Component
-  ```
-  diffuse_intensity = max(dot(normal, light_direction), 0.0)
-  diffuse = diffuse_intensity * light_colour
-  ```
-  Calculates how much light hits the surface based on the angle between the surface
-  normal and the direction from the surface to the light source.
-
-  ### Final Colour
-  ```
-  result = (ambient + diffuse) * object_colour
+  final_colour = (ambient + diffuse + specular) * object_colour
   ```
 
-  ## Visual Effect
+  ### Specular Component
+  ```
+  view_direction = normalize(camera_position - fragment_position)
+  reflect_direction = reflect(-light_direction, surface_normal)
+  specular_factor = pow(max(dot(view_direction, reflect_direction), 0.0), shininess)
+  specular = specular_strength * specular_factor * light_colour
+  ```
+
+  ### Parameters
+  - **Specular Strength**: Controls overall intensity of highlights (0.5 in this example)
+  - **Shininess**: Controls highlight size and sharpness (32 in this example)
+  - Higher shininess = smaller, sharper highlights (more mirror-like)
+  - Lower shininess = larger, softer highlights (more plastic-like)
+
+  ## Visual Effects
 
   The scene shows:
-  - A coral-coloured cube with realistic lighting that varies across surfaces
-  - Surfaces facing the light appear brighter
-  - Surfaces facing away from the light appear darker
-  - No completely black areas due to ambient lighting
-  - A small white cube representing the light source position
+  - A coral-coloured cube with realistic shading and bright specular highlights
+  - Highlights that move and change as you move the camera around
+  - More pronounced lighting differences compared to diffuse-only lighting
+  - Surfaces that appear more three-dimensional and material-like
 
   ## Technical Implementation
 
-  - Vertex data includes both positions and normal vectors (6 floats per vertex)
-  - Fragment shader performs per-pixel lighting calculations
-  - Light position passed as uniform for dynamic lighting calculations
-  - Normal vectors define surface orientation for accurate lighting
+  - **Proper Normal Transformation**: `Normal = mat3(transpose(inverse(model))) * aNormal`
+  - **View Position Uniform**: Camera position passed to fragment shader
+  - **Reflection Calculation**: Uses GLSL's built-in `reflect()` function
+  - **Power Function**: `pow()` creates the characteristic specular falloff curve
+
+  ## Physical Interpretation
+
+  Specular reflection models how light bounces off smooth surfaces:
+  - When light hits a surface, it reflects at an angle equal to the incident angle
+  - Viewers see bright highlights when looking in the direction of reflected light
+  - Real materials have varying degrees of shininess affecting highlight appearance
+  - This creates the visual cues that help us identify material properties
 
   ## Controls
 
@@ -75,7 +82,7 @@ defmodule EAGL.Examples.LearnOpenGL.Lighting.BasicLightingDiffuse do
 
   ## Usage
 
-      EAGL.Examples.LearnOpenGL.Lighting.BasicLightingDiffuse.run_example()
+      EAGL.Examples.LearnOpenGL.Lighting.BasicLightingSpecular.run_example()
 
   Press ENTER to exit.
   """
@@ -148,7 +155,7 @@ defmodule EAGL.Examples.LearnOpenGL.Lighting.BasicLightingDiffuse do
 
     EAGL.Window.run(
       __MODULE__,
-      "LearnOpenGL - 2 Lighting - 2.1 Basic Lighting (Diffuse)",
+      "LearnOpenGL - 2 Lighting - 2.2 Basic Lighting (Specular)",
       merged_opts
     )
   end
@@ -157,78 +164,88 @@ defmodule EAGL.Examples.LearnOpenGL.Lighting.BasicLightingDiffuse do
   def setup do
     IO.puts("""
 
-    === LearnOpenGL 2.1 - Basic Lighting (Diffuse) ===
-    This example introduces realistic lighting calculations using surface normals
-    and implements the first two components of the Phong lighting model.
+    === LearnOpenGL 2.2 - Basic Lighting (Specular) ===
+    This example completes the Phong lighting model by adding specular reflection,
+    creating realistic shiny surfaces with view-dependent highlights.
 
     Key Concepts:
-    - Surface Normals: Vectors perpendicular to surfaces that define orientation
-    - Ambient Lighting: Constant base illumination (prevents completely dark areas)
-    - Diffuse Lighting: Light intensity based on surface angle relative to light source
-    - Per-Fragment Lighting: Calculations performed for each pixel
-    - Dot Product Mathematics: Used to calculate angles between vectors
+    - Specular Reflection: Light bounces off surfaces following the law of reflection
+    - View Dependency: Highlights change position as you move the camera
+    - Reflection Vector: Mathematical representation of perfect light reflection
+    - Shininess Factor: Controls the size and sharpness of specular highlights
+    - Complete Phong Model: Ambient + Diffuse + Specular lighting components
 
     Lighting Components:
     1. Ambient = ambient_strength * light_colour (constant base lighting)
     2. Diffuse = max(dot(normal, light_direction), 0.0) * light_colour (angle-based lighting)
-    3. Final = (ambient + diffuse) * object_colour
+    3. Specular = pow(max(dot(view_direction, reflect_direction), 0.0), shininess) * light_colour
+
+    Mathematical Details:
+    - View Direction = normalize(camera_position - fragment_position)
+    - Reflect Direction = reflect(-light_direction, surface_normal)
+    - Specular Factor = pow(max(dot(view_dir, reflect_dir), 0.0), shininess)
+    - Final = (ambient + diffuse + specular) * object_colour
+
+    Parameters in This Example:
+    - Ambient Strength: 0.1 (10% base illumination)
+    - Specular Strength: 0.5 (50% highlight intensity)
+    - Shininess: 32 (moderately sharp highlights)
 
     Physical Interpretation:
-    - Surfaces perpendicular to light direction receive maximum illumination
-    - Surfaces parallel to light direction receive minimal illumination
-    - The dot product gives us the cosine of the angle between vectors
-    - max() function prevents negative lighting (surfaces can't emit negative light)
-    - Ambient component ensures no surface is completely black
+    - Higher shininess (64, 128, 256) = smaller, sharper highlights (mirror-like)
+    - Lower shininess (2, 4, 8) = larger, softer highlights (plastic-like)
+    - Specular strength controls how "metallic" vs "matte" the surface appears
+    - The reflection vector follows physics: angle of incidence = angle of reflection
 
     Visual Effects You'll Notice:
-    - The cube now has realistic shading with bright and dark faces
-    - Faces pointing toward the light source appear brighter
-    - Faces pointing away appear darker but not completely black
-    - The lighting creates depth and three-dimensional appearance
-    - Moving around shows how lighting changes with viewing angle
+    - Bright white highlights that move as you move the camera
+    - The cube now looks much more three-dimensional and realistic
+    - Different faces show different amounts of specular reflection
+    - Moving around reveals how material properties affect appearance
+    - Much more convincing simulation of a physical material
 
     Technical Implementation:
-    - Vertex data now includes normal vectors (6 floats per vertex)
-    - Vertex shader passes fragment position and normals to fragment shader
-    - Fragment shader performs lighting calculations per pixel
-    - Light position uniform allows for dynamic lighting calculations
+    - Proper normal transformation using inverse transpose matrix
+    - Camera position passed as viewPos uniform for per-fragment calculations
+    - GLSL reflect() function computes perfect reflection vector
+    - Power function creates characteristic specular falloff curve
 
     Next Steps:
-    - Specular component will add shiny highlights
-    - Materials will define how objects respond to light
-    - Multiple light sources will create complex scenes
-    - Normal mapping will add surface detail
+    - Materials will allow different objects to have unique surface properties
+    - Light properties will let us simulate different types of light sources
+    - Texture mapping will add surface detail to lighting calculations
+    - Multiple lights will create complex, realistic scenes
 
     Controls: WASD to move, mouse to look around, scroll wheel to zoom
     ========================================================================
     """)
 
-    # Compile and link lighting shader (for the object cube with diffuse lighting)
+    # Compile and link lighting shader (for the object cube with specular lighting)
     with {:ok, lighting_vertex_shader} <-
            create_shader(
              @gl_vertex_shader,
-             "learnopengl/2_lighting/2_1_basic_lighting_diffuse/lighting_vertex_shader.glsl"
+             "learnopengl/2_lighting/2_2_basic_lighting_specular/lighting_vertex_shader.glsl"
            ),
          {:ok, lighting_fragment_shader} <-
            create_shader(
              @gl_fragment_shader,
-             "learnopengl/2_lighting/2_1_basic_lighting_diffuse/lighting_fragment_shader.glsl"
+             "learnopengl/2_lighting/2_2_basic_lighting_specular/lighting_fragment_shader.glsl"
            ),
          {:ok, lighting_program} <-
            create_attach_link([lighting_vertex_shader, lighting_fragment_shader]) do
-      IO.puts("Basic lighting diffuse shader program compiled and linked successfully")
+      IO.puts("Basic lighting specular shader program compiled and linked successfully")
 
       # Compile and link light cube shader (for the light source cube)
       {:ok, light_cube_vertex_shader} =
         create_shader(
           @gl_vertex_shader,
-          "learnopengl/2_lighting/2_1_basic_lighting_diffuse/light_cube_vertex_shader.glsl"
+          "learnopengl/2_lighting/2_2_basic_lighting_specular/light_cube_vertex_shader.glsl"
         )
 
       {:ok, light_cube_fragment_shader} =
         create_shader(
           @gl_fragment_shader,
-          "learnopengl/2_lighting/2_1_basic_lighting_diffuse/light_cube_fragment_shader.glsl"
+          "learnopengl/2_lighting/2_2_basic_lighting_specular/light_cube_fragment_shader.glsl"
         )
 
       {:ok, light_cube_program} =
@@ -268,9 +285,7 @@ defmodule EAGL.Examples.LearnOpenGL.Lighting.BasicLightingDiffuse do
       # Initialize timing for delta time calculation
       current_time = :erlang.monotonic_time(:millisecond) / 1000.0
 
-      IO.puts(
-        "Ready to render - you should see a realistically lit coral cube with proper shading."
-      )
+      IO.puts("Ready to render - you should see a coral cube with realistic specular highlights.")
 
       {:ok,
        %{
@@ -307,11 +322,12 @@ defmodule EAGL.Examples.LearnOpenGL.Lighting.BasicLightingDiffuse do
     aspect_ratio = viewport_width / viewport_height
     projection = mat4_perspective(radians(state.camera.zoom), aspect_ratio, 0.1, 100.0)
 
-    # Render the lit object (coral cube with diffuse lighting)
+    # Render the lit object (coral cube with specular lighting)
     :gl.useProgram(state.lighting_program)
     set_uniform(state.lighting_program, "objectColor", vec3(1.0, 0.5, 0.31))
     set_uniform(state.lighting_program, "lightColor", vec3(1.0, 1.0, 1.0))
     set_uniform(state.lighting_program, "lightPos", @light_pos)
+    set_uniform(state.lighting_program, "viewPos", state.camera.position)
     set_uniform(state.lighting_program, "projection", projection)
     set_uniform(state.lighting_program, "view", view)
 
@@ -337,18 +353,18 @@ defmodule EAGL.Examples.LearnOpenGL.Lighting.BasicLightingDiffuse do
     :gl.bindVertexArray(state.light_cube_vao)
     :gl.drawArrays(@gl_triangles, 0, 36)
 
-    check("After rendering basic lighting diffuse example")
+    check("After rendering basic lighting specular example")
     :ok
   end
 
   @impl true
   def cleanup(state) do
     IO.puts("""
-    Cleaning up basic lighting diffuse example...
-    - Demonstrated surface normals and their role in lighting calculations
-    - Implemented ambient and diffuse components of the Phong lighting model
-    - Showed per-fragment lighting calculations for realistic shading
-    - Introduced dot product mathematics for angle-based lighting intensity
+    Cleaning up basic lighting specular example...
+    - Demonstrated complete Phong lighting model with specular reflection
+    - Showed view-dependent lighting effects and specular highlights
+    - Implemented proper normal transformation for accurate lighting
+    - Introduced reflection vectors and shininess parameters
     """)
 
     # Clean up vertex arrays and buffer

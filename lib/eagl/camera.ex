@@ -89,7 +89,7 @@ defmodule EAGL.Camera do
   @default_pitch 0.0
   @default_movement_speed 2.5
   # This seems to work well in our case
-  @default_mouse_sensitivity 0.05
+  @default_mouse_sensitivity 0.2
   @default_zoom 45.0
 
   @type movement_direction :: :forward | :backward | :left | :right

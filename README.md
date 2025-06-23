@@ -61,8 +61,13 @@ EAGL includes several examples to demonstrate its capabilities. Use the unified 
   Camera:           171) 7.1 Circle    172) 7.2 Keyboard+DT 173) 7.3 Mouse+Zoom
                     174) 7.4 Camera Class 175) 7.5 Exercise1 (FPS) 176) 7.6 Exercise2 (Custom LookAt)
 
+2. Learn OpenGL Lighting Examples:
+
+  Colors:           211) 1.1 Colors
+  Basic Lighting:   212) 2.1 Diffuse   213) 2.2 Specular
+
 ════════════════════════════════════════════════════════════════
-Enter code (01, 02, 111-153), 'q' to quit, 'r' to refresh:
+Enter code (01, 02, 111-176, 211-213), 'q' to quit, 'r' to refresh:
 >
 ```
 

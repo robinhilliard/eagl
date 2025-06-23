@@ -50,7 +50,7 @@ defmodule EAGL.CameraTest do
 
       # Default settings
       assert_float_equal(camera.movement_speed, 2.5)
-      assert_float_equal(camera.mouse_sensitivity, 0.05)
+      assert_float_equal(camera.mouse_sensitivity, 0.2)
       assert_float_equal(camera.zoom, 45.0)
 
       # Default world up
