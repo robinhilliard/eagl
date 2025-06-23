@@ -343,25 +343,25 @@ defmodule EAGL.Camera do
     camera.position
     # W - forward
     |> vec_add(
-      if :wx_misc.getKeyState(119),
+      if :wx_misc.getKeyState(?w),
         do: vec_scale(camera.front, velocity),
         else: vec3_zero()
     )
     # S - backward
     |> vec_add(
-      if :wx_misc.getKeyState(115),
+      if :wx_misc.getKeyState(?s),
         do: vec_scale(camera.front, -velocity),
         else: vec3_zero()
     )
     # A - strafe left
     |> vec_add(
-      if :wx_misc.getKeyState(97),
+      if :wx_misc.getKeyState(?a),
         do: vec_scale(camera.right, -velocity),
         else: vec3_zero()
     )
     # D - strafe right
     |> vec_add(
-      if :wx_misc.getKeyState(100),
+      if :wx_misc.getKeyState(?d),
         do: vec_scale(camera.right, velocity),
         else: vec3_zero()
     )

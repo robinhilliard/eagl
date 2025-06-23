@@ -69,12 +69,6 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.CameraKeyboardDt do
   # Camera movement speed (units per second)
   @camera_speed 2.5
 
-  # Key codes for movement (handling both upper and lowercase)
-  @key_w 119
-  @key_a 97
-  @key_s 115
-  @key_d 100
-
   # 3D cube vertex data with positions and texture coordinates
   @vertices ~v'''
   # positions        # texture coords
@@ -318,25 +312,25 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.CameraKeyboardDt do
       state.camera_pos
       # W
       |> vec_add(
-        if :wx_misc.getKeyState(@key_w),
+        if :wx_misc.getKeyState(?w),
           do: vec_scale(camera_front, velocity),
           else: vec3_zero()
       )
       # S
       |> vec_add(
-        if :wx_misc.getKeyState(@key_s),
+        if :wx_misc.getKeyState(?s),
           do: vec_scale(camera_front, -velocity),
           else: vec3_zero()
       )
       # A
       |> vec_add(
-        if :wx_misc.getKeyState(@key_a),
+        if :wx_misc.getKeyState(?a),
           do: vec_scale(normalize(cross(camera_front, camera_up)), -velocity),
           else: vec3_zero()
       )
       # D
       |> vec_add(
-        if :wx_misc.getKeyState(@key_d),
+        if :wx_misc.getKeyState(?d),
           do: vec_scale(normalize(cross(camera_front, camera_up)), velocity),
           else: vec3_zero()
       )
