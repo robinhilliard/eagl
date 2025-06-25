@@ -58,6 +58,7 @@ show_menu() {
     echo -e "  ${YELLOW}Colors:${NC}           ${CYAN}211)${NC} 1.1 Colors"
     echo -e "  ${YELLOW}Basic Lighting:${NC}   ${CYAN}212)${NC} 2.1 Diffuse   ${CYAN}213)${NC} 2.2 Specular"
     echo -e "  ${YELLOW}Lighting Exercises:${NC} ${CYAN}214)${NC} 2.3 Exercise1 ${CYAN}215)${NC} 2.4 Exercise2  ${CYAN}216)${NC} 2.5 Exercise3"
+    echo -e "  ${YELLOW}Materials:${NC}        ${CYAN}217)${NC} 3.1 Materials ${CYAN}218)${NC} 3.2 Exercise1"
     echo
     echo -e "${PURPLE}════════════════════════════════════════════════════════════════${NC}"
 }
@@ -188,12 +189,18 @@ run_example() {
         216)
             module="EAGL.Examples.LearnOpenGL.Lighting.BasicLightingExercise3"
             ;;
+        217)
+            module="EAGL.Examples.LearnOpenGL.Lighting.Materials"
+            ;;
+        218)
+            module="EAGL.Examples.LearnOpenGL.Lighting.MaterialsExercise1"
+            ;;
         *)
             echo -e "${RED}Invalid choice: $choice${NC}"
             echo -e "${YELLOW}Available examples:${NC}"
             echo -e "${YELLOW}- Non-Learn OpenGL: 01, 02${NC}"
             echo -e "${YELLOW}- Learn OpenGL Getting Started: 111, 112, 121-125, 131-136, 141-146, 151-153, 161-164, 171-176${NC}"
-            echo -e "${YELLOW}- Learn OpenGL Lighting: 211, 212, 213, 214, 215, 216${NC}"
+            echo -e "${YELLOW}- Learn OpenGL Lighting: 211-218${NC}"
             return 1
             ;;
     esac
@@ -211,7 +218,7 @@ run_example() {
 # Main loop
 while true; do
     show_menu
-    echo -e "Enter code (01, 02, 111-176, 211-216), 'q' to quit, 'r' to refresh:"
+    echo -e "Enter code (01, 02, 111-176, 211-218), 'q' to quit, 'r' to refresh:"
     echo -n "> "
     
     read -r choice
@@ -224,7 +231,7 @@ while true; do
         r|R|refresh)
             continue
             ;;
-        01|02|111|112|121|122|123|124|125|131|132|133|134|135|136|141|142|143|144|145|146|151|152|153|161|162|163|164|171|172|173|174|175|176|211|212|213|214|215|216)
+        01|02|111|112|121|122|123|124|125|131|132|133|134|135|136|141|142|143|144|145|146|151|152|153|161|162|163|164|171|172|173|174|175|176|211|212|213|214|215|216|217|218)
             clear
             if run_example "$choice"; then
                 echo
@@ -237,7 +244,7 @@ while true; do
             ;;
         *)
             echo -e "${RED}Invalid input.${NC}"
-            echo -e "${YELLOW}Valid codes: 01, 02, 111, 112, 121-125, 131-136, 141-146, 151-153, 161-164, 171-176, 211, 212, 213, 214, 215, 216${NC}"
+            echo -e "${YELLOW}Valid codes: 01, 02, 111, 112, 121-125, 131-136, 141-146, 151-153, 161-164, 171-176, 211-218${NC}"
             echo -n "Press ENTER to continue..."
             read -r
             ;;
