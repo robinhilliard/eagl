@@ -287,9 +287,11 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.CameraMouseZoom do
     aspect_ratio = viewport_width / viewport_height
     projection = mat4_perspective(radians(state.fov), aspect_ratio, 0.1, 100.0)
 
-    # Set matrices
-    set_uniform(state.program, "view", view)
-    set_uniform(state.program, "projection", projection)
+    # Set matrices using batch API
+    set_uniforms(state.program, [
+      view: view,
+      projection: projection
+    ])
 
     # Bind the vertex array
     :gl.bindVertexArray(state.vao)

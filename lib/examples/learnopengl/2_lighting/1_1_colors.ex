@@ -276,14 +276,18 @@ defmodule EAGL.Examples.LearnOpenGL.Lighting.Colors do
 
     # Render the lit object (coral cube)
     :gl.useProgram(state.lighting_program)
-    set_uniform(state.lighting_program, "objectColor", vec3(1.0, 0.5, 0.31))
-    set_uniform(state.lighting_program, "lightColor", vec3(1.0, 1.0, 1.0))
-    set_uniform(state.lighting_program, "projection", projection)
-    set_uniform(state.lighting_program, "view", view)
 
     # Set model matrix for the object (identity - at origin)
     model = mat4_identity()
-    set_uniform(state.lighting_program, "model", model)
+
+    # Set all uniforms efficiently using batch API
+    set_uniforms(state.lighting_program, [
+      objectColor: vec3(1.0, 0.5, 0.31),
+      lightColor: vec3(1.0, 1.0, 1.0),
+      projection: projection,
+      view: view,
+      model: model
+    ])
 
     # Render the object cube
     :gl.bindVertexArray(state.cube_vao)
@@ -291,13 +295,16 @@ defmodule EAGL.Examples.LearnOpenGL.Lighting.Colors do
 
     # Render the light source cube
     :gl.useProgram(state.light_cube_program)
-    set_uniform(state.light_cube_program, "projection", projection)
-    set_uniform(state.light_cube_program, "view", view)
 
     # Set model matrix for light cube (translated to light position and scaled down)
     light_model = mat4_scale(@light_scale) <~ mat4_translate(@light_pos) <~ mat4_identity()
 
-    set_uniform(state.light_cube_program, "model", light_model)
+    # Set light cube uniforms efficiently
+    set_uniforms(state.light_cube_program, [
+      projection: projection,
+      view: view,
+      model: light_model
+    ])
 
     # Render the light cube
     :gl.bindVertexArray(state.light_cube_vao)

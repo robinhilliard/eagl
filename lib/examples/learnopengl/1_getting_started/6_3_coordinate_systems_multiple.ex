@@ -231,8 +231,11 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.CoordinateSystemsMultiple do
     aspect_ratio = viewport_width / viewport_height
     projection = mat4_perspective(radians(45.0), aspect_ratio, 0.1, 100.0)
 
-    set_uniform(state.program, "view", view)
-    set_uniform(state.program, "projection", projection)
+    # Set common matrices using batch API
+    set_uniforms(state.program, [
+      view: view,
+      projection: projection
+    ])
 
     # Bind vertex array
     :gl.bindVertexArray(state.vao)

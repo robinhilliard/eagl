@@ -298,9 +298,11 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.CameraClass do
         20.0
       )
 
-    # Set matrices
-    set_uniform(state.program, "view", view)
-    set_uniform(state.program, "projection", projection)
+    # Set matrices using batch API
+    set_uniforms(state.program, [
+      view: view,
+      projection: projection
+    ])
 
     # Bind the vertex array
     :gl.bindVertexArray(state.vao)
