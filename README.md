@@ -592,6 +592,25 @@ lib/
 │   ├── texture.ex          # Texture loading and management (451 lines)
 │   ├── window.ex           # Window management (597 lines)
 │   └── window_behaviour.ex # Window callback behavior (66 lines)
+├── gltf/                   # GLTF 2.0 library (NEW!)
+│   ├── accessor.ex         # Typed views into buffers with sparse support
+│   ├── animation.ex        # Keyframe animations with channels and samplers
+│   ├── asset.ex            # Asset metadata and version information
+│   ├── buffer.ex           # Binary data storage (geometry, animations, skins)
+│   ├── buffer_view.ex      # Buffer subsets with stride and target info
+│   ├── camera.ex           # Perspective and orthographic projection cameras
+│   ├── extension.ex        # Extensions mechanism support
+│   ├── extras.ex           # Application-specific data support
+│   ├── gltf.ex             # Root glTF document structure
+│   ├── image.ex            # Image data for textures (external/embedded)
+│   ├── material.ex         # PBR materials with metallic-roughness model
+│   ├── mesh.ex             # Mesh primitives with vertex attributes
+│   ├── node.ex             # Scene graph nodes with transformations
+│   ├── sampler.ex          # Texture sampling (filtering and wrapping)
+│   ├── scene.ex            # Root nodes collection for rendering
+│   ├── skin.ex             # Vertex skinning with joints and matrices
+│   ├── texture.ex          # Texture combining image source and sampler
+│   └── texture_info.ex     # Texture references in materials
 ├── examples/               # Example applications
 │   ├── math_example.ex     # Math library demonstrations
 │   ├── teapot_example.ex   # 3D teapot rendering
@@ -790,4 +809,137 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - The Erlang/OTP team and particularly Dan Gudmundsson for the wxWidgets bindings
 - The [local Elixir User Group](https://https://elixir.sydney) for putting up with my occasional random talks
 - [Cursor](https://cursor.com) and Claude Sonnet for giving me the patience to get to running code and porting Joey's Learning OpenGL examples
+
+## GLTF 2.0 Library
+
+EAGL now includes a comprehensive GLTF 2.0 library for representing complex 3D models and scenes. The library provides complete support for all GLTF 2.0 properties and follows the official specification.
+
+### GLTF Features
+
+- **Complete Property Support**: All GLTF 2.0 properties from section 5 of the specification
+- **Type Safety**: Elixir structs with proper type specifications for all properties
+- **Extensions Support**: Built-in extensions mechanism with validation
+- **PBR Materials**: Full physically-based rendering material support
+- **Animations**: Keyframe animations with multiple interpolation modes
+- **Skinning**: Vertex skinning with joint hierarchies
+- **Multiple Cameras**: Perspective and orthographic camera types
+- **Texture Management**: Complete texture pipeline with samplers and filtering
+- **Buffer Views**: Efficient binary data management with accessors
+- **Scene Graphs**: Hierarchical node structures with transformations
+- **Validation**: Built-in validation functions for document integrity
+
+### Basic Usage
+
+```elixir
+# Create a basic GLTF document
+gltf = GLTF.new("2.0", generator: "EAGL", copyright: "2024")
+
+# Create a perspective camera
+camera = GLTF.Camera.perspective(
+  :math.pi() / 4,  # 45 degree field of view
+  0.1,             # near plane
+  aspect_ratio: 16.0 / 9.0,
+  zfar: 100.0
+)
+
+# Create a scene with nodes
+scene = GLTF.Scene.with_nodes([0, 1], name: "Main Scene")
+
+# Create a material with PBR properties
+pbr = GLTF.Material.PbrMetallicRoughness.new(
+  base_color_factor: [0.8, 0.2, 0.2, 1.0],  # Red material
+  metallic_factor: 0.0,
+  roughness_factor: 0.5
+)
+material = GLTF.Material.new(pbr_metallic_roughness: pbr)
+
+# Create nodes with transformations
+camera_node = GLTF.Node.with_trs(
+  [0.0, 2.0, 5.0],           # translation
+  [0.0, 0.0, 0.0, 1.0],      # rotation (quaternion)
+  [1.0, 1.0, 1.0],           # scale
+  camera: 0
+)
+
+mesh_node = GLTF.Node.new(
+  mesh: 0,
+  material: 0
+)
+
+# Assemble the complete document
+gltf = %{gltf | 
+  cameras: [camera],
+  materials: [material],
+  nodes: [camera_node, mesh_node],
+  scenes: [scene],
+  scene: 0
+}
+
+# Validate the document
+case GLTF.validate(gltf) do
+  :ok -> IO.puts("Valid GLTF document!")
+  {:error, reason} -> IO.puts("Validation error: #{inspect(reason)}")
+end
+```
+
+### GLTF Properties Reference
+
+The library implements all GLTF 2.0 properties as Elixir modules:
+
+#### Core Document Structure
+- `GLTF` - Root document with asset arrays and metadata
+- `GLTF.Asset` - Document metadata (version, generator, copyright)
+- `GLTF.Extension` - Extensions mechanism support
+- `GLTF.Extras` - Application-specific data utilities
+
+#### Scene and Hierarchy
+- `GLTF.Scene` - Collection of root nodes to render
+- `GLTF.Node` - Scene graph nodes with transformations and references
+- `GLTF.Camera` - Perspective and orthographic cameras
+- `GLTF.Camera.Perspective` - Perspective projection parameters
+- `GLTF.Camera.Orthographic` - Orthographic projection parameters
+
+#### Geometry and Meshes
+- `GLTF.Mesh` - Collection of mesh primitives
+- `GLTF.Mesh.Primitive` - Drawable geometry with attributes and material
+- `GLTF.Accessor` - Typed views into binary buffer data
+- `GLTF.Accessor.Sparse` - Sparse data representation for efficiency
+- `GLTF.Buffer` - Raw binary data containers
+- `GLTF.BufferView` - Views into buffer subsets
+
+#### Materials and Textures
+- `GLTF.Material` - PBR material definitions
+- `GLTF.Material.PbrMetallicRoughness` - Metallic-roughness material model
+- `GLTF.Material.NormalTextureInfo` - Normal map texture references
+- `GLTF.Material.OcclusionTextureInfo` - Occlusion texture references
+- `GLTF.Texture` - Texture combining image and sampler
+- `GLTF.TextureInfo` - Texture references in materials
+- `GLTF.Image` - Image data (external files, embedded, or buffer views)
+- `GLTF.Sampler` - Texture filtering and wrapping parameters
+
+#### Animation and Skinning
+- `GLTF.Animation` - Keyframe animation definitions
+- `GLTF.Animation.Channel` - Animation target channels
+- `GLTF.Animation.Sampler` - Animation data samplers with interpolation
+- `GLTF.Skin` - Vertex skinning with joint hierarchies
+
+### Design Principles
+
+The GLTF library follows these design principles:
+
+- **Specification Compliance**: Strict adherence to GLTF 2.0 specification
+- **Elixir Idiomatic**: Uses Elixir conventions and patterns
+- **Type Safety**: Comprehensive type specifications and validation
+- **Extensibility**: Support for GLTF extensions mechanism
+- **Performance**: Efficient structures for runtime use
+- **Documentation**: Comprehensive documentation with examples
+
+### Roadmap
+
+- [ ] **JSON Serialization**: Import/export to GLTF JSON format
+- [ ] **GLB Support**: Binary GLTF container format support
+- [ ] **Validation**: Extended validation with detailed error reporting
+- [ ] **Extensions**: Built-in support for common GLTF extensions
+- [ ] **Utilities**: Helper functions for common operations
+- [ ] **Integration**: Integration with EAGL rendering pipeline
 

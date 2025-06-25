@@ -1,0 +1,52 @@
+#!/bin/bash
+
+# GLB Loader Test Runner Script
+# =============================
+# 
+# This script runs the GLB loader tests using the Khronos Sample Assets
+# to validate real-world GLB file parsing.
+
+set -e
+
+echo "================================================="
+echo "           EAGL GLB Loader Test Suite"
+echo "================================================="
+echo
+
+# Change to the EAGL directory
+cd "$(dirname "$0")/../.."
+
+echo "Running GLB Loader unit tests..."
+echo "--------------------------------"
+mix test test/gltf/binary_test.exs
+
+echo
+echo "Running GLB Loader integration tests (requires internet)..."
+echo "-----------------------------------------------------------"
+echo "Note: These tests download real GLB files from GitHub"
+echo
+
+if command -v curl &> /dev/null; then
+    echo "✓ curl is available for HTTP requests"
+else
+    echo "⚠ curl not found - tests will use Erlang's built-in httpc"
+fi
+
+echo
+echo "Testing with ChairDamaskPurplegold.glb from Khronos Sample Assets..."
+mix test test/gltf/glb_loader_test.exs --include external
+
+echo
+echo "================================================="
+echo "GLB Loader tests completed successfully!"
+echo "================================================="
+echo
+echo "Test Summary:"
+echo "- Binary module: Structure validation and helper functions"
+echo "- GLB Loader: Real-world GLB file parsing from URLs"
+echo "- HTTP clients: Built-in httpc (others tested if available)"
+echo "- Validation: GLB specification compliance"
+echo
+echo "Test file used:"
+echo "https://github.com/KhronosGroup/glTF-Sample-Assets/raw/refs/heads/main/Models/ChairDamaskPurplegold/glTF-Binary/ChairDamaskPurplegold.glb"
+echo 
