@@ -777,6 +777,34 @@ EAGL focuses on **meaningful abstractions** rather than thin wrappers around Ope
 - **Direct OpenGL access**: When EAGL doesn't add substantial value
 - **Direct OpenGL integration**: Mix EAGL helpers with direct OpenGL calls
 
+### Platform and Rendering Philosophy
+
+EAGL prioritises **desktop OpenGL capabilities** to maximise educational and practical value for graphics programming:
+
+#### **Desktop-First Approach**
+- **Full OpenGL Access**: Modern OpenGL 3.3+ features including geometry shaders, tessellation, compute shaders
+- **Educational Completeness**: Learn comprehensive graphics techniques without platform constraints
+- **Professional Preparation**: Develop skills that transfer directly to industry graphics programming
+- **Research Capabilities**: Support advanced techniques needed in graphics research and development
+
+#### **Cross-Platform Asset Compatibility**
+- **glTF 2.0 Integration**: Runtime-neutral asset format for broad ecosystem compatibility  
+- **Asset Bridge**: Import glTF models and scenes for use with full desktop OpenGL capabilities
+- **Separation of Concerns**: Asset format (glTF) independent from rendering platform (desktop OpenGL)
+- **Ecosystem Integration**: Assets work across different renderers while maintaining access to advanced features
+
+#### **Educational Mission**
+- **Complete Feature Set**: Access to the full spectrum of modern OpenGL techniques
+- **Comprehensive Learning**: Explore the complete range of 3D graphics development approaches
+- **Skill Transfer**: Techniques applicable to game engines, CAD software, scientific visualisation
+- **Different Design Goals**: Desktop and web platforms serve different needs - we focus on desktop's strengths
+
+#### **Multi-Platform Strategy**
+- **Asset Compatibility**: Use glTF for models that work across rendering platforms
+- **Complementary Ecosystems**: Desktop development for full capabilities, established tools for web deployment
+- **Platform Strengths**: Leverage desktop OpenGL's comprehensive feature set where appropriate
+- **Standards-Based**: Integration through established formats rather than platform compromises
+
 ### Submitting Changes
 
 1. **Create a feature branch**: `git checkout -b feature/descriptive-name`
