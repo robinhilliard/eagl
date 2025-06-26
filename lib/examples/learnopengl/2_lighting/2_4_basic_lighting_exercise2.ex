@@ -249,7 +249,9 @@ defmodule EAGL.Examples.LearnOpenGL.Lighting.BasicLightingExercise2 do
            ),
          {:ok, lighting_program} <-
            create_attach_link([lighting_vertex_shader, lighting_fragment_shader]) do
-      IO.puts("Basic lighting exercise 2 (view space) shader program compiled and linked successfully")
+      IO.puts(
+        "Basic lighting exercise 2 (view space) shader program compiled and linked successfully"
+      )
 
       # Compile and link light cube shader
       {:ok, light_cube_vertex_shader} =
@@ -295,7 +297,9 @@ defmodule EAGL.Examples.LearnOpenGL.Lighting.BasicLightingExercise2 do
       # Initialize timing
       current_time = :erlang.monotonic_time(:millisecond) / 1000.0
 
-      IO.puts("Ready to render - you should see lighting calculated in view space (identical appearance).")
+      IO.puts(
+        "Ready to render - you should see lighting calculated in view space (identical appearance)."
+      )
 
       {:ok,
        %{
@@ -339,14 +343,15 @@ defmodule EAGL.Examples.LearnOpenGL.Lighting.BasicLightingExercise2 do
     model = mat4_identity()
 
     # Set all lighting uniforms efficiently using batch API
-    set_uniforms(state.lighting_program, [
+    set_uniforms(state.lighting_program,
       objectColor: vec3(1.0, 0.5, 0.31),
       lightColor: vec3(1.0, 1.0, 1.0),
-      lightPos: @light_pos,  # World space light position
+      # World space light position
+      lightPos: @light_pos,
       projection: projection,
       view: view,
       model: model
-    ])
+    )
 
     # Render the object cube
     :gl.bindVertexArray(state.cube_vao)
@@ -359,11 +364,11 @@ defmodule EAGL.Examples.LearnOpenGL.Lighting.BasicLightingExercise2 do
     light_model = mat4_scale(@light_scale) <~ mat4_translate(@light_pos) <~ mat4_identity()
 
     # Set light cube uniforms efficiently
-    set_uniforms(state.light_cube_program, [
+    set_uniforms(state.light_cube_program,
       projection: projection,
       view: view,
       model: light_model
-    ])
+    )
 
     # Render the light cube
     :gl.bindVertexArray(state.light_cube_vao)

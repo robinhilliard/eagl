@@ -232,10 +232,10 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.CoordinateSystemsMultiple do
     projection = mat4_perspective(radians(45.0), aspect_ratio, 0.1, 100.0)
 
     # Set common matrices using batch API
-    set_uniforms(state.program, [
+    set_uniforms(state.program,
       view: view,
       projection: projection
-    ])
+    )
 
     # Bind vertex array
     :gl.bindVertexArray(state.vao)

@@ -368,14 +368,16 @@ defmodule EAGL.Examples.LearnOpenGL.Lighting.Materials do
     light_color = vec3(light_color_r, light_color_g, light_color_b)
 
     # Calculate diffuse and ambient colours based on light colour
-    diffuse_color = vec_scale(light_color, 0.5)  # Decrease the influence
-    ambient_color = vec_scale(diffuse_color, 0.2)  # Low influence
+    # Decrease the influence
+    diffuse_color = vec_scale(light_color, 0.5)
+    # Low influence
+    ambient_color = vec_scale(diffuse_color, 0.2)
 
     # Set model matrix for the object
     model = mat4_identity()
 
     # Set all uniforms using batch API with quoted struct member names
-    set_uniforms(state.lighting_program, [
+    set_uniforms(state.lighting_program,
       # Light properties (structured uniforms)
       "light.position": @light_pos,
       "light.ambient": ambient_color,
@@ -393,7 +395,7 @@ defmodule EAGL.Examples.LearnOpenGL.Lighting.Materials do
       projection: projection,
       view: view,
       model: model
-    ])
+    )
 
     # Render the object cube
     :gl.bindVertexArray(state.cube_vao)
@@ -406,11 +408,11 @@ defmodule EAGL.Examples.LearnOpenGL.Lighting.Materials do
     light_model = mat4_scale(@light_scale) <~ mat4_translate(@light_pos) <~ mat4_identity()
 
     # Set light cube uniforms efficiently
-    set_uniforms(state.light_cube_program, [
+    set_uniforms(state.light_cube_program,
       projection: projection,
       view: view,
       model: light_model
-    ])
+    )
 
     # Render the light cube
     :gl.bindVertexArray(state.light_cube_vao)

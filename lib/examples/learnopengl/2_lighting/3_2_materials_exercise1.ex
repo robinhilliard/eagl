@@ -340,17 +340,23 @@ defmodule EAGL.Examples.LearnOpenGL.Lighting.MaterialsExercise1 do
     model = mat4_identity()
 
     # Set all uniforms using batch API with quoted struct member names
-    set_uniforms(state.lighting_program, [
+    set_uniforms(state.lighting_program,
       # Light properties (structured uniforms) - Fixed white light
       "light.position": @light_pos,
-      "light.ambient": vec3(1.0, 1.0, 1.0),    # Full white ambient
-      "light.diffuse": vec3(1.0, 1.0, 1.0),    # Full white diffuse
-      "light.specular": vec3(1.0, 1.0, 1.0),   # Full white specular
+      # Full white ambient
+      "light.ambient": vec3(1.0, 1.0, 1.0),
+      # Full white diffuse
+      "light.diffuse": vec3(1.0, 1.0, 1.0),
+      # Full white specular
+      "light.specular": vec3(1.0, 1.0, 1.0),
 
       # Material properties (structured uniforms) - Cyan material
-      "material.ambient": vec3(0.0, 0.1, 0.06),                        # Dark cyan
-      "material.diffuse": vec3(0.0, 0.50980392, 0.50980392),          # Bright cyan
-      "material.specular": vec3(0.50196078, 0.50196078, 0.50196078),  # Grey highlights
+      # Dark cyan
+      "material.ambient": vec3(0.0, 0.1, 0.06),
+      # Bright cyan
+      "material.diffuse": vec3(0.0, 0.50980392, 0.50980392),
+      # Grey highlights
+      "material.specular": vec3(0.50196078, 0.50196078, 0.50196078),
       "material.shininess": 32.0,
 
       # Camera and transformation matrices
@@ -358,7 +364,7 @@ defmodule EAGL.Examples.LearnOpenGL.Lighting.MaterialsExercise1 do
       projection: projection,
       view: view,
       model: model
-    ])
+    )
 
     # Render the object cube
     :gl.bindVertexArray(state.cube_vao)
@@ -371,11 +377,11 @@ defmodule EAGL.Examples.LearnOpenGL.Lighting.MaterialsExercise1 do
     light_model = mat4_scale(@light_scale) <~ mat4_translate(@light_pos) <~ mat4_identity()
 
     # Set light cube uniforms efficiently
-    set_uniforms(state.light_cube_program, [
+    set_uniforms(state.light_cube_program,
       projection: projection,
       view: view,
       model: light_model
-    ])
+    )
 
     # Render the light cube
     :gl.bindVertexArray(state.light_cube_vao)

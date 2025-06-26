@@ -288,10 +288,10 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.CameraMouseZoom do
     projection = mat4_perspective(radians(state.fov), aspect_ratio, 0.1, 100.0)
 
     # Set matrices using batch API
-    set_uniforms(state.program, [
+    set_uniforms(state.program,
       view: view,
       projection: projection
-    ])
+    )
 
     # Bind the vertex array
     :gl.bindVertexArray(state.vao)

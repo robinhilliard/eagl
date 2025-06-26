@@ -281,13 +281,13 @@ defmodule EAGL.Examples.LearnOpenGL.Lighting.Colors do
     model = mat4_identity()
 
     # Set all uniforms efficiently using batch API
-    set_uniforms(state.lighting_program, [
+    set_uniforms(state.lighting_program,
       objectColor: vec3(1.0, 0.5, 0.31),
       lightColor: vec3(1.0, 1.0, 1.0),
       projection: projection,
       view: view,
       model: model
-    ])
+    )
 
     # Render the object cube
     :gl.bindVertexArray(state.cube_vao)
@@ -300,11 +300,11 @@ defmodule EAGL.Examples.LearnOpenGL.Lighting.Colors do
     light_model = mat4_scale(@light_scale) <~ mat4_translate(@light_pos) <~ mat4_identity()
 
     # Set light cube uniforms efficiently
-    set_uniforms(state.light_cube_program, [
+    set_uniforms(state.light_cube_program,
       projection: projection,
       view: view,
       model: light_model
-    ])
+    )
 
     # Render the light cube
     :gl.bindVertexArray(state.light_cube_vao)
