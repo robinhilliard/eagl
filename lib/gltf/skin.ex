@@ -13,13 +13,13 @@ defmodule GLTF.Skin do
   ]
 
   @type t :: %__MODULE__{
-    inverse_bind_matrices: non_neg_integer() | nil,
-    skeleton: non_neg_integer() | nil,
-    joints: [non_neg_integer()],
-    name: String.t() | nil,
-    extensions: map() | nil,
-    extras: any() | nil
-  }
+          inverse_bind_matrices: non_neg_integer() | nil,
+          skeleton: non_neg_integer() | nil,
+          joints: [non_neg_integer()],
+          name: String.t() | nil,
+          extensions: map() | nil,
+          extras: any() | nil
+        }
 
   @doc """
   Create a new skin with required joints.
@@ -38,7 +38,8 @@ defmodule GLTF.Skin do
   @doc """
   Get the number of joints in this skin.
   """
-  def joint_count(%__MODULE__{joints: joints}), do: length(joints)
+  def joint_count(%__MODULE__{joints: joints}) when is_list(joints), do: length(joints)
+  def joint_count(%__MODULE__{}), do: 0
 
   @doc """
   Check if skin has inverse bind matrices.
@@ -51,4 +52,26 @@ defmodule GLTF.Skin do
   """
   def has_skeleton?(%__MODULE__{skeleton: nil}), do: false
   def has_skeleton?(%__MODULE__{skeleton: _}), do: true
+
+  @doc """
+  Load a Skin struct from JSON data.
+  """
+  def load(json_data) when is_map(json_data) do
+    skin = %__MODULE__{
+      inverse_bind_matrices: json_data["inverseBindMatrices"],
+      skeleton: json_data["skeleton"],
+      joints: json_data["joints"],
+      name: json_data["name"],
+      extensions: json_data["extensions"],
+      extras: json_data["extras"]
+    }
+
+    # Validate that joints array is present and not empty
+    case skin.joints do
+      nil -> {:error, :missing_joints}
+      [] -> {:error, :empty_joints_array}
+      joints when is_list(joints) -> {:ok, skin}
+      _ -> {:error, :invalid_joints}
+    end
+  end
 end

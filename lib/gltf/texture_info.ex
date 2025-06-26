@@ -11,11 +11,11 @@ defmodule GLTF.TextureInfo do
   ]
 
   @type t :: %__MODULE__{
-    index: non_neg_integer(),
-    tex_coord: non_neg_integer(),
-    extensions: map() | nil,
-    extras: any() | nil
-  }
+          index: non_neg_integer(),
+          tex_coord: non_neg_integer(),
+          extensions: map() | nil,
+          extras: any() | nil
+        }
 
   @doc """
   Create a new texture info with required texture index.

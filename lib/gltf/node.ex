@@ -19,19 +19,19 @@ defmodule GLTF.Node do
   ]
 
   @type t :: %__MODULE__{
-    camera: non_neg_integer() | nil,
-    children: [non_neg_integer()] | nil,
-    skin: non_neg_integer() | nil,
-    matrix: [float()] | nil,
-    mesh: non_neg_integer() | nil,
-    rotation: [float()] | nil,
-    scale: [float()] | nil,
-    translation: [float()] | nil,
-    weights: [float()] | nil,
-    name: String.t() | nil,
-    extensions: map() | nil,
-    extras: any() | nil
-  }
+          camera: non_neg_integer() | nil,
+          children: [non_neg_integer()] | nil,
+          skin: non_neg_integer() | nil,
+          matrix: [float()] | nil,
+          mesh: non_neg_integer() | nil,
+          rotation: [float()] | nil,
+          scale: [float()] | nil,
+          translation: [float()] | nil,
+          weights: [float()] | nil,
+          name: String.t() | nil,
+          extensions: map() | nil,
+          extras: any() | nil
+        }
 
   @doc """
   Create a new node.
@@ -112,5 +112,46 @@ defmodule GLTF.Node do
   def validate_transform(%__MODULE__{}) do
     # TRS properties are allowed
     :ok
+  end
+
+  @doc """
+  Check if this node has any children.
+  """
+  def has_children?(%__MODULE__{children: nil}), do: false
+  def has_children?(%__MODULE__{children: []}), do: false
+  def has_children?(%__MODULE__{children: _}), do: true
+
+  @doc """
+  Load a Node struct from JSON data.
+  """
+  def load(json_data) when is_map(json_data) do
+    node = %__MODULE__{
+      camera: json_data["camera"],
+      children: json_data["children"],
+      skin: json_data["skin"],
+      matrix: json_data["matrix"],
+      mesh: json_data["mesh"],
+      rotation: json_data["rotation"],
+      scale: json_data["scale"],
+      translation: json_data["translation"],
+      weights: json_data["weights"],
+      name: json_data["name"],
+      extensions: json_data["extensions"],
+      extras: json_data["extras"]
+    }
+
+    # Validate that matrix and TRS are mutually exclusive
+    case {node.matrix, has_trs_properties?(node)} do
+      # No matrix, TRS is fine
+      {nil, _} -> {:ok, node}
+      # Has matrix, no TRS properties
+      {_, false} -> {:ok, node}
+      {_, true} -> {:error, :matrix_and_trs_both_defined}
+    end
+  end
+
+  # Check if the node has any TRS (translation/rotation/scale) properties
+  defp has_trs_properties?(%__MODULE__{translation: t, rotation: r, scale: s}) do
+    t != nil or r != nil or s != nil
   end
 end

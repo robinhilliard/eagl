@@ -13,13 +13,13 @@ defmodule GLTF.Asset do
   ]
 
   @type t :: %__MODULE__{
-    copyright: String.t() | nil,
-    generator: String.t() | nil,
-    version: String.t(),
-    min_version: String.t() | nil,
-    extensions: map() | nil,
-    extras: any() | nil
-  }
+          copyright: String.t() | nil,
+          generator: String.t() | nil,
+          version: String.t(),
+          min_version: String.t() | nil,
+          extensions: map() | nil,
+          extras: any() | nil
+        }
 
   @doc """
   Create a new Asset struct with required version.
@@ -42,6 +42,27 @@ defmodule GLTF.Asset do
     case min_version do
       nil -> String.starts_with?(version, String.split(target_version, ".") |> hd())
       min_ver -> Version.match?(target_version, ">= #{min_ver}")
+    end
+  end
+
+  @doc """
+  Load an Asset struct from JSON data.
+  """
+  def load(json_data) when is_map(json_data) do
+    asset = %__MODULE__{
+      copyright: json_data["copyright"],
+      generator: json_data["generator"],
+      version: json_data["version"],
+      min_version: json_data["minVersion"],
+      extensions: json_data["extensions"],
+      extras: json_data["extras"]
+    }
+
+    # Validate required fields
+    case asset.version do
+      nil -> {:error, :missing_version}
+      version when is_binary(version) -> {:ok, asset}
+      _ -> {:error, :invalid_version}
     end
   end
 end

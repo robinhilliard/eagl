@@ -13,13 +13,13 @@ defmodule GLTF.Image do
   ]
 
   @type t :: %__MODULE__{
-    uri: String.t() | nil,
-    mime_type: String.t() | nil,
-    buffer_view: non_neg_integer() | nil,
-    name: String.t() | nil,
-    extensions: map() | nil,
-    extras: any() | nil
-  }
+          uri: String.t() | nil,
+          mime_type: String.t() | nil,
+          buffer_view: non_neg_integer() | nil,
+          name: String.t() | nil,
+          extensions: map() | nil,
+          extras: any() | nil
+        }
 
   @doc """
   Create a new image from URI.
@@ -67,7 +67,9 @@ defmodule GLTF.Image do
   @doc """
   Detect MIME type from binary data magic bytes.
   """
-  def detect_mime_type(<<0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, _::binary>>), do: "image/png"
+  def detect_mime_type(<<0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, _::binary>>),
+    do: "image/png"
+
   def detect_mime_type(<<0xFF, 0xD8, 0xFF, _::binary>>), do: "image/jpeg"
   def detect_mime_type(_), do: nil
 
@@ -89,6 +91,7 @@ defmodule GLTF.Image do
   def external?(%__MODULE__{uri: uri, buffer_view: nil}) when is_binary(uri) do
     not embedded?(%__MODULE__{uri: uri})
   end
+
   def external?(%__MODULE__{}), do: false
 
   @doc """
@@ -100,6 +103,7 @@ defmodule GLTF.Image do
       _ -> nil
     end
   end
+
   def file_extension(%__MODULE__{}), do: nil
 
   @doc """
@@ -109,4 +113,41 @@ defmodule GLTF.Image do
   def mime_type_from_extension("jpeg"), do: "image/jpeg"
   def mime_type_from_extension("png"), do: "image/png"
   def mime_type_from_extension(_), do: nil
+
+  @doc """
+  Load an Image struct from JSON data.
+  """
+  def load(json_data) when is_map(json_data) do
+    image = %__MODULE__{
+      uri: json_data["uri"],
+      mime_type: json_data["mimeType"],
+      buffer_view: json_data["bufferView"],
+      name: json_data["name"],
+      extensions: json_data["extensions"],
+      extras: json_data["extras"]
+    }
+
+    # Validate that either URI or buffer_view is specified, but not both
+    case {image.uri, image.buffer_view} do
+      {nil, nil} ->
+        {:error, :missing_image_source}
+
+      {_, _} when image.uri != nil and image.buffer_view != nil ->
+        {:error, :both_uri_and_buffer_view_specified}
+
+      {uri, nil} when is_binary(uri) ->
+        {:ok, image}
+
+      {nil, buffer_view} when is_integer(buffer_view) ->
+        # When using buffer_view, mime_type is required
+        case image.mime_type do
+          nil -> {:error, :missing_mime_type_for_buffer_view}
+          mime when is_binary(mime) -> {:ok, image}
+          _ -> {:error, :invalid_mime_type}
+        end
+
+      _ ->
+        {:error, :invalid_image_configuration}
+    end
+  end
 end

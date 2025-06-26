@@ -15,15 +15,15 @@ defmodule GLTF.BufferView do
   ]
 
   @type t :: %__MODULE__{
-    buffer: non_neg_integer(),
-    byte_offset: non_neg_integer(),
-    byte_length: pos_integer(),
-    byte_stride: pos_integer() | nil,
-    target: buffer_target() | nil,
-    name: String.t() | nil,
-    extensions: map() | nil,
-    extras: any() | nil
-  }
+          buffer: non_neg_integer(),
+          byte_offset: non_neg_integer(),
+          byte_length: pos_integer(),
+          byte_stride: pos_integer() | nil,
+          target: buffer_target() | nil,
+          name: String.t() | nil,
+          extensions: map() | nil,
+          extras: any() | nil
+        }
 
   @type buffer_target :: :array_buffer | :element_array_buffer
 
@@ -67,5 +67,46 @@ defmodule GLTF.BufferView do
   """
   def target_from_constant(constant) do
     Map.get(buffer_targets(), constant)
+  end
+
+  @doc """
+  Load a BufferView struct from JSON data.
+  """
+  def load(json_data) when is_map(json_data) do
+    # Parse target if provided
+    target =
+      case json_data["target"] do
+        nil -> nil
+        target_int when is_integer(target_int) -> target_from_constant(target_int)
+        _ -> nil
+      end
+
+    buffer_view = %__MODULE__{
+      buffer: json_data["buffer"],
+      byte_offset: json_data["byteOffset"] || 0,
+      byte_length: json_data["byteLength"],
+      byte_stride: json_data["byteStride"],
+      target: target,
+      name: json_data["name"],
+      extensions: json_data["extensions"],
+      extras: json_data["extras"]
+    }
+
+    # Validate required fields
+    case {buffer_view.buffer, buffer_view.byte_length} do
+      {nil, _} ->
+        {:error, :missing_buffer}
+
+      {_, nil} ->
+        {:error, :missing_byte_length}
+
+      {buffer, byte_length}
+      when is_integer(buffer) and buffer >= 0 and
+             is_integer(byte_length) and byte_length > 0 ->
+        {:ok, buffer_view}
+
+      _ ->
+        {:error, :invalid_fields}
+    end
   end
 end

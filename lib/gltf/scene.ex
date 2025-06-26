@@ -11,11 +11,11 @@ defmodule GLTF.Scene do
   ]
 
   @type t :: %__MODULE__{
-    nodes: [non_neg_integer()] | nil,
-    name: String.t() | nil,
-    extensions: map() | nil,
-    extras: any() | nil
-  }
+          nodes: [non_neg_integer()] | nil,
+          name: String.t() | nil,
+          extensions: map() | nil,
+          extras: any() | nil
+        }
 
   @doc """
   Create a new scene.
@@ -42,7 +42,7 @@ defmodule GLTF.Scene do
   end
 
   @doc """
-  Check if scene has any root nodes.
+  Check if this scene has any nodes.
   """
   def has_nodes?(%__MODULE__{nodes: nil}), do: false
   def has_nodes?(%__MODULE__{nodes: []}), do: false
@@ -53,4 +53,18 @@ defmodule GLTF.Scene do
   """
   def node_count(%__MODULE__{nodes: nil}), do: 0
   def node_count(%__MODULE__{nodes: nodes}), do: length(nodes)
+
+  @doc """
+  Load a Scene struct from JSON data.
+  """
+  def load(json_data) when is_map(json_data) do
+    scene = %__MODULE__{
+      nodes: json_data["nodes"],
+      name: json_data["name"],
+      extensions: json_data["extensions"],
+      extras: json_data["extras"]
+    }
+
+    {:ok, scene}
+  end
 end

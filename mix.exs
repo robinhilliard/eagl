@@ -45,6 +45,10 @@ defmodule EAGL.MixProject do
       # Optional dependencies for enhanced functionality
       {:stb_image, "~> 0.6", optional: true},
 
+      # Optional JSON libraries for glTF loading (choose one)
+      {:poison, "~> 5.0", optional: true},
+      {:jason, "~> 1.4", optional: true},
+
       # Development and documentation
       {:ex_doc, "~> 0.31", only: :dev, runtime: false},
       {:excoveralls, "~> 0.18", only: :test}
@@ -54,8 +58,11 @@ defmodule EAGL.MixProject do
   defp description do
     """
     EAGL (Easier OpenGL) - A clean, idiomatic Elixir interface for OpenGL programming.
-    Features GLM-inspired 3D math, Wings3D-inspired helpers and direct ports of
-    LearnOpenGL.com tutorials. Intended for 3D graphics and game development.
+    Features GLM-inspired 3D math, Wings3D-inspired helpers, direct ports of
+    LearnOpenGL.com tutorials, and comprehensive glTF/GLB model loading.
+    Intended for 3D graphics and game development.
+
+    Optional dependencies: stb_image (texture loading), poison or jason (glTF JSON parsing).
     """
   end
 

@@ -18,25 +18,27 @@ defmodule GLTF.Binary do
   ]
 
   @type t :: %__MODULE__{
-    magic: binary(),
-    version: non_neg_integer(),
-    length: non_neg_integer(),
-    json_chunk: chunk(),
-    binary_chunk: chunk() | nil
-  }
+          magic: binary(),
+          version: non_neg_integer(),
+          length: non_neg_integer(),
+          json_chunk: chunk(),
+          binary_chunk: chunk() | nil
+        }
 
   @type chunk :: %{
-    length: non_neg_integer(),
-    type: chunk_type(),
-    data: binary()
-  }
+          length: non_neg_integer(),
+          type: chunk_type(),
+          data: binary()
+        }
 
   @type chunk_type :: :json | :bin | :unknown
 
   # GLB constants
   @glb_magic "glTF"
-  @json_chunk_type 0x4E4F534A  # "JSON"
-  @bin_chunk_type  0x004E4942  # "BIN\0"
+  # "JSON"
+  @json_chunk_type 0x4E4F534A
+  # "BIN\0"
+  @bin_chunk_type 0x004E4942
 
   @doc """
   Creates a new GLB binary structure.
@@ -138,7 +140,9 @@ defmodule GLTF.Binary do
   end
 
   defp validate_magic(@glb_magic), do: :ok
-  defp validate_magic(magic), do: {:error, "Invalid magic: expected '#{@glb_magic}', got '#{magic}'"}
+
+  defp validate_magic(magic),
+    do: {:error, "Invalid magic: expected '#{@glb_magic}', got '#{magic}'"}
 
   defp validate_version(2), do: :ok
   defp validate_version(version), do: {:error, "Unsupported version: #{version}"}
@@ -149,15 +153,23 @@ defmodule GLTF.Binary do
 
   defp validate_binary_chunk(nil), do: :ok
   defp validate_binary_chunk(%{type: :bin}), do: :ok
-  defp validate_binary_chunk(%{type: type}), do: {:error, "Binary chunk must be BIN type, got #{type}"}
 
-  defp validate_total_length(%__MODULE__{length: total_length, json_chunk: json_chunk, binary_chunk: binary_chunk}) do
+  defp validate_binary_chunk(%{type: type}),
+    do: {:error, "Binary chunk must be BIN type, got #{type}"}
+
+  defp validate_total_length(%__MODULE__{
+         length: total_length,
+         json_chunk: json_chunk,
+         binary_chunk: binary_chunk
+       }) do
     header_size = 12
     json_size = 8 + json_chunk.length
-    binary_size = case binary_chunk do
-      nil -> 0
-      chunk -> 8 + chunk.length
-    end
+
+    binary_size =
+      case binary_chunk do
+        nil -> 0
+        chunk -> 8 + chunk.length
+      end
 
     expected_length = header_size + json_size + binary_size
 

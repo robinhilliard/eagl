@@ -1,0 +1,16 @@
+{
+    "elixir.testExUnit.env": {
+        "MIX_ENV": "test"
+    },
+    "elixir.testExUnit.excludeTags": [
+        "external"
+    ],
+    "files.exclude": {
+        "**/.build": true,
+        "**/deps": true,
+        "**/_build": true,
+        "**/cover": true
+    },
+    "elixir.mixEnv": "test",
+    "editor.formatOnSave": true
+}

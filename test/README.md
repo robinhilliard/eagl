@@ -253,4 +253,311 @@ All examples run in parallel with a 500ms timeout and verify:
 - Expected timeout message output
 - No GL errors during startup phase
 
-This provides **complete coverage** of all examples available through the `run_examples` script, ensuring comprehensive automated testing of the entire EAGL example suite. 
+This provides **complete coverage** of all examples available through the `run_examples` script, ensuring comprehensive automated testing of the entire EAGL example suite.
+
+# GLTF Module Testing Strategy
+
+This document outlines the comprehensive testing approach for the GLTF library, organized by risk-based priority levels.
+
+## Overview
+
+The GLTF library implements a complete glTF 2.0 parser with support for both `.gltf` (JSON) and `.glb` (binary) formats. Our testing strategy ensures robust coverage while being efficient and maintainable.
+
+## Priority-Based Testing Strategy
+
+### 🔴 Critical Priority (85-95% Coverage)
+
+**Modules**: GLB Loader, Data Store, Integration Tests
+
+These modules handle the core file parsing and data management functionality. Failures here break the entire loading pipeline.
+
+**Test Files**:
+- `test/gltf_integration_test.exs` - End-to-end tests with real glTF files
+- `test/gltf/glb_loader_test.exs` - GLB binary format parsing
+- `test/gltf/data_store_test.exs` - Binary data management
+
+**Focus Areas**:
+- File I/O and HTTP client support
+- Binary parsing according to glTF specification
+- Error handling for malformed files
+- Memory management for large assets
+- All buffer types (GLB chunks, external files, data URIs)
+
+### 🟡 High Priority (60-80% Coverage)
+
+**Modules**: Accessor, Mesh, Buffer, Material
+
+Core data structures with complex validation logic and data transformation.
+
+**Test Files**:
+- `test/gltf/accessor_test.exs` - Data type validation and sparse accessors
+- `test/gltf/mesh_test.exs` - Primitive validation and attribute handling
+- `test/gltf/buffer_test.exs` - Buffer loading and validation
+- `test/gltf/material_test.exs` - Material properties and PBR validation
+
+**Focus Areas**:
+- Data type validation (component types, accessor types)
+- Complex nested structures
+- Real-world usage patterns
+- Edge cases and boundary conditions
+
+### 🟢 Medium Priority (40-60% Coverage)
+
+**Modules**: Camera, Animation, Node, Texture, Image
+
+Important modules with some validation logic but less complexity.
+
+**Test Files**:
+- `test/gltf/camera_test.exs` - Camera projection validation
+- `test/gltf/animation_test.exs` - Animation channel validation
+- `test/gltf/node_test.exs` - Node hierarchy and transforms
+- `test/gltf/texture_test.exs` - Texture reference validation
+- `test/gltf/image_test.exs` - Image loading and formats
+
+**Focus Areas**:
+- Basic validation logic
+- Reference integrity
+- Common usage patterns
+- Error scenarios
+
+### 🔵 Low Priority (30-50% Coverage)
+
+**Modules**: Asset, Scene, BufferView, Sampler, Skin
+
+Simple data containers with minimal validation logic.
+
+**Test Files**:
+- `test/gltf/asset_test.exs` - Version validation and metadata
+- `test/gltf/scene_test.exs` - Scene node references
+- `test/gltf/buffer_view_test.exs` - Buffer view parameters
+- `test/gltf/sampler_test.exs` - Texture sampling parameters
+- `test/gltf/skin_test.exs` - Skinning matrix references
+
+**Focus Areas**:
+- Basic load/unload functionality
+- Required field validation
+- Extension and extras preservation
+
+## Running Tests
+
+### Using the Test Runner
+
+The `test/test_runner.exs` script provides organized test execution:
+
+```bash
+# Run all tests
+elixir test/test_runner.exs
+
+# Run only critical tests (for CI/PR checks)
+elixir test/test_runner.exs --critical
+
+# Run integration tests only
+elixir test/test_runner.exs --integration
+
+# Run tests by priority level
+elixir test/test_runner.exs --priority high
+elixir test/test_runner.exs --priority medium
+elixir test/test_runner.exs --priority low
+
+# Generate coverage report
+elixir test/test_runner.exs --coverage
+```
+
+### Using Mix Directly
+
+```bash
+# Run all tests
+mix test
+
+# Run specific test file
+mix test test/gltf/glb_loader_test.exs
+
+# Run tests with coverage
+mix test --cover
+
+# Run tests matching pattern
+mix test --only integration
+```
+
+## Test Structure and Patterns
+
+### Integration Tests (`test/gltf_integration_test.exs`)
+
+- **Purpose**: End-to-end validation with real glTF files
+- **Scope**: Downloads and tests against Khronos sample assets
+- **Validates**: Complete loading pipeline, structure integrity, index validation
+- **Key Features**:
+  - Downloads sample GLB files from Khronos repository
+  - Tests multiple file formats and complexity levels
+  - Validates both JSON library support (Poison/Jason)
+  - Comprehensive error handling scenarios
+
+### Critical Module Tests
+
+**GLB Loader** (`test/gltf/glb_loader_test.exs`):
+- Binary parsing according to glTF spec section 4
+- HTTP client support (httpc, req, httpoison)
+- Validation modes (normal/strict)
+- Edge cases (malformed files, truncation, padding)
+
+**Data Store** (`test/gltf/data_store_test.exs`):
+- All buffer types (GLB chunks, external files, data URIs)
+- Buffer slicing operations
+- Memory efficiency with large files
+- Mixed buffer type scenarios
+
+### Module-Specific Tests
+
+Each module test follows a consistent pattern:
+
+```elixir
+defmodule GLTF.ModuleTest do
+  use ExUnit.Case, async: true
+  doctest GLTF.Module
+
+  describe "load/1" do
+    # Basic loading scenarios
+  end
+
+  describe "validation" do
+    # Error cases and edge conditions
+  end
+
+  describe "real-world patterns" do
+    # Common usage scenarios
+  end
+end
+```
+
+## Writing New Tests
+
+### For Critical Modules
+
+1. **Comprehensive Coverage**: Aim for 85-95% line coverage
+2. **Error Scenarios**: Test all error paths and edge cases
+3. **Performance**: Include tests with large datasets
+4. **Real-world Data**: Use actual glTF files when possible
+
+### For Simple Data Containers
+
+1. **Basic Functionality**: Test load/create functions
+2. **Required Fields**: Validate required field checking
+3. **Extensions**: Ensure extensions/extras are preserved
+4. **Minimal Coverage**: 30-50% is sufficient
+
+### Test Organization
+
+```
+test/
+├── README.md                    # This file
+├── test_runner.exs             # Priority-based test runner
+├── gltf_integration_test.exs   # End-to-end integration tests
+├── fixtures/                   # Test data and samples
+│   ├── samples/               # Downloaded Khronos samples
+│   └── custom/                # Custom test files
+└── gltf/                      # Module-specific tests
+    ├── glb_loader_test.exs    # Critical: GLB parsing
+    ├── data_store_test.exs    # Critical: Data management
+    ├── accessor_test.exs      # High: Data validation
+    ├── mesh_test.exs          # High: Complex structures
+    ├── asset_test.exs         # Low: Simple containers
+    └── ...
+```
+
+## Coverage Reports
+
+Generate detailed coverage reports:
+
+```bash
+# Generate coverage with ExCoveralls
+mix test --cover
+
+# Open HTML coverage report
+open cover/excoveralls.html
+```
+
+### Coverage Targets by Priority
+
+| Priority | Target Coverage | Rationale |
+|----------|----------------|-----------|
+| Critical | 85-95% | Mission-critical, failure breaks everything |
+| High     | 60-80% | Important validation logic |
+| Medium   | 40-60% | Some validation, mostly containers |
+| Low      | 30-50% | Simple data containers |
+
+## Integration with CI/CD
+
+### Pull Request Checks
+```bash
+# Run critical tests for fast feedback
+elixir test/test_runner.exs --critical
+```
+
+### Full CI Pipeline
+```bash
+# Run all tests with coverage
+elixir test/test_runner.exs --coverage
+```
+
+### Performance Testing
+```bash
+# Run integration tests with large files
+elixir test/test_runner.exs --integration
+```
+
+## Testing Philosophy
+
+1. **Risk-Based Prioritization**: Focus testing effort where failures have the highest impact
+2. **Real-World Validation**: Use actual glTF files from the Khronos sample repository
+3. **Specification Compliance**: Ensure adherence to glTF 2.0 specification
+4. **Maintainable Tests**: Write clear, self-documenting tests that are easy to update
+5. **Efficient Execution**: Organize tests so developers can run relevant subsets quickly
+
+## Common Test Patterns
+
+### Testing Load Functions
+```elixir
+test "loads valid data" do
+  json_data = %{"required_field" => "value"}
+  assert {:ok, struct} = Module.load(json_data)
+  assert struct.required_field == "value"
+end
+
+test "rejects missing required field" do
+  json_data = %{}
+  assert {:error, :missing_required_field} = Module.load(json_data)
+end
+```
+
+### Testing Real-World Scenarios
+```elixir
+test "typical usage pattern" do
+  # Use realistic data that matches common glTF exports
+  json_data = %{
+    "componentType" => 5126,  # FLOAT
+    "count" => 24,           # 8 vertices * 3 positions
+    "type" => "VEC3"         # 3D positions
+  }
+  
+  assert {:ok, accessor} = Accessor.load(json_data)
+  assert Accessor.element_size(accessor) == 12  # 4 bytes * 3 components
+end
+```
+
+### Testing Error Scenarios
+```elixir
+test "handles malformed data gracefully" do
+  invalid_cases = [
+    {"nil value", nil},
+    {"wrong type", "should_be_number"},
+    {"out of range", -1}
+  ]
+  
+  for {description, invalid_value} <- invalid_cases do
+    json_data = %{"field" => invalid_value}
+    assert {:error, _reason} = Module.load(json_data)
+  end
+end
+```
+
+This testing strategy ensures robust coverage while maintaining development velocity and code quality. 

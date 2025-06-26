@@ -71,7 +71,7 @@ defmodule GLTF.GLBLoader do
            :ok <- maybe_validate(glb_binary, validate_option, strict) do
         {:ok, glb_binary}
       else
-        {:error, reason} -> {:error, reason}
+        {:error, reason} -> {:error, format_error(reason)}
         error -> {:error, "Failed to parse GLB file: #{inspect(error)}"}
       end
     rescue
@@ -209,6 +209,14 @@ defmodule GLTF.GLBLoader do
 
   # Private functions
 
+  # Format error atoms/tuples to strings for consistent error handling
+  defp format_error(:enoent), do: "File not found"
+  defp format_error(:eacces), do: "Permission denied"
+  defp format_error(:eisdir), do: "Is a directory"
+  defp format_error(reason) when is_atom(reason), do: "File error: #{reason}"
+  defp format_error(reason) when is_binary(reason), do: reason
+  defp format_error(reason), do: "Error: #{inspect(reason)}"
+
   # Fetch binary data from URL using different HTTP clients
   defp fetch_url(url, timeout, :httpc) do
     fetch_url_httpc(url, timeout)
@@ -264,7 +272,8 @@ defmodule GLTF.GLBLoader do
       end
     rescue
       UndefinedFunctionError ->
-        {:error, "Req library not available. Please add {:req, \"~> 0.4\"} to your dependencies or use :httpc"}
+        {:error,
+         "Req library not available. Please add {:req, \"~> 0.4\"} to your dependencies or use :httpc"}
     end
   end
 
@@ -286,7 +295,8 @@ defmodule GLTF.GLBLoader do
       end
     rescue
       UndefinedFunctionError ->
-        {:error, "HTTPoison library not available. Please add {:httpoison, \"~> 2.0\"} to your dependencies or use :httpc"}
+        {:error,
+         "HTTPoison library not available. Please add {:httpoison, \"~> 2.0\"} to your dependencies or use :httpc"}
     end
   end
 
@@ -296,17 +306,32 @@ defmodule GLTF.GLBLoader do
   end
 
   defp parse_header(binary_data) do
-    <<magic::binary-size(4), version::little-unsigned-32, length::little-unsigned-32, rest::binary>> = binary_data
+    <<magic::binary-size(4), version::little-unsigned-32, length::little-unsigned-32,
+      rest::binary>> = binary_data
 
-    if byte_size(binary_data) < length do
-      {:error, "File size mismatch: header claims #{length} bytes, file has #{byte_size(binary_data)}"}
-    else
-      header = %{
-        magic: magic,
-        version: version,
-        length: length
-      }
-      {:ok, header, rest}
+    # Validate magic first
+    cond do
+      magic != "glTF" ->
+        {:error, "Invalid magic: expected 'glTF', got '#{magic}'"}
+
+      # Then validate version
+      version != 2 ->
+        {:error, "Unsupported version: expected 2, got #{version}"}
+
+      # Finally validate file size
+      byte_size(binary_data) < length ->
+        {:error,
+         "File size mismatch: header claims #{length} bytes, file has #{byte_size(binary_data)}"}
+
+      # All validations passed
+      true ->
+        header = %{
+          magic: magic,
+          version: version,
+          length: length
+        }
+
+        {:ok, header, rest}
     end
   end
 
@@ -316,22 +341,26 @@ defmodule GLTF.GLBLoader do
       {:ok, json_chunk, remaining} ->
         case parse_binary_chunk(remaining) do
           {:ok, binary_chunk} ->
-            glb_binary = Binary.new(
-              header.magic,
-              header.version,
-              header.length,
-              json_chunk,
-              binary_chunk
-            )
+            glb_binary =
+              Binary.new(
+                header.magic,
+                header.version,
+                header.length,
+                json_chunk,
+                binary_chunk
+              )
+
             {:ok, glb_binary}
 
           {:ok, nil} ->
-            glb_binary = Binary.new(
-              header.magic,
-              header.version,
-              header.length,
-              json_chunk
-            )
+            glb_binary =
+              Binary.new(
+                header.magic,
+                header.version,
+                header.length,
+                json_chunk
+              )
+
             {:ok, glb_binary}
 
           {:error, reason} ->
@@ -365,7 +394,8 @@ defmodule GLTF.GLBLoader do
           {:ok, json_chunk, remaining}
 
         other ->
-          {:error, "First chunk must be JSON, got #{other} (0x#{Integer.to_string(chunk_type, 16)})"}
+          {:error,
+           "First chunk must be JSON, got #{other} (0x#{Integer.to_string(chunk_type, 16)})"}
       end
     end
   end
@@ -438,6 +468,7 @@ defmodule GLTF.GLBLoader do
 
   # Binary chunks should be padded with zeros (0x00) to 4-byte alignment
   defp validate_binary_padding(nil, _strict), do: :ok
+
   defp validate_binary_padding(%{length: length, data: data}, strict) do
     actual_length = byte_size(data)
 
@@ -468,6 +499,80 @@ defmodule GLTF.GLBLoader do
     UndefinedFunctionError ->
       # Jason not available, skip JSON validation
       :ok
+  end
+
+  @doc """
+  Loads a complete GLTF document from a GLB file.
+
+  This function combines GLB parsing with full GLTF struct loading,
+  creating a complete tree of module structs with proper data management.
+
+  Options:
+    - :validate - boolean, set to true to validate the parsed GLB structure (default: true)
+    - :strict - boolean, set to true for strict validation that rejects any warnings (default: false)
+    - :json_library - atom, JSON library to use (:poison, :jason) (default: :poison)
+
+  ## Examples
+
+      iex> {:ok, gltf} = GLTF.GLBLoader.load_gltf("model.glb")
+      iex> gltf.asset.version
+      "2.0"
+
+  """
+  @spec load_gltf(String.t(), keyword()) :: {:ok, GLTF.t()} | {:error, String.t()}
+  def load_gltf(path_or_url, opts \\ []) do
+    json_library = Keyword.get(opts, :json_library, :poison)
+
+    with {:ok, glb_binary} <- parse(path_or_url, opts),
+         {:ok, gltf} <- load_gltf_from_glb(glb_binary, json_library) do
+      {:ok, gltf}
+    end
+  end
+
+  @doc """
+  Loads a complete GLTF document from a GLB binary structure.
+
+  ## Examples
+
+      iex> {:ok, glb_binary} = GLTF.GLBLoader.parse_binary(binary_data)
+      iex> {:ok, gltf} = GLTF.GLBLoader.load_gltf_from_glb(glb_binary)
+
+  """
+  @spec load_gltf_from_glb(Binary.t(), atom()) :: {:ok, GLTF.t()} | {:error, String.t()}
+  def load_gltf_from_glb(%Binary{} = glb_binary, json_library \\ :poison) do
+    case json_library do
+      :poison -> GLTF.load_from_glb(glb_binary)
+      :jason -> load_gltf_from_glb_jason(glb_binary)
+      _ -> {:error, "Unsupported JSON library: #{json_library}. Use :poison or :jason"}
+    end
+  end
+
+  # Load GLTF using Jason library instead of Poison
+  defp load_gltf_from_glb_jason(%Binary{} = glb_binary) do
+    json_string = Binary.get_json(glb_binary)
+
+    try do
+      case Jason.decode(json_string) do
+        {:ok, json_data} ->
+          binary_data = Binary.get_binary(glb_binary)
+          data_store = GLTF.DataStore.new()
+
+          # GLB buffer (index 0) points to the binary chunk
+          data_store =
+            case binary_data do
+              nil -> data_store
+              data -> GLTF.DataStore.store_glb_buffer(data_store, 0, data)
+            end
+
+          GLTF.load(json_data, data_store)
+
+        {:error, reason} ->
+          {:error, "JSON decode error: #{inspect(reason)}"}
+      end
+    rescue
+      UndefinedFunctionError ->
+        {:error, "Jason library not available for JSON parsing"}
+    end
   end
 
   @doc """
@@ -514,17 +619,20 @@ defmodule GLTF.GLBLoader do
   @spec get_info(Binary.t()) :: map()
   def get_info(%Binary{} = glb_binary) do
     json_size = glb_binary.json_chunk.length
-    binary_size = case glb_binary.binary_chunk do
-      nil -> 0
-      chunk -> chunk.length
-    end
+
+    binary_size =
+      case glb_binary.binary_chunk do
+        nil -> 0
+        chunk -> chunk.length
+      end
 
     %{
       magic: glb_binary.magic,
       version: glb_binary.version,
       total_size: glb_binary.length,
       header_size: 12,
-      json_chunk_size: json_size + 8,  # +8 for chunk header
+      # +8 for chunk header
+      json_chunk_size: json_size + 8,
       binary_chunk_size: if(glb_binary.binary_chunk, do: binary_size + 8, else: 0),
       has_binary: Binary.has_binary?(glb_binary),
       chunk_count: if(Binary.has_binary?(glb_binary), do: 2, else: 1)
@@ -564,6 +672,7 @@ defmodule GLTF.GLBLoader do
       {:ok, json_map} ->
         IO.puts("\nGLTF Asset Info:")
         IO.puts("================")
+
         if asset = json_map["asset"] do
           IO.puts("Version: #{asset["version"] || "unknown"}")
           IO.puts("Generator: #{asset["generator"] || "unknown"}")
@@ -587,6 +696,7 @@ defmodule GLTF.GLBLoader do
 
         IO.puts("\nGLTF Content:")
         IO.puts("=============")
+
         Enum.each(counts, fn {key, count} ->
           if count > 0 do
             IO.puts("#{String.capitalize(to_string(key))}: #{count}")

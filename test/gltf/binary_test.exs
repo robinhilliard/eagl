@@ -100,6 +100,7 @@ defmodule GLTF.BinaryTest do
     test "validates GLB with binary chunk" do
       json_chunk = Binary.chunk(4, :json, "{}")
       binary_chunk = Binary.chunk(8, :bin, <<1, 2, 3, 4, 5, 6, 7, 8>>)
+
       # Total = header(12) + json_chunk_header(8) + json_data(4) + binary_chunk_header(8) + binary_data(8) = 40
       glb = Binary.new("glTF", 2, 40, json_chunk, binary_chunk)
 
@@ -155,7 +156,8 @@ defmodule GLTF.BinaryTest do
 
     test "rejects total length too small" do
       json_chunk = Binary.chunk(4, :json, "{}")
-      glb = Binary.new("glTF", 2, 10, json_chunk)  # Too small
+      # Too small
+      glb = Binary.new("glTF", 2, 10, json_chunk)
 
       assert {:error, reason} = Binary.validate(glb)
       assert String.contains?(reason, "Total length")
@@ -187,6 +189,7 @@ defmodule GLTF.BinaryTest do
       json_chunk = Binary.chunk(4, :json, "{}")
       binary_data = <<1, 2, 3, 4, 5, 6, 7, 8>>
       binary_chunk = Binary.chunk(byte_size(binary_data), :bin, binary_data)
+
       # Total = header(12) + json_chunk_header(8) + json_data(4) + binary_chunk_header(8) + binary_data(8) = 40
       glb = Binary.new("glTF", 2, 40, json_chunk, binary_chunk)
 
@@ -206,6 +209,7 @@ defmodule GLTF.BinaryTest do
     test "returns true when binary chunk present" do
       json_chunk = Binary.chunk(4, :json, "{}")
       binary_chunk = Binary.chunk(8, :bin, <<1, 2, 3, 4, 5, 6, 7, 8>>)
+
       # Total = header(12) + json_chunk_header(8) + json_data(4) + binary_chunk_header(8) + binary_data(8) = 40
       glb = Binary.new("glTF", 2, 40, json_chunk, binary_chunk)
 
@@ -222,7 +226,7 @@ defmodule GLTF.BinaryTest do
   end
 
   describe "struct enforcement" do
-        test "allows creation with all required keys" do
+    test "allows creation with all required keys" do
       json_chunk = Binary.chunk(4, :json, "{}")
 
       glb = %Binary{
@@ -233,7 +237,8 @@ defmodule GLTF.BinaryTest do
       }
 
       assert %Binary{} = glb
-      assert glb.binary_chunk == nil  # Optional field defaults to nil
+      # Optional field defaults to nil
+      assert glb.binary_chunk == nil
     end
 
     test "struct has correct enforce_keys behavior" do

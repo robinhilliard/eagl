@@ -14,17 +14,23 @@ defmodule GLTF.Sampler do
   ]
 
   @type t :: %__MODULE__{
-    mag_filter: mag_filter() | nil,
-    min_filter: min_filter() | nil,
-    wrap_s: wrap_mode(),
-    wrap_t: wrap_mode(),
-    name: String.t() | nil,
-    extensions: map() | nil,
-    extras: any() | nil
-  }
+          mag_filter: mag_filter() | nil,
+          min_filter: min_filter() | nil,
+          wrap_s: wrap_mode(),
+          wrap_t: wrap_mode(),
+          name: String.t() | nil,
+          extensions: map() | nil,
+          extras: any() | nil
+        }
 
   @type mag_filter :: :nearest | :linear
-  @type min_filter :: :nearest | :linear | :nearest_mipmap_nearest | :linear_mipmap_nearest | :nearest_mipmap_linear | :linear_mipmap_linear
+  @type min_filter ::
+          :nearest
+          | :linear
+          | :nearest_mipmap_nearest
+          | :linear_mipmap_nearest
+          | :nearest_mipmap_linear
+          | :linear_mipmap_linear
   @type wrap_mode :: :clamp_to_edge | :mirrored_repeat | :repeat
 
   # WebGL filter constants
@@ -109,6 +115,62 @@ defmodule GLTF.Sampler do
   @doc """
   Check if min filter uses mipmapping.
   """
-  def uses_mipmaps?(filter) when filter in [:nearest_mipmap_nearest, :linear_mipmap_nearest, :nearest_mipmap_linear, :linear_mipmap_linear], do: true
+  def uses_mipmaps?(filter)
+      when filter in [
+             :nearest_mipmap_nearest,
+             :linear_mipmap_nearest,
+             :nearest_mipmap_linear,
+             :linear_mipmap_linear
+           ],
+      do: true
+
   def uses_mipmaps?(_), do: false
+
+  @doc """
+  Check if this sampler uses linear filtering for magnification.
+  """
+  def linear_mag?(%__MODULE__{mag_filter: @linear}), do: true
+  def linear_mag?(%__MODULE__{}), do: false
+
+  @doc """
+  Load a Sampler struct from JSON data.
+  """
+  def load(json_data) when is_map(json_data) do
+    # Parse filter values
+    mag_filter = parse_filter(json_data["magFilter"])
+    min_filter = parse_filter(json_data["minFilter"])
+
+    # Parse wrap values
+    wrap_s = parse_wrap(json_data["wrapS"], @repeat)
+    wrap_t = parse_wrap(json_data["wrapT"], @repeat)
+
+    sampler = %__MODULE__{
+      mag_filter: mag_filter,
+      min_filter: min_filter,
+      wrap_s: wrap_s,
+      wrap_t: wrap_t,
+      name: json_data["name"],
+      extensions: json_data["extensions"],
+      extras: json_data["extras"]
+    }
+
+    {:ok, sampler}
+  end
+
+  # Parse filter constants
+  defp parse_filter(nil), do: nil
+  defp parse_filter(@nearest), do: @nearest
+  defp parse_filter(@linear), do: @linear
+  defp parse_filter(@nearest_mipmap_nearest), do: @nearest_mipmap_nearest
+  defp parse_filter(@linear_mipmap_nearest), do: @linear_mipmap_nearest
+  defp parse_filter(@nearest_mipmap_linear), do: @nearest_mipmap_linear
+  defp parse_filter(@linear_mipmap_linear), do: @linear_mipmap_linear
+  defp parse_filter(_), do: nil
+
+  # Parse wrap constants
+  defp parse_wrap(nil, default), do: default
+  defp parse_wrap(@clamp_to_edge, _), do: @clamp_to_edge
+  defp parse_wrap(@mirrored_repeat, _), do: @mirrored_repeat
+  defp parse_wrap(@repeat, _), do: @repeat
+  defp parse_wrap(_, default), do: default
 end
