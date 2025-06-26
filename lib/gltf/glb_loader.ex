@@ -1,41 +1,52 @@
 defmodule GLTF.GLBLoader do
   @moduledoc """
-  GLB (Binary glTF) file loader.
+  GLB (Binary glTF) file loader with HTTP response caching.
 
-  Parses the binary GLB format according to section 4 of the glTF 2.0 specification.
-  GLB files contain a 12-byte header followed by one or more chunks containing
-  JSON and optional binary data.
+  This module provides functionality to load and parse GLB files from local filesystem
+  or remote URLs. It supports multiple HTTP clients and implements response caching
+  with HTTP conditional requests for efficient remote file handling.
 
-  Based on section 4.4 "Binary glTF Layout" of the glTF 2.0 specification.
+  ## Caching
 
-  ## Loading GLB Files
+  When loading GLB files from URLs, this module automatically implements HTTP response
+  caching with the following features:
 
-  The loader supports loading GLB files from multiple sources:
+  - **Local cache**: Files are cached in `#{System.tmp_dir!()}/eagl_gltf_cache/`
+  - **Conditional requests**: Uses ETags and Last-Modified headers for efficient updates
+  - **Automatic expiry**: Cached files are considered fresh for 1 hour by default
+  - **Graceful fallback**: Falls back to cached content if network requests fail
 
-  - **Local files**: `parse_file/2` for files on disk
-  - **URLs**: `parse_url/2` for remote files (HTTP/HTTPS)
-  - **Auto-detect**: `parse/2` automatically detects URLs vs file paths
-  - **Binary data**: `parse_binary/1` for data already in memory
+  Cache files are stored with SHA256 hashes of the URL to ensure uniqueness and security.
 
-  ## Khronos Reference Files
+  ## Examples
 
-  The loader is designed to work with the official Khronos glTF sample assets:
+      # Load from local file
+      {:ok, glb_binary} = GLTF.GLBLoader.parse("model.glb")
 
-      # Simple box model
-      url = "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/main/Models/Box/glTF-Binary/Box.glb"
-      {:ok, glb} = GLTF.GLBLoader.parse_url(url)
+      # Load from URL with automatic caching
+      {:ok, glb_binary} = GLTF.GLBLoader.parse("https://example.com/model.glb")
 
-      # Complex scene
-      url = "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/main/Models/Sponza/glTF-Binary/Sponza.glb"
-      {:ok, glb} = GLTF.GLBLoader.parse_url(url)
+      # Clear cache if needed
+      GLTF.GLBLoader.clear_cache()
 
-  ## HTTP Client Support
+  ## HTTP Clients
 
-  The loader supports multiple HTTP clients for URL loading:
+  Supports multiple HTTP clients for flexibility:
 
   - **:httpc** (default) - Built into Erlang/OTP, no extra dependencies
-  - **:req** - Modern HTTP client, add `{:req, "~> 0.4"}` to dependencies
-  - **:httpoison** - Popular HTTP client, add `{:httpoison, "~> 2.0"}` to dependencies
+  - **:req** - Modern HTTP client (requires `{:req, "~> 0.4"}` dependency)
+  - **:httpoison** - Popular HTTP client (requires `{:httpoison, "~> 2.0"}` dependency)
+
+  ## Error Handling
+
+  The module provides comprehensive error handling for various failure scenarios:
+  - Network connectivity issues
+  - Invalid GLB file format
+  - File system errors
+  - HTTP errors (4xx, 5xx)
+
+  When network requests fail but cached content is available, the module will
+  automatically fall back to the cached version.
   """
 
   alias GLTF.Binary
@@ -236,6 +247,134 @@ defmodule GLTF.GLBLoader do
 
   # Fetch using built-in :httpc (Erlang)
   defp fetch_url_httpc(url, timeout) do
+    fetch_url_httpc_cached(url, timeout)
+  end
+
+  # Fetch using built-in :httpc with response caching
+  defp fetch_url_httpc_cached(url, timeout) do
+    cache_info = get_cache_info(url)
+
+    case check_cache(cache_info) do
+      {:hit, body} ->
+        # Cache hit - return cached content
+        {:ok, body}
+
+      {:miss, _reason} ->
+        # Cache miss - fetch fresh content
+        fetch_and_cache_httpc(url, timeout, cache_info, [])
+
+      {:stale, cached_metadata} ->
+        # Cache exists but may be stale - use conditional request
+        conditional_headers = build_conditional_headers(cached_metadata)
+        fetch_and_cache_httpc(url, timeout, cache_info, conditional_headers)
+    end
+  end
+
+  # Get cache information for a URL
+  defp get_cache_info(url) do
+    cache_dir = get_cache_directory()
+    url_hash = :crypto.hash(:sha256, url) |> Base.encode16(case: :lower)
+    cache_file = Path.join(cache_dir, "#{url_hash}.glb")
+    metadata_file = Path.join(cache_dir, "#{url_hash}.meta")
+
+    %{
+      url: url,
+      cache_file: cache_file,
+      metadata_file: metadata_file,
+      cache_dir: cache_dir
+    }
+  end
+
+  # Get or create cache directory
+  defp get_cache_directory() do
+    cache_dir = Path.join(System.tmp_dir!(), "eagl_gltf_cache")
+    File.mkdir_p!(cache_dir)
+    cache_dir
+  end
+
+  # Check cache status
+  defp check_cache(%{cache_file: cache_file, metadata_file: metadata_file}) do
+    case {File.exists?(cache_file), File.exists?(metadata_file)} do
+      {true, true} ->
+        case read_cache_metadata(metadata_file) do
+          {:ok, metadata} ->
+            if cache_fresh?(metadata) do
+              case File.read(cache_file) do
+                {:ok, body} -> {:hit, body}
+                {:error, _} -> {:miss, :cache_read_error}
+              end
+            else
+              {:stale, metadata}
+            end
+
+          {:error, _} ->
+            {:miss, :metadata_read_error}
+        end
+
+      {true, false} ->
+        {:miss, :missing_metadata}
+
+      {false, _} ->
+        {:miss, :missing_cache_file}
+    end
+  end
+
+  # Read cache metadata
+  defp read_cache_metadata(metadata_file) do
+    case File.read(metadata_file) do
+      {:ok, content} ->
+        case Jason.decode(content) do
+          {:ok, metadata} -> {:ok, metadata}
+          {:error, _} -> {:error, :invalid_json}
+        end
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  rescue
+    UndefinedFunctionError ->
+      # Fallback to :erlang.term_to_binary format if Jason not available
+      case File.read(metadata_file) do
+        {:ok, content} ->
+          try do
+            {:ok, :erlang.binary_to_term(content)}
+          rescue
+            _ -> {:error, :invalid_term}
+          end
+
+        {:error, reason} ->
+          {:error, reason}
+      end
+  end
+
+  # Check if cache is fresh (within 1 hour by default)
+  defp cache_fresh?(metadata, max_age_seconds \\ 3600) do
+    cached_at = Map.get(metadata, "cached_at", 0)
+    current_time = System.system_time(:second)
+    current_time - cached_at < max_age_seconds
+  end
+
+  # Build conditional request headers
+  defp build_conditional_headers(metadata) do
+    headers = []
+
+    headers =
+      case Map.get(metadata, "etag") do
+        nil -> headers
+        etag -> [{~c"if-none-match", String.to_charlist(etag)} | headers]
+      end
+
+    headers =
+      case Map.get(metadata, "last_modified") do
+        nil -> headers
+        last_modified -> [{~c"if-modified-since", String.to_charlist(last_modified)} | headers]
+      end
+
+    headers
+  end
+
+  # Fetch and cache using httpc
+  defp fetch_and_cache_httpc(url, timeout, cache_info, conditional_headers) do
     url_charlist = String.to_charlist(url)
 
     # Start inets if not already started
@@ -245,15 +384,112 @@ defmodule GLTF.GLBLoader do
     http_options = [timeout: timeout, autoredirect: true]
     options = [body_format: :binary]
 
-    case :httpc.request(:get, {url_charlist, []}, http_options, options) do
-      {:ok, {{_version, 200, _reason_phrase}, _headers, body}} ->
+    case :httpc.request(:get, {url_charlist, conditional_headers}, http_options, options) do
+      {:ok, {{_version, 200, _reason_phrase}, headers, body}} ->
+        # Fresh content received - cache it
+        metadata = extract_cache_metadata(headers)
+        store_in_cache(cache_info, body, metadata)
         {:ok, body}
+
+      {:ok, {{_version, 304, _reason_phrase}, _headers, _body}} ->
+        # Not modified - use cached content
+        case File.read(cache_info.cache_file) do
+          {:ok, cached_body} ->
+            # Update cache timestamp to extend freshness
+            update_cache_timestamp(cache_info.metadata_file)
+            {:ok, cached_body}
+
+          {:error, reason} ->
+            {:error, "Cache file missing after 304 response: #{reason}"}
+        end
 
       {:ok, {{_version, status_code, reason_phrase}, _headers, _body}} ->
         {:error, "HTTP error #{status_code}: #{reason_phrase}"}
 
       {:error, reason} ->
-        {:error, "HTTP request failed: #{inspect(reason)}"}
+        # If request fails but we have cached content, use it as fallback
+        case File.read(cache_info.cache_file) do
+          {:ok, cached_body} ->
+            {:ok, cached_body}
+
+          {:error, _} ->
+            {:error, "HTTP request failed: #{inspect(reason)}"}
+        end
+    end
+  end
+
+  # Extract cache metadata from response headers
+  defp extract_cache_metadata(headers) do
+    etag =
+      case :proplists.get_value(~c"etag", headers) do
+        :undefined -> nil
+        value -> List.to_string(value)
+      end
+
+    last_modified =
+      case :proplists.get_value(~c"last-modified", headers) do
+        :undefined -> nil
+        value -> List.to_string(value)
+      end
+
+    cache_control =
+      case :proplists.get_value(~c"cache-control", headers) do
+        :undefined -> nil
+        value -> List.to_string(value)
+      end
+
+    %{
+      "etag" => etag,
+      "last_modified" => last_modified,
+      "cache_control" => cache_control,
+      "cached_at" => System.system_time(:second)
+    }
+  end
+
+  # Store content and metadata in cache
+  defp store_in_cache(%{cache_file: cache_file, metadata_file: metadata_file}, body, metadata) do
+    # Ensure cache directory exists
+    File.mkdir_p!(Path.dirname(cache_file))
+
+    # Write the binary content
+    case File.write(cache_file, body) do
+      :ok ->
+        # Write metadata
+        metadata_content =
+          try do
+            Jason.encode!(metadata)
+          rescue
+            UndefinedFunctionError ->
+              # Fallback to Erlang term format if Jason not available
+              :erlang.term_to_binary(metadata)
+          end
+
+        File.write(metadata_file, metadata_content)
+
+      {:error, reason} ->
+        {:error, "Failed to write cache file: #{reason}"}
+    end
+  end
+
+  # Update cache timestamp to extend freshness period
+  defp update_cache_timestamp(metadata_file) do
+    case read_cache_metadata(metadata_file) do
+      {:ok, metadata} ->
+        updated_metadata = Map.put(metadata, "cached_at", System.system_time(:second))
+
+        metadata_content =
+          try do
+            Jason.encode!(updated_metadata)
+          rescue
+            UndefinedFunctionError ->
+              :erlang.term_to_binary(updated_metadata)
+          end
+
+        File.write(metadata_file, metadata_content)
+
+      {:error, _} ->
+        # Ignore errors when updating timestamp
+        :ok
     end
   end
 
@@ -708,5 +944,98 @@ defmodule GLTF.GLBLoader do
     end
 
     :ok
+  end
+
+  @doc """
+  Clears the GLB response cache.
+
+  Removes all cached GLB files and their metadata from the temporary cache directory.
+  This is useful for debugging, testing, or when you want to force fresh downloads.
+
+  ## Examples
+
+      iex> GLTF.GLBLoader.clear_cache()
+      :ok
+
+  """
+  @spec clear_cache() :: :ok | {:error, String.t()}
+  def clear_cache() do
+    cache_dir = get_cache_directory()
+
+    case File.rm_rf(cache_dir) do
+      {:ok, _} ->
+        # Recreate the empty cache directory
+        File.mkdir_p!(cache_dir)
+        :ok
+
+      {:error, reason} ->
+        {:error, "Failed to clear cache: #{inspect(reason)}"}
+    end
+  end
+
+  @doc """
+  Gets statistics about the GLB response cache.
+
+  Returns information about cache size, number of files, and oldest/newest entries.
+
+  ## Examples
+
+      iex> GLTF.GLBLoader.cache_stats()
+      %{
+        cache_dir: "/tmp/eagl_gltf_cache",
+        file_count: 5,
+        total_size_bytes: 2048576,
+        oldest_file: ~U[2024-01-15 10:30:00Z],
+        newest_file: ~U[2024-01-15 14:45:00Z]
+      }
+
+  """
+  @spec cache_stats() :: map()
+  def cache_stats() do
+    cache_dir = get_cache_directory()
+
+    case File.ls(cache_dir) do
+      {:ok, files} ->
+        glb_files = Enum.filter(files, &String.ends_with?(&1, ".glb"))
+
+        file_stats =
+          Enum.map(glb_files, fn file ->
+            file_path = Path.join(cache_dir, file)
+
+            case File.stat(file_path) do
+              {:ok, %File.Stat{size: size, mtime: mtime}} ->
+                %{file: file, size: size, mtime: mtime}
+
+              {:error, _} ->
+                nil
+            end
+          end)
+          |> Enum.reject(&is_nil/1)
+
+        total_size = Enum.sum(Enum.map(file_stats, & &1.size))
+
+        %{
+          cache_dir: cache_dir,
+          file_count: length(glb_files),
+          total_size_bytes: total_size,
+          oldest_file: file_stats |> Enum.map(& &1.mtime) |> Enum.min(fn -> nil end),
+          newest_file: file_stats |> Enum.map(& &1.mtime) |> Enum.max(fn -> nil end)
+        }
+
+      {:error, :enoent} ->
+        %{
+          cache_dir: cache_dir,
+          file_count: 0,
+          total_size_bytes: 0,
+          oldest_file: nil,
+          newest_file: nil
+        }
+
+      {:error, reason} ->
+        %{
+          cache_dir: cache_dir,
+          error: "Failed to read cache directory: #{inspect(reason)}"
+        }
+    end
   end
 end
