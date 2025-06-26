@@ -31,7 +31,8 @@ defmodule GLTF.BufferView do
         }
 
   # OpenGL constants for buffer targets
-  @type target :: 34962 | 34963  # GL_ARRAY_BUFFER | GL_ELEMENT_ARRAY_BUFFER
+  # GL_ARRAY_BUFFER | GL_ELEMENT_ARRAY_BUFFER
+  @type target :: 34962 | 34963
 
   @doc """
   Create a new buffer view.
