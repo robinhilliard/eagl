@@ -280,7 +280,7 @@ defmodule GLTF.DataStoreTest do
 
   describe "edge cases and error handling" do
     test "handles negative buffer indices gracefully" do
-      store = DataStore.new()
+      _store = DataStore.new()
 
       # These should not crash but also won't work due to function guards
       # The guards prevent calling with negative indices

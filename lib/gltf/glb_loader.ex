@@ -323,28 +323,28 @@ defmodule GLTF.GLBLoader do
   defp read_cache_metadata(metadata_file) do
     case File.read(metadata_file) do
       {:ok, content} ->
-        case Jason.decode(content) do
-          {:ok, metadata} -> {:ok, metadata}
-          {:error, _} -> {:error, :invalid_json}
-        end
-
-      {:error, reason} ->
-        {:error, reason}
-    end
-  rescue
-    UndefinedFunctionError ->
-      # Fallback to :erlang.term_to_binary format if Jason not available
-      case File.read(metadata_file) do
-        {:ok, content} ->
+        if Code.ensure_loaded?(Jason) do
+          try do
+            case apply(Jason, :decode, [content]) do
+              {:ok, metadata} -> {:ok, metadata}
+              {:error, _} -> {:error, :invalid_json}
+            end
+          rescue
+            UndefinedFunctionError ->
+              {:error, :invalid_json}
+          end
+        else
+          # Fallback to :erlang.term_to_binary format if Jason not available
           try do
             {:ok, :erlang.binary_to_term(content)}
           rescue
             _ -> {:error, :invalid_term}
           end
+        end
 
-        {:error, reason} ->
-          {:error, reason}
-      end
+      {:error, reason} ->
+        {:error, reason}
+    end
   end
 
   # Check if cache is fresh (within 1 hour by default)
@@ -456,12 +456,17 @@ defmodule GLTF.GLBLoader do
       :ok ->
         # Write metadata
         metadata_content =
-          try do
-            Jason.encode!(metadata)
-          rescue
-            UndefinedFunctionError ->
-              # Fallback to Erlang term format if Jason not available
-              :erlang.term_to_binary(metadata)
+          if Code.ensure_loaded?(Jason) do
+            try do
+              apply(Jason, :encode!, [metadata])
+            rescue
+              UndefinedFunctionError ->
+                # Fallback to Erlang term format if Jason not available
+                :erlang.term_to_binary(metadata)
+            end
+          else
+            # Fallback to Erlang term format if Jason not available
+            :erlang.term_to_binary(metadata)
           end
 
         File.write(metadata_file, metadata_content)
@@ -478,11 +483,15 @@ defmodule GLTF.GLBLoader do
         updated_metadata = Map.put(metadata, "cached_at", System.system_time(:second))
 
         metadata_content =
-          try do
-            Jason.encode!(updated_metadata)
-          rescue
-            UndefinedFunctionError ->
-              :erlang.term_to_binary(updated_metadata)
+          if Code.ensure_loaded?(Jason) do
+            try do
+              apply(Jason, :encode!, [updated_metadata])
+            rescue
+              UndefinedFunctionError ->
+                :erlang.term_to_binary(updated_metadata)
+            end
+          else
+            :erlang.term_to_binary(updated_metadata)
           end
 
         File.write(metadata_file, metadata_content)
@@ -495,44 +504,54 @@ defmodule GLTF.GLBLoader do
 
   # Fetch using Req library (if available)
   defp fetch_url_req(url, timeout) do
-    try do
-      case Req.get(url, receive_timeout: timeout) do
-        {:ok, %{status: 200, body: body}} ->
-          {:ok, body}
+    if Code.ensure_loaded?(Req) do
+      try do
+        case apply(Req, :get, [url, [receive_timeout: timeout]]) do
+          {:ok, %{status: 200, body: body}} ->
+            {:ok, body}
 
-        {:ok, %{status: status_code}} ->
-          {:error, "HTTP error #{status_code}"}
+          {:ok, %{status: status_code}} ->
+            {:error, "HTTP error #{status_code}"}
 
-        {:error, reason} ->
-          {:error, "Req request failed: #{inspect(reason)}"}
+          {:error, reason} ->
+            {:error, "Req request failed: #{inspect(reason)}"}
+        end
+      rescue
+        UndefinedFunctionError ->
+          {:error,
+           "Req library not available. Please add {:req, \"~> 0.4\"} to your dependencies or use :httpc"}
       end
-    rescue
-      UndefinedFunctionError ->
-        {:error,
-         "Req library not available. Please add {:req, \"~> 0.4\"} to your dependencies or use :httpc"}
+    else
+      {:error,
+       "Req library not available. Please add {:req, \"~> 0.4\"} to your dependencies or use :httpc"}
     end
   end
 
   # Fetch using HTTPoison library (if available)
   defp fetch_url_httpoison(url, timeout) do
-    try do
-      case HTTPoison.get(url, [], recv_timeout: timeout) do
-        {:ok, %{status_code: 200, body: body}} ->
-          {:ok, body}
+    if Code.ensure_loaded?(HTTPoison) do
+      try do
+        case apply(HTTPoison, :get, [url, [], [recv_timeout: timeout]]) do
+          {:ok, %{status_code: 200, body: body}} ->
+            {:ok, body}
 
-        {:ok, %{status_code: status_code}} ->
-          {:error, "HTTP error #{status_code}"}
+          {:ok, %{status_code: status_code}} ->
+            {:error, "HTTP error #{status_code}"}
 
-        {:error, %{reason: reason}} ->
-          {:error, "HTTPoison request failed: #{inspect(reason)}"}
+          {:error, %{reason: reason}} ->
+            {:error, "HTTPoison request failed: #{inspect(reason)}"}
 
-        {:error, reason} ->
-          {:error, "HTTPoison request failed: #{inspect(reason)}"}
+          {:error, reason} ->
+            {:error, "HTTPoison request failed: #{inspect(reason)}"}
+        end
+      rescue
+        UndefinedFunctionError ->
+          {:error,
+           "HTTPoison library not available. Please add {:httpoison, \"~> 2.0\"} to your dependencies or use :httpc"}
       end
-    rescue
-      UndefinedFunctionError ->
-        {:error,
-         "HTTPoison library not available. Please add {:httpoison, \"~> 2.0\"} to your dependencies or use :httpc"}
+    else
+      {:error,
+       "HTTPoison library not available. Please add {:httpoison, \"~> 2.0\"} to your dependencies or use :httpc"}
     end
   end
 
@@ -576,6 +595,17 @@ defmodule GLTF.GLBLoader do
     case parse_json_chunk(chunk_data) do
       {:ok, json_chunk, remaining} ->
         case parse_binary_chunk(remaining) do
+          {:ok, nil} ->
+            glb_binary =
+              Binary.new(
+                header.magic,
+                header.version,
+                header.length,
+                json_chunk
+              )
+
+            {:ok, glb_binary}
+
           {:ok, binary_chunk} ->
             glb_binary =
               Binary.new(
@@ -584,17 +614,6 @@ defmodule GLTF.GLBLoader do
                 header.length,
                 json_chunk,
                 binary_chunk
-              )
-
-            {:ok, glb_binary}
-
-          {:ok, nil} ->
-            glb_binary =
-              Binary.new(
-                header.magic,
-                header.version,
-                header.length,
-                json_chunk
               )
 
             {:ok, glb_binary}
@@ -727,14 +746,21 @@ defmodule GLTF.GLBLoader do
 
   # Validate that JSON content is valid JSON
   defp validate_json_content(%Binary{json_chunk: %{data: json_string}}, _strict) do
-    case Jason.decode(json_string) do
-      {:ok, _json} -> :ok
-      {:error, reason} -> {:error, "Invalid JSON content: #{inspect(reason)}"}
-    end
-  rescue
-    UndefinedFunctionError ->
+    if Code.ensure_loaded?(Jason) do
+      try do
+        case apply(Jason, :decode, [json_string]) do
+          {:ok, _json} -> :ok
+          {:error, reason} -> {:error, "Invalid JSON content: #{inspect(reason)}"}
+        end
+      rescue
+        UndefinedFunctionError ->
+          # Jason not available, skip JSON validation
+          :ok
+      end
+    else
       # Jason not available, skip JSON validation
       :ok
+    end
   end
 
   @doc """
@@ -787,27 +813,31 @@ defmodule GLTF.GLBLoader do
   defp load_gltf_from_glb_jason(%Binary{} = glb_binary) do
     json_string = Binary.get_json(glb_binary)
 
-    try do
-      case Jason.decode(json_string) do
-        {:ok, json_data} ->
-          binary_data = Binary.get_binary(glb_binary)
-          data_store = GLTF.DataStore.new()
+    if Code.ensure_loaded?(Jason) do
+      try do
+        case apply(Jason, :decode, [json_string]) do
+          {:ok, json_data} ->
+            binary_data = Binary.get_binary(glb_binary)
+            data_store = GLTF.DataStore.new()
 
-          # GLB buffer (index 0) points to the binary chunk
-          data_store =
-            case binary_data do
-              nil -> data_store
-              data -> GLTF.DataStore.store_glb_buffer(data_store, 0, data)
-            end
+            # GLB buffer (index 0) points to the binary chunk
+            data_store =
+              case binary_data do
+                nil -> data_store
+                data -> GLTF.DataStore.store_glb_buffer(data_store, 0, data)
+              end
 
-          GLTF.load(json_data, data_store)
+            GLTF.load(json_data, data_store)
 
-        {:error, reason} ->
-          {:error, "JSON decode error: #{inspect(reason)}"}
+          {:error, reason} ->
+            {:error, "JSON decode error: #{inspect(reason)}"}
+        end
+      rescue
+        UndefinedFunctionError ->
+          {:error, "Jason library not available for JSON parsing"}
       end
-    rescue
-      UndefinedFunctionError ->
-        {:error, "Jason library not available for JSON parsing"}
+    else
+      {:error, "Jason library not available for JSON parsing"}
     end
   end
 
@@ -827,14 +857,18 @@ defmodule GLTF.GLBLoader do
   def get_json_map(%Binary{} = glb_binary) do
     json_string = Binary.get_json(glb_binary)
 
-    try do
-      case Jason.decode(json_string) do
-        {:ok, json_map} -> {:ok, json_map}
-        {:error, reason} -> {:error, "JSON decode error: #{inspect(reason)}"}
+    if Code.ensure_loaded?(Jason) do
+      try do
+        case apply(Jason, :decode, [json_string]) do
+          {:ok, json_map} -> {:ok, json_map}
+          {:error, reason} -> {:error, "JSON decode error: #{inspect(reason)}"}
+        end
+      rescue
+        UndefinedFunctionError ->
+          {:error, "Jason library not available for JSON parsing"}
       end
-    rescue
-      UndefinedFunctionError ->
-        {:error, "Jason library not available for JSON parsing"}
+    else
+      {:error, "Jason library not available for JSON parsing"}
     end
   end
 

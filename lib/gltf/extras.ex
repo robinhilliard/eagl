@@ -17,11 +17,11 @@ defmodule GLTF.Extras do
       # Try Jason first, fall back to Poison if available
       cond do
         Code.ensure_loaded?(Jason) ->
-          Jason.encode!(data)
+          apply(Jason, :encode!, [data])
           true
 
         Code.ensure_loaded?(Poison) ->
-          Poison.encode!(data)
+          apply(Poison, :encode!, [data])
           true
 
         true ->
