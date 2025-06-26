@@ -1,9 +1,12 @@
 defmodule GLTF.Accessor do
   @moduledoc """
-  A typed view into a bufferView. A bufferView contains raw binary data.
-  An accessor provides a typed view into a bufferView or a subset of a bufferView
-  similar to how WebGL's vertexAttribPointer() defines an attribute in a buffer.
+  Accessor defines how to access binary data from a buffer view.
+
+  Uses OpenGL constants directly for component types while keeping
+  accessor types as atoms since they are glTF spec strings.
   """
+
+  use EAGL.Const
 
   defstruct [
     :buffer_view,
@@ -20,6 +23,14 @@ defmodule GLTF.Accessor do
     :extras
   ]
 
+  # OpenGL constants for component types
+  @type component_type :: 5120 | 5121 | 5122 | 5123 | 5125 | 5126
+  # GL_BYTE | GL_UNSIGNED_BYTE | GL_SHORT | GL_UNSIGNED_SHORT | GL_UNSIGNED_INT | GL_FLOAT
+
+  # glTF spec accessor types (not OpenGL constants)
+  @type accessor_type ::
+          :scalar | :vec2 | :vec3 | :vec4 | :mat2 | :mat3 | :mat4
+
   @type t :: %__MODULE__{
           buffer_view: non_neg_integer() | nil,
           byte_offset: non_neg_integer(),
@@ -35,156 +46,165 @@ defmodule GLTF.Accessor do
           extras: any() | nil
         }
 
-  @type component_type :: 5120 | 5121 | 5122 | 5123 | 5125 | 5126
-  @type accessor_type :: :scalar | :vec2 | :vec3 | :vec4 | :mat2 | :mat3 | :mat4
+  @doc """
+  Get the byte size of a component type.
+  """
+  def component_size(@gl_byte), do: 1
+  def component_size(@gl_unsigned_byte), do: 1
+  def component_size(@gl_short), do: 2
+  def component_size(@gl_unsigned_short), do: 2
+  def component_size(@gl_unsigned_int), do: 4
+  def component_size(@gl_float), do: 4
 
-  # Component types
-  @byte 5120
-  @unsigned_byte 5121
-  @short 5122
-  @unsigned_short 5123
-  @unsigned_int 5125
-  @float 5126
+  @doc """
+  Get the number of components for an accessor type.
+  """
+  def type_component_count(:scalar), do: 1
+  def type_component_count(:vec2), do: 2
+  def type_component_count(:vec3), do: 3
+  def type_component_count(:vec4), do: 4
+  def type_component_count(:mat2), do: 4
+  def type_component_count(:mat3), do: 9
+  def type_component_count(:mat4), do: 16
 
-  def component_types do
-    %{
-      @byte => {:signed_byte, 1},
-      @unsigned_byte => {:unsigned_byte, 1},
-      @short => {:signed_short, 2},
-      @unsigned_short => {:unsigned_short, 2},
-      @unsigned_int => {:unsigned_int, 4},
-      @float => {:float, 4}
-    }
-  end
-
-  def accessor_types do
-    %{
-      :scalar => 1,
-      :vec2 => 2,
-      :vec3 => 3,
-      :vec4 => 4,
-      :mat2 => 4,
-      :mat3 => 9,
-      :mat4 => 16
-    }
+  @doc """
+  Calculate the byte size of a single element for this accessor.
+  """
+  def element_byte_size(%__MODULE__{component_type: component_type, type: type}) do
+    component_size(component_type) * type_component_count(type)
   end
 
   @doc """
-  Calculate the element size in bytes for this accessor.
+  Calculate the total byte size of all elements in this accessor.
   """
-  def element_size(%__MODULE__{component_type: component_type, type: type}) do
-    {_, component_size} = Map.get(component_types(), component_type)
-    component_count = Map.get(accessor_types(), type)
-    component_size * component_count
+  def total_byte_size(%__MODULE__{count: count} = accessor) do
+    element_byte_size(accessor) * count
+  end
+
+  @doc """
+  Create a new accessor.
+  """
+  def new(opts \\ []) do
+    %__MODULE__{
+      buffer_view: Keyword.get(opts, :buffer_view),
+      byte_offset: Keyword.get(opts, :byte_offset, 0),
+      component_type: Keyword.fetch!(opts, :component_type),
+      normalized: Keyword.get(opts, :normalized, false),
+      count: Keyword.fetch!(opts, :count),
+      type: Keyword.fetch!(opts, :type),
+      max: Keyword.get(opts, :max),
+      min: Keyword.get(opts, :min),
+      sparse: Keyword.get(opts, :sparse),
+      name: Keyword.get(opts, :name),
+      extensions: Keyword.get(opts, :extensions),
+      extras: Keyword.get(opts, :extras)
+    }
   end
 
   @doc """
   Load an Accessor struct from JSON data.
   """
   def load(json_data) when is_map(json_data) do
-    # Parse accessor type
-    accessor_type =
-      case json_data["type"] do
-        "SCALAR" -> :scalar
-        "VEC2" -> :vec2
-        "VEC3" -> :vec3
-        "VEC4" -> :vec4
-        "MAT2" -> :mat2
-        "MAT3" -> :mat3
-        "MAT4" -> :mat4
-        _ -> nil
-      end
+    # Parse component type (store OpenGL constants directly)
+    component_type = parse_component_type(json_data["componentType"])
+    # Parse accessor type (keep as atoms since they're glTF spec strings)
+    type = parse_type(json_data["type"])
 
-    accessor = %__MODULE__{
-      buffer_view: json_data["bufferView"],
-      byte_offset: json_data["byteOffset"] || 0,
-      component_type: json_data["componentType"],
-      normalized: json_data["normalized"] || false,
-      count: json_data["count"],
-      type: accessor_type,
-      max: json_data["max"],
-      min: json_data["min"],
-      sparse: load_sparse(json_data["sparse"]),
-      name: json_data["name"],
-      extensions: json_data["extensions"],
-      extras: json_data["extras"]
-    }
+    if component_type && type do
+      accessor = %__MODULE__{
+        buffer_view: json_data["bufferView"],
+        byte_offset: json_data["byteOffset"] || 0,
+        component_type: component_type,
+        normalized: json_data["normalized"] || false,
+        count: json_data["count"],
+        type: type,
+        max: json_data["max"],
+        min: json_data["min"],
+        sparse: parse_sparse(json_data["sparse"]),
+        name: json_data["name"],
+        extensions: json_data["extensions"],
+        extras: json_data["extras"]
+      }
 
-    # Validate required fields
-    case {accessor.component_type, accessor.count, accessor.type} do
-      {nil, _, _} ->
-        {:error, :missing_component_type}
-
-      {_, nil, _} ->
-        {:error, :missing_count}
-
-      {_, _, nil} ->
-        {:error, :invalid_accessor_type}
-
-      {ct, count, _} when is_integer(ct) and is_integer(count) and count > 0 ->
-        # Validate component type is supported
-        if Map.has_key?(component_types(), ct) do
-          {:ok, accessor}
-        else
-          {:error, {:unsupported_component_type, ct}}
-        end
-
-      _ ->
-        {:error, :invalid_fields}
+      {:ok, accessor}
+    else
+      {:error, :invalid_component_type_or_type}
     end
   end
 
-  # Load sparse accessor data if present
-  defp load_sparse(nil), do: nil
+  # Parse component type constants - return OpenGL constants directly
+  defp parse_component_type(@gl_byte), do: @gl_byte
+  defp parse_component_type(@gl_unsigned_byte), do: @gl_unsigned_byte
+  defp parse_component_type(@gl_short), do: @gl_short
+  defp parse_component_type(@gl_unsigned_short), do: @gl_unsigned_short
+  defp parse_component_type(@gl_unsigned_int), do: @gl_unsigned_int
+  defp parse_component_type(@gl_float), do: @gl_float
+  defp parse_component_type(_), do: nil
 
-  defp load_sparse(sparse_data) when is_map(sparse_data) do
-    indices =
-      case sparse_data["indices"] do
-        nil -> nil
-        indices_data -> load_sparse_indices(indices_data)
-      end
+  # Parse type strings (keep as atoms since they're glTF spec strings)
+  defp parse_type("SCALAR"), do: :scalar
+  defp parse_type("VEC2"), do: :vec2
+  defp parse_type("VEC3"), do: :vec3
+  defp parse_type("VEC4"), do: :vec4
+  defp parse_type("MAT2"), do: :mat2
+  defp parse_type("MAT3"), do: :mat3
+  defp parse_type("MAT4"), do: :mat4
+  defp parse_type(_), do: nil
 
-    values =
-      case sparse_data["values"] do
-        nil -> nil
-        values_data -> load_sparse_values(values_data)
-      end
+  # Parse sparse accessor data (placeholder for now)
+  defp parse_sparse(nil), do: nil
 
-    # Create sparse struct using map syntax to avoid forward reference
-    sparse_struct = %{
-      __struct__: GLTF.Accessor.Sparse,
-      count: sparse_data["count"],
-      indices: indices,
-      values: values,
-      extensions: sparse_data["extensions"],
-      extras: sparse_data["extras"]
-    }
-
-    sparse_struct
+  defp parse_sparse(_sparse_data) do
+    # TODO: Implement sparse accessor parsing
+    nil
   end
 
-  defp load_sparse_indices(indices_data) when is_map(indices_data) do
-    # Create indices struct using map syntax to avoid forward reference
-    %{
-      __struct__: GLTF.Accessor.Sparse.Indices,
-      buffer_view: indices_data["bufferView"],
-      byte_offset: indices_data["byteOffset"] || 0,
-      component_type: indices_data["componentType"],
-      extensions: indices_data["extensions"],
-      extras: indices_data["extras"]
-    }
+  @doc """
+  Check if this accessor points to valid buffer view data.
+  """
+  def valid_buffer_view?(%__MODULE__{buffer_view: nil}), do: false
+
+  def valid_buffer_view?(%__MODULE__{buffer_view: buffer_view})
+      when is_integer(buffer_view) and buffer_view >= 0,
+      do: true
+
+  def valid_buffer_view?(_), do: false
+
+  @doc """
+  Get the absolute byte offset within the underlying buffer.
+  """
+  def absolute_byte_offset(%__MODULE__{byte_offset: accessor_offset}, buffer_view_offset) do
+    accessor_offset + buffer_view_offset
   end
 
-  defp load_sparse_values(values_data) when is_map(values_data) do
-    # Create values struct using map syntax to avoid forward reference
-    %{
-      __struct__: GLTF.Accessor.Sparse.Values,
-      buffer_view: values_data["bufferView"],
-      byte_offset: values_data["byteOffset"] || 0,
-      extensions: values_data["extensions"],
-      extras: values_data["extras"]
-    }
-  end
+  @doc """
+  Check if this accessor uses normalized integer values.
+  """
+  def normalized?(%__MODULE__{normalized: normalized}), do: !!normalized
+
+  @doc """
+  Check if this accessor uses floating-point components.
+  """
+  def float_components?(%__MODULE__{component_type: @gl_float}), do: true
+  def float_components?(_), do: false
+
+  @doc """
+  Check if this accessor represents matrix data.
+  """
+  def matrix?(%__MODULE__{type: type}) when type in [:mat2, :mat3, :mat4], do: true
+  def matrix?(_), do: false
+
+  @doc """
+  Check if this accessor represents vector data.
+  """
+  def vector?(%__MODULE__{type: type}) when type in [:vec2, :vec3, :vec4], do: true
+  def vector?(_), do: false
+
+  @doc """
+  Check if this accessor represents scalar data.
+  """
+  def scalar?(%__MODULE__{type: :scalar}), do: true
+  def scalar?(_), do: false
 end
 
 defmodule GLTF.Accessor.Sparse do

@@ -478,7 +478,7 @@ defmodule GLTF do
   Calculate the total byte size needed for an accessor.
   """
   def calculate_accessor_byte_size(%GLTF.Accessor{} = accessor) do
-    element_size = GLTF.Accessor.element_size(accessor)
+    element_size = GLTF.Accessor.element_byte_size(accessor)
     element_size * accessor.count
   end
 

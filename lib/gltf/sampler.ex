@@ -1,7 +1,12 @@
 defmodule GLTF.Sampler do
   @moduledoc """
   Texture sampler properties for filtering and wrapping modes.
+
+  Stores OpenGL constants directly rather than mapping to atoms,
+  following EAGL's philosophy of thin wrapping.
   """
+
+  use EAGL.Const
 
   defstruct [
     :mag_filter,
@@ -23,54 +28,18 @@ defmodule GLTF.Sampler do
           extras: any() | nil
         }
 
-  @type mag_filter :: :nearest | :linear
-  @type min_filter ::
-          :nearest
-          | :linear
-          | :nearest_mipmap_nearest
-          | :linear_mipmap_nearest
-          | :nearest_mipmap_linear
-          | :linear_mipmap_linear
-  @type wrap_mode :: :clamp_to_edge | :mirrored_repeat | :repeat
+  # OpenGL constants for magnification filters
+  # GL_NEAREST | GL_LINEAR
+  @type mag_filter :: 9728 | 9729
 
-  # WebGL filter constants
-  @nearest 9728
-  @linear 9729
-  @nearest_mipmap_nearest 9984
-  @linear_mipmap_nearest 9985
-  @nearest_mipmap_linear 9986
-  @linear_mipmap_linear 9987
+  # OpenGL constants for minification filters
+  @type min_filter :: 9728 | 9729 | 9984 | 9985 | 9986 | 9987
+  # GL_NEAREST | GL_LINEAR | GL_NEAREST_MIPMAP_NEAREST |
+  # GL_LINEAR_MIPMAP_NEAREST | GL_NEAREST_MIPMAP_LINEAR | GL_LINEAR_MIPMAP_LINEAR
 
-  # WebGL wrap constants
-  @clamp_to_edge 33071
-  @mirrored_repeat 33648
-  @repeat 10497
-
-  def mag_filter_constants do
-    %{
-      @nearest => :nearest,
-      @linear => :linear
-    }
-  end
-
-  def min_filter_constants do
-    %{
-      @nearest => :nearest,
-      @linear => :linear,
-      @nearest_mipmap_nearest => :nearest_mipmap_nearest,
-      @linear_mipmap_nearest => :linear_mipmap_nearest,
-      @nearest_mipmap_linear => :nearest_mipmap_linear,
-      @linear_mipmap_linear => :linear_mipmap_linear
-    }
-  end
-
-  def wrap_constants do
-    %{
-      @clamp_to_edge => :clamp_to_edge,
-      @mirrored_repeat => :mirrored_repeat,
-      @repeat => :repeat
-    }
-  end
+  # OpenGL constants for wrap modes
+  @type wrap_mode :: 33071 | 33648 | 10497
+  # GL_CLAMP_TO_EDGE | GL_MIRRORED_REPEAT | GL_REPEAT
 
   @doc """
   Create a new sampler with default repeat wrapping.
@@ -79,8 +48,8 @@ defmodule GLTF.Sampler do
     %__MODULE__{
       mag_filter: Keyword.get(opts, :mag_filter),
       min_filter: Keyword.get(opts, :min_filter),
-      wrap_s: Keyword.get(opts, :wrap_s, :repeat),
-      wrap_t: Keyword.get(opts, :wrap_t, :repeat),
+      wrap_s: Keyword.get(opts, :wrap_s, @gl_repeat),
+      wrap_t: Keyword.get(opts, :wrap_t, @gl_repeat),
       name: Keyword.get(opts, :name),
       extensions: Keyword.get(opts, :extensions),
       extras: Keyword.get(opts, :extras)
@@ -88,39 +57,14 @@ defmodule GLTF.Sampler do
   end
 
   @doc """
-  Get WebGL constant for mag filter.
-  """
-  def mag_filter_constant(:nearest), do: @nearest
-  def mag_filter_constant(:linear), do: @linear
-  def mag_filter_constant(nil), do: nil
-
-  @doc """
-  Get WebGL constant for min filter.
-  """
-  def min_filter_constant(:nearest), do: @nearest
-  def min_filter_constant(:linear), do: @linear
-  def min_filter_constant(:nearest_mipmap_nearest), do: @nearest_mipmap_nearest
-  def min_filter_constant(:linear_mipmap_nearest), do: @linear_mipmap_nearest
-  def min_filter_constant(:nearest_mipmap_linear), do: @nearest_mipmap_linear
-  def min_filter_constant(:linear_mipmap_linear), do: @linear_mipmap_linear
-  def min_filter_constant(nil), do: nil
-
-  @doc """
-  Get WebGL constant for wrap mode.
-  """
-  def wrap_constant(:clamp_to_edge), do: @clamp_to_edge
-  def wrap_constant(:mirrored_repeat), do: @mirrored_repeat
-  def wrap_constant(:repeat), do: @repeat
-
-  @doc """
   Check if min filter uses mipmapping.
   """
   def uses_mipmaps?(filter)
       when filter in [
-             :nearest_mipmap_nearest,
-             :linear_mipmap_nearest,
-             :nearest_mipmap_linear,
-             :linear_mipmap_linear
+             @gl_nearest_mipmap_nearest,
+             @gl_linear_mipmap_nearest,
+             @gl_nearest_mipmap_linear,
+             @gl_linear_mipmap_linear
            ],
       do: true
 
@@ -129,20 +73,20 @@ defmodule GLTF.Sampler do
   @doc """
   Check if this sampler uses linear filtering for magnification.
   """
-  def linear_mag?(%__MODULE__{mag_filter: @linear}), do: true
+  def linear_mag?(%__MODULE__{mag_filter: @gl_linear}), do: true
   def linear_mag?(%__MODULE__{}), do: false
 
   @doc """
   Load a Sampler struct from JSON data.
   """
   def load(json_data) when is_map(json_data) do
-    # Parse filter values
+    # Parse filter values (store OpenGL constants directly)
     mag_filter = parse_filter(json_data["magFilter"])
     min_filter = parse_filter(json_data["minFilter"])
 
-    # Parse wrap values
-    wrap_s = parse_wrap(json_data["wrapS"], @repeat)
-    wrap_t = parse_wrap(json_data["wrapT"], @repeat)
+    # Parse wrap values (store OpenGL constants directly)
+    wrap_s = parse_wrap(json_data["wrapS"], @gl_repeat)
+    wrap_t = parse_wrap(json_data["wrapT"], @gl_repeat)
 
     sampler = %__MODULE__{
       mag_filter: mag_filter,
@@ -157,20 +101,20 @@ defmodule GLTF.Sampler do
     {:ok, sampler}
   end
 
-  # Parse filter constants
+  # Parse filter constants - return OpenGL constants directly
   defp parse_filter(nil), do: nil
-  defp parse_filter(@nearest), do: @nearest
-  defp parse_filter(@linear), do: @linear
-  defp parse_filter(@nearest_mipmap_nearest), do: @nearest_mipmap_nearest
-  defp parse_filter(@linear_mipmap_nearest), do: @linear_mipmap_nearest
-  defp parse_filter(@nearest_mipmap_linear), do: @nearest_mipmap_linear
-  defp parse_filter(@linear_mipmap_linear), do: @linear_mipmap_linear
+  defp parse_filter(@gl_nearest), do: @gl_nearest
+  defp parse_filter(@gl_linear), do: @gl_linear
+  defp parse_filter(@gl_nearest_mipmap_nearest), do: @gl_nearest_mipmap_nearest
+  defp parse_filter(@gl_linear_mipmap_nearest), do: @gl_linear_mipmap_nearest
+  defp parse_filter(@gl_nearest_mipmap_linear), do: @gl_nearest_mipmap_linear
+  defp parse_filter(@gl_linear_mipmap_linear), do: @gl_linear_mipmap_linear
   defp parse_filter(_), do: nil
 
-  # Parse wrap constants
+  # Parse wrap constants - return OpenGL constants directly
   defp parse_wrap(nil, default), do: default
-  defp parse_wrap(@clamp_to_edge, _), do: @clamp_to_edge
-  defp parse_wrap(@mirrored_repeat, _), do: @mirrored_repeat
-  defp parse_wrap(@repeat, _), do: @repeat
+  defp parse_wrap(@gl_clamp_to_edge, _), do: @gl_clamp_to_edge
+  defp parse_wrap(@gl_mirrored_repeat, _), do: @gl_mirrored_repeat
+  defp parse_wrap(@gl_repeat, _), do: @gl_repeat
   defp parse_wrap(_, default), do: default
 end
