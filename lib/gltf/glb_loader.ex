@@ -1002,7 +1002,7 @@ defmodule GLTF.GLBLoader do
         File.mkdir_p!(cache_dir)
         :ok
 
-      {:error, reason} ->
+      {:error, reason, _} ->
         {:error, "Failed to clear cache: #{inspect(reason)}"}
     end
   end
