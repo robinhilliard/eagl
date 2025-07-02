@@ -12,6 +12,7 @@
 Code.append_path("_build/dev/lib/eagl/ebin")
 Code.append_path("_build/dev/lib/poison/ebin")
 Code.append_path("_build/dev/lib/jason/ebin")
+Code.append_path("_build/dev/lib/stb_image/ebin")
 
 defmodule GLBWebDemo do
   @moduledoc """
@@ -43,7 +44,7 @@ defmodule GLBWebDemo do
 
   @default_model "duck"
 
-  def run_example(model_name \\ @default_model) do
+  def run_example(model_name \\ @default_model, opts \\ []) do
     # Parse command line arguments
     model_name = case System.argv() do
       [model_arg | _] when model_arg in ["--help", "-h"] ->
@@ -74,14 +75,13 @@ defmodule GLBWebDemo do
     ║                                                                               ║
     ║ Pipeline: Web → HTTP → GLB Parse → Scene Graph → Transforms → PBR Render     ║
     ║ Phase 5: Scene Hierarchy & Node Transformations (TRS matrices & hierarchy)  ║
-    ║ Controls: WASD to move, mouse to look around, scroll to zoom                 ║
+    ║ Controls: WASD to move, mouse to look around, scroll to zoom, ENTER to exit ║
     ║ Features: Scene graphs, node transforms, multi-mesh scenes, spatial layout   ║
     ╚═══════════════════════════════════════════════════════════════════════════════╝
     """)
 
     EAGL.Window.run(__MODULE__, "GLB Web Demo - Phase 5 - #{String.upcase(model_name)}",
-      size: {1200, 800},
-      depth_testing: true
+      Keyword.merge([size: {1200, 800}, depth_testing: true, enter_to_exit: true], opts)
     )
   end
 
@@ -125,7 +125,7 @@ defmodule GLBWebDemo do
       IO.puts("     - Scenes: #{length(scene_data.scenes)}")
       IO.puts("     - Nodes: #{length(scene_data.nodes)}")
       IO.puts("     - Mesh instances: #{length(scene_data.mesh_instances)}")
-      IO.puts("🎮 Controls: WASD + mouse + scroll")
+      IO.puts("🎮 Controls: WASD + mouse + scroll + ENTER to exit")
 
       {:ok, %{
         shader_program: shader_program,
@@ -195,8 +195,11 @@ defmodule GLBWebDemo do
     end
   end
 
-  def handle_event({:mouse_wheel, _, _, _, wheel_delta}, %{camera: camera} = state) do
-    updated_camera = Camera.process_mouse_scroll(camera, wheel_delta)
+  def handle_event({:mouse_wheel, _x, _y, wheel_rotation, _wheel_delta}, %{camera: camera} = state) do
+    # wheel_rotation is typically -120 (scroll up) or +120 (scroll down)
+    # Convert to a smaller zoom delta - scroll up should zoom in (reduce FOV)
+    zoom_delta = wheel_rotation / 120.0 * 2.0
+    updated_camera = Camera.process_mouse_scroll(camera, zoom_delta)
     {:ok, %{state | camera: updated_camera}}
   end
 
@@ -313,7 +316,7 @@ defmodule GLBWebDemo do
     :ok = Application.ensure_started(:ssl)
     :ok = Application.ensure_started(:inets)
 
-    case GLTF.GLBLoader.parse_url(model_url, http_client: :req, timeout: 30_000) do
+    case GLTF.GLBLoader.parse_url(model_url, http_client: :httpc, timeout: 30_000) do
       {:ok, glb_binary} ->
         IO.puts("    ✓ GLB downloaded and parsed successfully")
         parse_gltf_content(glb_binary)
@@ -864,10 +867,10 @@ defmodule GLBWebDemo do
         {:error, "Image #{image_index} not found in glTF"}
 
       image ->
-        # Load image data (only support embedded images for now)
+        # Load image data and create OpenGL texture directly
         case load_image_data(image, gltf, data_store) do
-          {:ok, image_data, width, height, format} ->
-            create_opengl_texture(image_data, width, height, format)
+          {:ok, image_binary, mime_type} ->
+            load_texture_from_glb_binary(image_binary, mime_type)
           {:error, reason} ->
             {:error, reason}
         end
@@ -900,15 +903,15 @@ defmodule GLBWebDemo do
         {:error, "Buffer view #{image.buffer_view} not found"}
 
       buffer_view ->
-        # Get image data from buffer
-        case GLTF.DataStore.get_buffer_data(data_store, buffer_view.buffer) do
+        # Get image data from buffer using the GLTF wrapper function
+        case GLTF.get_buffer_data(gltf, data_store, buffer_view.buffer) do
           {:ok, buffer_data} ->
             offset = buffer_view.byte_offset || 0
             length = buffer_view.byte_length
 
             if byte_size(buffer_data) >= offset + length do
               image_binary = binary_part(buffer_data, offset, length)
-              decode_image_binary(image_binary, image.mime_type)
+              {:ok, image_binary, image.mime_type}
             else
               {:error, "Buffer too small for image data"}
             end
@@ -926,7 +929,7 @@ defmodule GLBWebDemo do
         case Base.decode64(base64_data) do
           {:ok, image_binary} ->
             mime_type = extract_mime_type_from_data_uri(header)
-            decode_image_binary(image_binary, mime_type)
+            {:ok, image_binary, mime_type}
           :error ->
             {:error, "Invalid base64 data in data URI"}
         end
@@ -942,59 +945,16 @@ defmodule GLBWebDemo do
     end
   end
 
-  defp decode_image_binary(image_binary, mime_type) do
-    # For now, create a simple placeholder texture since we don't have image decoding
-    # In a real implementation, you'd use stb_image or similar
-    IO.puts("                📷 Creating placeholder texture for #{mime_type || "unknown"} image (#{byte_size(image_binary)} bytes)")
+  defp load_texture_from_glb_binary(image_binary, mime_type) do
+    # Use the new EAGL.Texture.load_texture_from_binary function for real image decoding
+    IO.puts("                📷 Loading real texture from #{mime_type || "unknown"} image (#{byte_size(image_binary)} bytes)")
 
-    # Create a simple 2x2 checkerboard pattern
-    width = 2
-    height = 2
-
-    # Create RGBA checkerboard pattern
-    pixel_data = <<
-      255, 255, 255, 255,  # white
-      128, 128, 128, 255,  # gray
-      128, 128, 128, 255,  # gray
-      255, 255, 255, 255   # white
-    >>
-
-    {:ok, pixel_data, width, height, :rgba}
-  end
-
-  defp create_opengl_texture(pixel_data, width, height, format) do
-    case create_texture() do
-      {:ok, texture_id} ->
-        :gl.bindTexture(@gl_texture_2d, texture_id)
-
-        # Set texture parameters for good quality
-        set_texture_parameters(
-          wrap_s: @gl_repeat,
-          wrap_t: @gl_repeat,
-          min_filter: @gl_linear_mipmap_linear,
-          mag_filter: @gl_linear
-        )
-
-        # Upload texture data
-        {internal_format, gl_format, gl_type} = case format do
-          :rgb -> {@gl_rgb, @gl_rgb, @gl_unsigned_byte}
-          :rgba -> {@gl_rgba, @gl_rgba, @gl_unsigned_byte}
-          _ -> {@gl_rgba, @gl_rgba, @gl_unsigned_byte}
-        end
-
-        load_texture_data(width, height, pixel_data,
-          internal_format: internal_format,
-          format: gl_format,
-          type: gl_type
-        )
-
-        # Generate mipmaps
-        :gl.generateMipmap(@gl_texture_2d)
-        :gl.bindTexture(@gl_texture_2d, 0)
-
+    case load_texture_from_binary(image_binary, mime_type: mime_type) do
+      {:ok, texture_id, width, height} ->
+        IO.puts("                ✓ Successfully loaded #{width}x#{height} texture (ID: #{texture_id})")
         {:ok, texture_id}
-
       {:error, reason} ->
+        IO.puts("                ⚠️  Failed to load texture: #{reason}")
         {:error, reason}
     end
   end
@@ -1157,8 +1117,9 @@ defmodule GLBWebDemo do
 
   defp generate_default_texcoords(vertex_count) do
     # Generate simple texture coordinates (0,0) for all vertices - need 2 values per vertex
+    # Note: (0,0) in glTF coordinates becomes (0,1) in OpenGL after V-flipping
     texcoords = for _ <- 1..trunc(vertex_count) do
-      [0.0, 0.0]  # Two float values per vertex
+      [0.0, 0.0]  # Two float values per vertex (U, V in glTF coordinates)
     end
     |> List.flatten()
     IO.puts("          - Generated #{length(texcoords)} texcoord values for #{vertex_count} vertices (should be #{trunc(vertex_count) * 2})")
@@ -1194,6 +1155,10 @@ defmodule GLBWebDemo do
       pos_idx = i * 3
       tex_idx = i * 2
 
+      # Flip V coordinate to convert from glTF (V=0 at top) to OpenGL (V=0 at bottom) convention
+      v_coord = Enum.at(texcoords, tex_idx + 1) || 0.0
+      flipped_v = 1.0 - v_coord
+
       [
         Enum.at(positions, pos_idx) || 0.0,     # x
         Enum.at(positions, pos_idx + 1) || 0.0, # y
@@ -1202,12 +1167,12 @@ defmodule GLBWebDemo do
         Enum.at(normals, pos_idx + 1) || 1.0,   # ny (default up)
         Enum.at(normals, pos_idx + 2) || 0.0,   # nz
         Enum.at(texcoords, tex_idx) || 0.0,     # u
-        Enum.at(texcoords, tex_idx + 1) || 0.0  # v
+        flipped_v                               # v (flipped for OpenGL)
       ]
     end
 
-        # Debug: Show first few interleaved vertices
-    IO.puts("          - First few interleaved vertices:")
+        # Debug: Show first few interleaved vertices (V coordinate is flipped for OpenGL)
+    IO.puts("          - First few interleaved vertices (V coordinates flipped for OpenGL):")
     vertices
     |> Enum.take(3)
     |> Enum.with_index()

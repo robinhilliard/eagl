@@ -273,6 +273,101 @@ defmodule EAGL.Texture do
   end
 
   @doc """
+  Loads a texture from raw binary image data.
+
+  This function is designed to work with embedded image data from GLB files or
+  other sources where the image data is already in memory as binary data.
+
+  Requires the optional `stb_image` dependency. If not available, falls back to
+  checkerboard texture with a helpful warning message.
+
+  ## Parameters
+
+  - `binary_data`: Raw binary image data (JPEG, PNG, etc.)
+  - `opts`: Options for texture loading
+
+  ## Options
+
+  - `flip_y`: Flip image vertically (default: true, matches OpenGL convention)
+  - `fallback_size`: Size of fallback checkerboard if image loading fails (default: 256)
+  - `fallback_square_size`: Square size for fallback checkerboard (default: 32)
+  - `mime_type`: MIME type hint for the image format (optional, used for error messages)
+
+  ## Examples
+
+      # Load from GLB embedded image data
+      {:ok, texture_id, width, height} = load_texture_from_binary(image_binary)
+
+      # Load with custom options
+      {:ok, texture_id, width, height} = load_texture_from_binary(image_binary,
+        flip_y: false,
+        mime_type: "image/jpeg"
+      )
+  """
+  @spec load_texture_from_binary(binary(), keyword()) ::
+          {:ok, texture_id(), pos_integer(), pos_integer()} | {:error, String.t()}
+  def load_texture_from_binary(binary_data, opts \\ []) when is_binary(binary_data) do
+    flip_y = Keyword.get(opts, :flip_y, true)
+    fallback_size = Keyword.get(opts, :fallback_size, 256)
+    fallback_square_size = Keyword.get(opts, :fallback_square_size, 32)
+    mime_type = Keyword.get(opts, :mime_type, "unknown")
+
+    case load_image_from_binary_with_stb(binary_data, flip_y) do
+      {:ok, width, height, pixel_data, channels} ->
+        try do
+          # Create and configure texture
+          {:ok, texture_id} = create_texture()
+          :gl.bindTexture(@gl_texture_2d, texture_id)
+
+          # Determine format based on channels
+          format =
+            case channels do
+              1 -> @gl_red
+              2 -> @gl_rg
+              3 -> @gl_rgb
+              4 -> @gl_rgba
+              _ -> @gl_rgb
+            end
+
+          set_texture_parameters(
+            wrap_s: @gl_repeat,
+            wrap_t: @gl_repeat,
+            min_filter: @gl_linear_mipmap_linear,
+            mag_filter: @gl_linear
+          )
+
+          # Set pixel store parameters for proper alignment
+          :gl.pixelStorei(@gl_unpack_alignment, 1)
+
+          load_texture_data(width, height, pixel_data,
+            internal_format: format,
+            format: format
+          )
+
+          :gl.generateMipmap(@gl_texture_2d)
+
+          {:ok, texture_id, width, height}
+        rescue
+          e -> {:error, "Failed to create texture from binary data: #{inspect(e)}"}
+        end
+
+      {:error, :stb_image_not_available} ->
+        print_stb_image_binary_warning(mime_type, byte_size(binary_data))
+        create_checkerboard_texture(fallback_size, fallback_square_size)
+
+      {:error, reason} ->
+        IO.puts("""
+        ⚠️  Failed to load image from binary data: #{mime_type}
+        Error: #{reason}
+        Data size: #{byte_size(binary_data)} bytes
+        Falling back to checkerboard texture...
+        """)
+
+        create_checkerboard_texture(fallback_size, fallback_square_size)
+    end
+  end
+
+  @doc """
   Creates a simple checkerboard texture for testing purposes.
   Returns a tuple of {texture_id, width, height}.
 
@@ -365,6 +460,36 @@ defmodule EAGL.Texture do
     end
   end
 
+  # Load image from binary data using stb_image if available
+  @spec load_image_from_binary_with_stb(binary(), boolean()) ::
+          {:ok, pos_integer(), pos_integer(), binary(), pos_integer()}
+          | {:error, atom() | String.t()}
+  defp load_image_from_binary_with_stb(binary_data, flip_y) do
+    if Code.ensure_loaded?(StbImage) do
+      try do
+        case StbImage.read_binary(binary_data, desired_channels: 0) do
+          {:ok, %StbImage{data: pixel_data, shape: {width, height, channels}}} ->
+            # Flip Y if requested (OpenGL convention)
+            final_data =
+              if flip_y do
+                flip_image_vertically(pixel_data, width, height, channels)
+              else
+                pixel_data
+              end
+
+            {:ok, width, height, final_data, channels}
+
+          {:error, reason} ->
+            {:error, "StbImage error: #{reason}"}
+        end
+      rescue
+        e -> {:error, "StbImage exception: #{inspect(e)}"}
+      end
+    else
+      {:error, :stb_image_not_available}
+    end
+  end
+
   # Flip image data vertically (Y-axis)
   @spec flip_image_vertically(binary(), pos_integer(), pos_integer(), pos_integer()) :: binary()
   defp flip_image_vertically(pixel_data, width, height, channels) do
@@ -395,6 +520,37 @@ defmodule EAGL.Texture do
     The optional 'stb_image' dependency is not available.
 
     To enable real image loading, add to your mix.exs:
+
+        def deps do
+          [
+            {:stb_image, "~> 0.6"}
+          ]
+        end
+
+    Then run:
+        mix deps.get
+        mix compile
+
+    For now, falling back to checkerboard texture...
+    ═══════════════════════════════════════════════════════════════
+    """)
+  end
+
+  # Print helpful warning when stb_image is not available for binary data
+  @spec print_stb_image_binary_warning(String.t(), pos_integer()) :: :ok
+  defp print_stb_image_binary_warning(mime_type, byte_size) do
+    IO.puts("""
+
+    ⚠️  Binary Image Loading Not Available
+    ═══════════════════════════════════════════════════════════════
+
+    Attempted to load binary image data:
+    - MIME type: #{mime_type}
+    - Size: #{byte_size} bytes
+
+    The optional 'stb_image' dependency is not available.
+
+    To enable real image loading from binary data, add to your mix.exs:
 
         def deps do
           [
