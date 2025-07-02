@@ -151,12 +151,11 @@ defmodule GLTF.EAGL do
           metallic = pbr.metallic_factor || 1.0
           roughness = pbr.roughness_factor || 1.0
 
-          %{
-            base_material
-            | base_color_factor: base_color,
-              metallic_factor: metallic,
-              roughness_factor: roughness
-          }
+          Map.merge(base_material, %{
+            base_color_factor: base_color,
+            metallic_factor: metallic,
+            roughness_factor: roughness
+          })
       end
 
     # Emissive properties
