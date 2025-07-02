@@ -1,7 +1,43 @@
 defmodule EAGL.BufferTest do
   use ExUnit.Case
+  use EAGL.Const
+  use WX.Const
   import EAGL.Buffer
   doctest EAGL.Buffer
+
+  # OpenGL context attributes for test - ensure proper OpenGL context for VAO creation
+  defp gl_attributes do
+    base_attributes = [
+      # Use RGBA mode
+      @wx_gl_rgba,
+      # Minimum 8 bits for red channel
+      @wx_gl_min_red,
+      8,
+      # Minimum 8 bits for green channel
+      @wx_gl_min_green,
+      8,
+      # Minimum 8 bits for blue channel
+      @wx_gl_min_blue,
+      8,
+      # Double buffering for smooth animation
+      @wx_gl_doublebuffer
+    ]
+
+    # Add OpenGL 3.3 Core Profile request on macOS for proper VAO support
+    macos_attributes = case :os.type() do
+      {:unix, :darwin} ->
+        [
+          # Request OpenGL 3.3 Core Profile on macOS
+          @wx_gl_major_version, 3,
+          @wx_gl_minor_version, 3,
+          @wx_gl_core_profile
+        ]
+      _ ->
+        []
+    end
+
+    base_attributes ++ macos_attributes ++ [0]
+  end
 
   describe "create_position_array/1" do
     setup do
@@ -10,7 +46,9 @@ defmodule EAGL.BufferTest do
         :application.start(:wx)
         wx = :wx.new()
         frame = :wxFrame.new(wx, -1, "Test", size: {100, 100})
-        gl_canvas = :wxGLCanvas.new(frame, [])
+
+        # Use proper OpenGL attributes for VAO creation
+        gl_canvas = :wxGLCanvas.new(frame, gl_attributes())
         :wxFrame.show(frame)
         :timer.sleep(50)
         gl_context = :wxGLContext.new(gl_canvas)
@@ -68,7 +106,9 @@ defmodule EAGL.BufferTest do
         :application.start(:wx)
         wx = :wx.new()
         frame = :wxFrame.new(wx, -1, "Test", size: {100, 100})
-        gl_canvas = :wxGLCanvas.new(frame, [])
+
+        # Use proper OpenGL attributes for VAO creation
+        gl_canvas = :wxGLCanvas.new(frame, gl_attributes())
         :wxFrame.show(frame)
         :timer.sleep(50)
         gl_context = :wxGLContext.new(gl_canvas)
@@ -507,7 +547,9 @@ defmodule EAGL.BufferTest do
         :application.start(:wx)
         wx = :wx.new()
         frame = :wxFrame.new(wx, -1, "Test", size: {100, 100})
-        gl_canvas = :wxGLCanvas.new(frame, [])
+
+        # Use proper OpenGL attributes for VAO creation
+        gl_canvas = :wxGLCanvas.new(frame, gl_attributes())
         :wxFrame.show(frame)
         :timer.sleep(50)
         gl_context = :wxGLContext.new(gl_canvas)

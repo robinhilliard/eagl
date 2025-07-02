@@ -313,7 +313,7 @@ defmodule GLBWebDemo do
     :ok = Application.ensure_started(:ssl)
     :ok = Application.ensure_started(:inets)
 
-    case GLTF.GLBLoader.parse_url(model_url, timeout: 30_000) do
+    case GLTF.GLBLoader.parse_url(model_url, http_client: :req, timeout: 30_000) do
       {:ok, glb_binary} ->
         IO.puts("    ✓ GLB downloaded and parsed successfully")
         parse_gltf_content(glb_binary)

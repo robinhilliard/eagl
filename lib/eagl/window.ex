@@ -74,6 +74,27 @@ defmodule EAGL.Window do
   # 60 FPS
   @tick_interval trunc(1000 / 60)
 
+  # Private helper to get the physical framebuffer size for OpenGL viewport
+  # On retina displays, logical size ≠ physical size, and OpenGL viewport needs physical size
+  defp get_framebuffer_size(canvas) do
+    {logical_width, logical_height} = :wxWindow.getSize(canvas)
+
+    # Get content scale factor (1.0 on non-retina, 2.0 on retina, etc.)
+    scale_factor =
+      try do
+        :wxWindow.getContentScaleFactor(canvas)
+      rescue
+        # Fallback for older wxWidgets versions that don't have getContentScaleFactor
+        _ -> 1.0
+      end
+
+    # Calculate physical framebuffer size
+    physical_width = round(logical_width * scale_factor)
+    physical_height = round(logical_height * scale_factor)
+
+    {physical_width, physical_height}
+  end
+
   # OpenGL context attributes for wxGLCanvas.
   # Based on Wings3D's wings_gl.erl attributes/0 function.
   # Ensures proper OpenGL context with optional depth buffer, double buffering, and RGBA mode.
@@ -114,11 +135,16 @@ defmodule EAGL.Window do
     macos_attributes =
       case :os.type() do
         {:unix, :darwin} ->
-          IO.puts("Detected macOS: Adding forward compatibility and requesting OpenGL 3.3 Core Profile")
+          IO.puts(
+            "Detected macOS: Adding forward compatibility and requesting OpenGL 3.3 Core Profile"
+          )
+
           [
             @wx_gl_forward_compat,
-            @wx_gl_major_version, 3,
-            @wx_gl_minor_version, 3,
+            @wx_gl_major_version,
+            3,
+            @wx_gl_minor_version,
+            3,
             @wx_gl_core_profile
           ]
 
@@ -257,10 +283,14 @@ defmodule EAGL.Window do
               e in [ErlangError] ->
                 case e.original do
                   {:nif_not_loaded, _, _, _, _} ->
-                    {:error, {:nif_not_loaded, "OpenGL NIFs are not loaded. This may be due to missing OpenGL drivers or incompatible wxWidgets/OTP versions."}}
+                    {:error,
+                     {:nif_not_loaded,
+                      "OpenGL NIFs are not loaded. This may be due to missing OpenGL drivers or incompatible wxWidgets/OTP versions."}}
+
                   _ ->
                     {:error, {:gl_error, e}}
                 end
+
               e ->
                 {:error, {:unexpected_error, e}}
             end
@@ -268,12 +298,12 @@ defmodule EAGL.Window do
           case nif_test_result do
             :ok ->
               # Continue with initialization
-              # Get initial size and validate
-              {width, height} = :wxWindow.getSize(gl_canvas)
+              # Get physical framebuffer size for retina display support
+              {width, height} = get_framebuffer_size(gl_canvas)
               safe_width = max(width, 1)
               safe_height = max(height, 1)
 
-              # Initialize OpenGL with proper setup
+              # Initialize OpenGL with proper setup using physical framebuffer size
               :gl.viewport(0, 0, safe_width, safe_height)
 
               # Conditionally enable depth testing based on configuration
@@ -565,26 +595,20 @@ defmodule EAGL.Window do
           {canvas_width, canvas_height} = :wxWindow.getSize(gl_canvas)
 
           # Ensure canvas fills the frame (only if sizes are valid)
-          {final_width, final_height} =
-            if canvas_width > 0 and canvas_height > 0 and frame_width > 0 and frame_height > 0 do
-              if canvas_width != frame_width or canvas_height != frame_height do
-                :wxWindow.setSize(gl_canvas, {frame_width, frame_height})
-                # Use the frame size for rendering after resize
-                {frame_width, frame_height}
-              else
-                {canvas_width, canvas_height}
-              end
-            else
-              # Fallback to reasonable defaults if dimensions are invalid
-              {max(canvas_width, 1), max(canvas_height, 1)}
+          if canvas_width > 0 and canvas_height > 0 and frame_width > 0 and frame_height > 0 do
+            if canvas_width != frame_width or canvas_height != frame_height do
+              :wxWindow.setSize(gl_canvas, {frame_width, frame_height})
             end
+          end
 
-          # Ensure viewport dimensions are positive
-          safe_width = max(final_width, 1)
-          safe_height = max(final_height, 1)
+          # Get physical framebuffer size for retina display support
+          {physical_width, physical_height} = get_framebuffer_size(gl_canvas)
+          safe_width = max(physical_width, 1)
+          safe_height = max(physical_height, 1)
 
           :gl.viewport(0, 0, safe_width, safe_height)
-          callback_module.render(safe_width * 1.0, safe_height * 1.0, state)
+          # Pass physical framebuffer size to render function (for OpenGL operations)
+          callback_module.render(physical_width * 1.0, physical_height * 1.0, state)
           :wxGLCanvas.swapBuffers(gl_canvas)
         end
 
@@ -712,14 +736,17 @@ defmodule EAGL.Window do
         end
 
         :wxGLCanvas.setCurrent(gl_canvas, gl_context)
-        {width, height} = :wxWindow.getSize(gl_canvas)
+        # Get physical framebuffer size for OpenGL viewport and render callback (retina support)
+        {physical_width, physical_height} = get_framebuffer_size(gl_canvas)
 
         # Ensure dimensions are positive
-        safe_width = max(width, 1)
-        safe_height = max(height, 1)
+        safe_physical_width = max(physical_width, 1)
+        safe_physical_height = max(physical_height, 1)
 
-        :gl.viewport(0, 0, safe_width, safe_height)
-        callback_module.render(safe_width * 1.0, safe_height * 1.0, state)
+        # Set OpenGL viewport to physical framebuffer size
+        :gl.viewport(0, 0, safe_physical_width, safe_physical_height)
+        # Pass physical framebuffer size to render function for all OpenGL operations
+        callback_module.render(safe_physical_width * 1.0, safe_physical_height * 1.0, state)
         :wxGLCanvas.swapBuffers(gl_canvas)
         # Set timeout to nil after first render to prevent multiple timers
         main_loop(frame, gl_canvas, gl_context, callback_module, state, enter_to_exit, nil)

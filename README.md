@@ -543,7 +543,64 @@ sudo dnf install mesa-libGL-devel mesa-libGLU-devel
 #### macOS
 OpenGL is included with macOS. No additional setup required.
 
-**Note**: EAGL automatically detects macOS and enables forward compatibility for OpenGL 3.0+ contexts, which is required by Apple's OpenGL implementation. This matches the behaviour of the `#ifdef __APPLE__` code commonly found in OpenGL tutorials.
+**Important**: EAGL automatically detects macOS and enables forward compatibility for OpenGL 3.0+ contexts, which is required by Apple's OpenGL implementation. This matches the behaviour of the `#ifdef __APPLE__` code commonly found in OpenGL tutorials.
+
+##### Version Sensitivity for OpenGL NIFs
+
+macOS requires **exact version matching** between Erlang/OTP and Elixir for OpenGL Native Implemented Functions (NIFs) to load properly. Version mismatches will cause `{:nif_not_loaded, :module, :gl, :line, N}` errors when examples try to run.
+
+**Symptoms of version mismatch:**
+- Examples fail with `{:nif_not_loaded, :module, :gl, :line, 356}` or similar errors
+- `wx` module loads successfully but OpenGL calls fail
+- Error occurs immediately when trying to use any `:gl.*` functions
+
+**Solution:**
+Use matching Erlang/OTP and Elixir versions. Check your current versions:
+
+```bash
+# Check current versions
+elixir --version
+# Should show matching OTP versions, e.g.:
+# Erlang/OTP 26 [erts-14.2.1]
+# Elixir 1.15.7 (compiled with Erlang/OTP 26)
+```
+
+If versions don't match (e.g., "OTP 28" with "compiled with Erlang/OTP 25"):
+
+```bash
+# List available versions
+asdf list erlang
+asdf list elixir
+
+# Switch to matching versions (example)
+asdf global erlang 26.2.1
+asdf global elixir 1.15.7-otp-26
+
+# Or update your project's .tool-versions file
+echo "erlang 26.2.1" > .tool-versions
+echo "elixir 1.15.7-otp-26" >> .tool-versions
+```
+
+**Recommended version combinations:**
+- **Erlang/OTP 26.2.1** + **Elixir 1.15.7-otp-26**
+- **Erlang/OTP 25.3** + **Elixir 1.14.5-otp-25**
+
+##### Retina Display Support
+
+EAGL automatically handles retina display scaling on macOS. The viewport will correctly fill the entire window regardless of display pixel density.
+
+**How it works:**
+- **Logical size**: What you see (e.g., 1024×768)
+- **Physical size**: Actual pixels (e.g., 2048×1536 on 2× retina)
+- **Automatic scaling**: EAGL detects the content scale factor and passes physical dimensions to render functions
+
+**What this means:**
+- ✅ Viewport fills entire window on retina displays
+- ✅ Text and graphics appear crisp at native resolution  
+- ✅ No manual scaling required in your render functions
+- ✅ Works seamlessly across different display types
+
+If you're using EAGL, retina support is automatic. If you're calling `:gl.viewport()` directly, use the dimensions passed to your `render/3` function rather than calling `:wxWindow.getSize()` yourself.
 
 #### Windows  
 OpenGL is typically available through graphics drivers. If you encounter issues, ensure your graphics drivers are up to date.
@@ -970,4 +1027,38 @@ The GLTF library follows these design principles:
 - [ ] **Extensions**: Built-in support for common GLTF extensions
 - [ ] **Utilities**: Helper functions for common operations
 - [ ] **Integration**: Integration with EAGL rendering pipeline
+
+##### GLB Loading HTTP Client Issue
+
+On some macOS systems, Erlang's built-in `:httpc` HTTP client has a bug where `http_util.timestamp/0` fails during HTTPS requests, causing GLB web loading to fail with errors like:
+
+```
+"function :http_util.timestamp/0 is undefined (module :http_util is not available)"
+```
+
+**Solution:**
+Add the `:req` HTTP client as a dependency and configure GLB loading to use it:
+
+```elixir
+# In mix.exs
+defp deps do
+  [
+    {:req, "~> 0.5"}  # Add this for reliable HTTP on macOS
+    # ... other deps
+  ]
+end
+
+# When loading GLB files from URLs
+{:ok, glb} = GLTF.GLBLoader.parse_url(url, http_client: :req)
+```
+
+**Symptoms of httpc issue:**
+- GLB web demos fail with "http_util.timestamp/0 is undefined"
+- Local GLB files work fine, only URL loading fails
+- Direct `:http_util.timestamp()` calls work but `:httpc.request()` fails
+
+**Alternative HTTP clients:**
+- `:req` (recommended) - Modern, reliable HTTP client
+- `:httpoison` - Popular alternative if you prefer it
+- `:httpc` (default) - Works on most systems but has issues on some macOS configurations
 

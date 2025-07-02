@@ -49,6 +49,9 @@ defmodule EAGL.MixProject do
       {:poison, "~> 5.0", optional: true},
       {:jason, "~> 1.4", optional: true},
 
+      # HTTP client for GLB loading (alternative to broken httpc on some systems)
+      {:req, "~> 0.5", optional: true},
+
       # Development and documentation
       {:ex_doc, "~> 0.31", only: :dev, runtime: false},
       {:excoveralls, "~> 0.18", only: :test}
