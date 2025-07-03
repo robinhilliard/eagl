@@ -6,7 +6,7 @@
 # Phase 5: Scene Hierarchy and Node Transformations from GLB files
 # Shows the complete pipeline: Web → HTTP Download → GLB Parse → Scene Graph → Transform Hierarchy → Render
 #
-# Run with: elixir examples/glb_web_demo.exs
+# Run with: elixir lib/examples/gltf/glb_web_demo.exs
 
 # Add the current project to the code path
 Code.append_path("_build/dev/lib/eagl/ebin")
@@ -34,36 +34,47 @@ defmodule GLBWebDemo do
   alias EAGL.Camera
 
   @sample_models %{
-    "box" => "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/main/Models/Box/glTF-Binary/Box.glb",
-    "duck" => "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/main/Models/Duck/glTF-Binary/Duck.glb",
-    "avocado" => "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/main/Models/Avocado/glTF-Binary/Avocado.glb",
-    "damaged_helmet" => "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/main/Models/DamagedHelmet/glTF-Binary/DamagedHelmet.glb",
-    "flight_helmet" => "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/main/Models/FlightHelmet/glTF-Binary/FlightHelmet.glb",
-    "barramundi" => "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/main/Models/BarramundiFish/glTF-Binary/BarramundiFish.glb"
+    "box" =>
+      "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/main/Models/Box/glTF-Binary/Box.glb",
+    "duck" =>
+      "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/main/Models/Duck/glTF-Binary/Duck.glb",
+    "avocado" =>
+      "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/main/Models/Avocado/glTF-Binary/Avocado.glb",
+    "damaged_helmet" =>
+      "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/main/Models/DamagedHelmet/glTF-Binary/DamagedHelmet.glb",
+    "flight_helmet" =>
+      "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/main/Models/FlightHelmet/glTF-Binary/FlightHelmet.glb",
+    "barramundi" =>
+      "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/main/Models/BarramundiFish/glTF-Binary/BarramundiFish.glb"
   }
 
   @default_model "duck"
 
   def run_example(model_name \\ @default_model, opts \\ []) do
     # Parse command line arguments
-    model_name = case System.argv() do
-      [model_arg | _] when model_arg in ["--help", "-h"] ->
-        show_help()
-        System.halt(0)
-      [model_arg | _] ->
-        if Map.has_key?(@sample_models, model_arg) do
-          model_arg
-        else
-          IO.puts("❌ Unknown model '#{model_arg}'. Available models:")
-          Enum.each(@sample_models, fn {name, _url} ->
-            IO.puts("   - #{name}")
-          end)
-          IO.puts("Using default: #{@default_model}")
-          @default_model
-        end
-      [] ->
-        model_name
-    end
+    model_name =
+      case System.argv() do
+        [model_arg | _] when model_arg in ["--help", "-h"] ->
+          show_help()
+          System.halt(0)
+
+        [model_arg | _] ->
+          if Map.has_key?(@sample_models, model_arg) do
+            model_arg
+          else
+            IO.puts("❌ Unknown model '#{model_arg}'. Available models:")
+
+            Enum.each(@sample_models, fn {name, _url} ->
+              IO.puts("   - #{name}")
+            end)
+
+            IO.puts("Using default: #{@default_model}")
+            @default_model
+          end
+
+        [] ->
+          model_name
+      end
 
     model_url = @sample_models[model_name]
 
@@ -80,7 +91,9 @@ defmodule GLBWebDemo do
     ╚═══════════════════════════════════════════════════════════════════════════════╝
     """)
 
-    EAGL.Window.run(__MODULE__, "GLB Web Demo - Phase 5 - #{String.upcase(model_name)}",
+    EAGL.Window.run(
+      __MODULE__,
+      "GLB Web Demo - Phase 5 - #{String.upcase(model_name)}",
       Keyword.merge([size: {1200, 800}, depth_testing: true, enter_to_exit: true], opts)
     )
   end
@@ -89,7 +102,7 @@ defmodule GLBWebDemo do
     IO.puts("""
     GLB Web Demo - Phase 5
 
-    Usage: elixir examples/glb_web_demo.exs [model_name]
+    Usage: elixir lib/examples/gltf/glb_web_demo.exs [model_name]
 
     Available models:
     """)
@@ -102,10 +115,10 @@ defmodule GLBWebDemo do
 
     IO.puts("""
     Examples:
-      elixir examples/glb_web_demo.exs box
-      elixir examples/glb_web_demo.exs duck
-      elixir examples/glb_web_demo.exs avocado
-      elixir examples/glb_web_demo.exs damaged_helmet
+      elixir lib/examples/gltf/glb_web_demo.exs box
+      elixir lib/examples/gltf/glb_web_demo.exs duck
+      elixir lib/examples/gltf/glb_web_demo.exs avocado
+      elixir lib/examples/gltf/glb_web_demo.exs damaged_helmet
 
     Default model: #{@default_model}
     """)
@@ -119,7 +132,6 @@ defmodule GLBWebDemo do
          {:ok, shader_program} <- setup_shaders(),
          {:ok, camera} <- setup_camera(),
          {:ok, scene_data, source} <- attempt_glb_loading() do
-
       IO.puts("✅ Setup complete! Loaded scene from #{source}")
       IO.puts("  📊 Scene info:")
       IO.puts("     - Scenes: #{length(scene_data.scenes)}")
@@ -127,14 +139,15 @@ defmodule GLBWebDemo do
       IO.puts("     - Mesh instances: #{length(scene_data.mesh_instances)}")
       IO.puts("🎮 Controls: WASD + mouse + scroll + ENTER to exit")
 
-      {:ok, %{
-        shader_program: shader_program,
-        camera: camera,
-        scene_data: scene_data,
-        source: source,
-        last_mouse: {600, 400},
-        first_mouse: true
-      }}
+      {:ok,
+       %{
+         shader_program: shader_program,
+         camera: camera,
+         scene_data: scene_data,
+         source: source,
+         last_mouse: {600, 400},
+         first_mouse: true
+       }}
     else
       {:error, reason} ->
         IO.puts("❌ Setup failed: #{reason}")
@@ -143,7 +156,11 @@ defmodule GLBWebDemo do
   end
 
   @impl true
-  def render(width, height, %{shader_program: program, camera: camera, scene_data: scene_data} = state) do
+  def render(
+        width,
+        height,
+        %{shader_program: program, camera: camera, scene_data: scene_data} = state
+      ) do
     # Clear and setup 3D rendering
     :gl.viewport(0, 0, trunc(width), trunc(height))
     :gl.clearColor(0.1, 0.1, 0.2, 1.0)
@@ -152,7 +169,8 @@ defmodule GLBWebDemo do
     # Enable 3D rendering with glTF conventions
     :gl.enable(@gl_depth_test)
     :gl.enable(@gl_cull_face)
-    :gl.cullFace(@gl_back)  # glTF: counter-clockwise = front-facing
+    # glTF: counter-clockwise = front-facing
+    :gl.cullFace(@gl_back)
 
     :gl.useProgram(program)
 
@@ -184,7 +202,10 @@ defmodule GLBWebDemo do
     {:ok, %{state | camera: updated_camera}}
   end
 
-  def handle_event({:mouse_motion, x, y}, %{camera: camera, last_mouse: {last_x, last_y}, first_mouse: first_mouse} = state) do
+  def handle_event(
+        {:mouse_motion, x, y},
+        %{camera: camera, last_mouse: {last_x, last_y}, first_mouse: first_mouse} = state
+      ) do
     if first_mouse do
       {:ok, %{state | last_mouse: {x, y}, first_mouse: false}}
     else
@@ -195,7 +216,10 @@ defmodule GLBWebDemo do
     end
   end
 
-  def handle_event({:mouse_wheel, _x, _y, wheel_rotation, _wheel_delta}, %{camera: camera} = state) do
+  def handle_event(
+        {:mouse_wheel, _x, _y, wheel_rotation, _wheel_delta},
+        %{camera: camera} = state
+      ) do
     # wheel_rotation is typically -120 (scroll up) or +120 (scroll down)
     # Convert to a smaller zoom delta - scroll up should zoom in (reduce FOV)
     zoom_delta = wheel_rotation / 120.0 * 2.0
@@ -205,7 +229,7 @@ defmodule GLBWebDemo do
 
   def handle_event(_event, state), do: {:ok, state}
 
-    @impl true
+  @impl true
   def cleanup(%{scene_data: scene_data}) do
     IO.puts("🧹 Cleaning up GLB resources...")
 
@@ -223,11 +247,13 @@ defmodule GLBWebDemo do
       # Clean up textures (Phase 4)
       textures = material.textures || %{}
       texture_ids = Map.values(textures) |> Enum.filter(&is_integer/1)
+
       if length(texture_ids) > 0 do
         :gl.deleteTextures(texture_ids)
         IO.puts("  🖼️  Cleaned up #{length(texture_ids)} texture(s)")
       end
     end)
+
     :ok
   end
 
@@ -241,28 +267,33 @@ defmodule GLBWebDemo do
     IO.puts("  🔍 Checking JSON libraries...")
 
     # Try to load libraries more explicitly
-    poison_available = try do
-      Code.ensure_loaded?(Poison) and function_exported?(Poison, :decode, 1)
-    rescue
-      _ -> false
-    end
+    poison_available =
+      try do
+        Code.ensure_loaded?(Poison) and function_exported?(Poison, :decode, 1)
+      rescue
+        _ -> false
+      end
 
-    jason_available = try do
-      Code.ensure_loaded?(Jason) and function_exported?(Jason, :decode, 1)
-    rescue
-      _ -> false
-    end
+    jason_available =
+      try do
+        Code.ensure_loaded?(Jason) and function_exported?(Jason, :decode, 1)
+      rescue
+        _ -> false
+      end
 
     cond do
       poison_available ->
         IO.puts("  ✓ JSON library: Poison available")
         :ok
+
       jason_available ->
         IO.puts("  ✓ JSON library: Jason available")
         :ok
+
       true ->
         IO.puts("  ⚠️  No JSON library found - will use demo cube only")
-        :ok  # Don't fail, just use demo cube
+        # Don't fail, just use demo cube
+        :ok
     end
   end
 
@@ -283,21 +314,25 @@ defmodule GLBWebDemo do
 
   defp load_glb_scene do
     # Get the model name from command line or use default
-    model_name = case System.argv() do
-      [model_arg | _] ->
-        if Map.has_key?(@sample_models, model_arg) do
-          model_arg
-        else
+    model_name =
+      case System.argv() do
+        [model_arg | _] ->
+          if Map.has_key?(@sample_models, model_arg) do
+            model_arg
+          else
+            @default_model
+          end
+
+        _ ->
           @default_model
-        end
-      _ ->
-        @default_model
-    end
+      end
+
     model_url = @sample_models[model_name]
 
     # Check if we have JSON libraries
-    has_json = (Code.ensure_loaded?(Poison) and function_exported?(Poison, :decode, 1)) or
-               (Code.ensure_loaded?(Jason) and function_exported?(Jason, :decode, 1))
+    has_json =
+      (Code.ensure_loaded?(Poison) and function_exported?(Poison, :decode, 1)) or
+        (Code.ensure_loaded?(Jason) and function_exported?(Jason, :decode, 1))
 
     unless has_json do
       {:error, "No JSON library available"}
@@ -330,14 +365,18 @@ defmodule GLBWebDemo do
     IO.puts("    🔍 Loading glTF document...")
 
     # Determine which JSON library to use
-    json_library = cond do
-      Code.ensure_loaded?(Poison) and function_exported?(Poison, :decode, 1) ->
-        :poison
-      Code.ensure_loaded?(Jason) and function_exported?(Jason, :decode, 1) ->
-        :jason
-      true ->
-        :poison  # fallback, will likely fail but gives better error message
-    end
+    json_library =
+      cond do
+        Code.ensure_loaded?(Poison) and function_exported?(Poison, :decode, 1) ->
+          :poison
+
+        Code.ensure_loaded?(Jason) and function_exported?(Jason, :decode, 1) ->
+          :jason
+
+        true ->
+          # fallback, will likely fail but gives better error message
+          :poison
+      end
 
     case GLTF.GLBLoader.load_gltf_from_glb(glb_binary, json_library) do
       {:ok, gltf} ->
@@ -356,14 +395,17 @@ defmodule GLBWebDemo do
         # Setup data store with binary data
         binary_data = GLTF.Binary.get_binary(glb_binary)
         data_store = GLTF.DataStore.new()
-        data_store = case binary_data do
-          nil ->
-            IO.puts("      - No binary data found")
-            data_store
-          data ->
-            IO.puts("      - Binary data: #{byte_size(data)} bytes")
-            GLTF.DataStore.store_glb_buffer(data_store, 0, data)
-        end
+
+        data_store =
+          case binary_data do
+            nil ->
+              IO.puts("      - No binary data found")
+              data_store
+
+            data ->
+              IO.puts("      - Binary data: #{byte_size(data)} bytes")
+              GLTF.DataStore.store_glb_buffer(data_store, 0, data)
+          end
 
         extract_scene_graph(gltf, data_store)
 
@@ -383,9 +425,11 @@ defmodule GLBWebDemo do
           {:ok, scene_data} ->
             IO.puts("      ✅ Scene graph extracted successfully")
             {:ok, scene_data}
+
           {:error, reason} ->
             {:error, "Failed to extract scene hierarchy: #{reason}"}
         end
+
       {:error, reason} ->
         {:error, "Failed to extract meshes: #{reason}"}
     end
@@ -402,24 +446,27 @@ defmodule GLBWebDemo do
         IO.puts("        Processing #{length(meshes)} mesh(es)...")
 
         # Extract all meshes and create a map: mesh_index -> mesh_data
-        results = Enum.with_index(meshes)
-        |> Enum.map(fn {mesh, index} ->
-          case extract_mesh_geometry(mesh, gltf, data_store, index) do
-            {:ok, gpu_mesh} ->
-              IO.puts("          ✓ Mesh #{index}: Extracted successfully")
-              {index, gpu_mesh}
-            {:error, reason} ->
-              IO.puts("          ❌ Mesh #{index}: #{inspect(reason)}")
-              {:error, {index, reason}}
-          end
-        end)
+        results =
+          Enum.with_index(meshes)
+          |> Enum.map(fn {mesh, index} ->
+            case extract_mesh_geometry(mesh, gltf, data_store, index) do
+              {:ok, gpu_mesh} ->
+                IO.puts("          ✓ Mesh #{index}: Extracted successfully")
+                {index, gpu_mesh}
+
+              {:error, reason} ->
+                IO.puts("          ❌ Mesh #{index}: #{inspect(reason)}")
+                {:error, {index, reason}}
+            end
+          end)
 
         # Collect successful mesh extractions into a map
-        extracted_meshes = results
-        |> Enum.reduce(%{}, fn
-          {index, gpu_mesh}, acc when is_integer(index) -> Map.put(acc, index, gpu_mesh)
-          {:error, _}, acc -> acc
-        end)
+        extracted_meshes =
+          results
+          |> Enum.reduce(%{}, fn
+            {index, gpu_mesh}, acc when is_integer(index) -> Map.put(acc, index, gpu_mesh)
+            {:error, _}, acc -> acc
+          end)
 
         if map_size(extracted_meshes) > 0 do
           IO.puts("        ✅ #{map_size(extracted_meshes)} mesh(es) extracted successfully")
@@ -435,14 +482,17 @@ defmodule GLBWebDemo do
 
     # Get the default scene or first scene
     scene_index = gltf.scene || 0
-    scene = case Enum.at(gltf.scenes || [], scene_index) do
-      nil ->
-        IO.puts("        ⚠️  No scenes found, creating default scene")
-        %{nodes: Enum.to_list(0..(length(gltf.nodes || []) - 1))}
-      scene ->
-        IO.puts("        📋 Using scene #{scene_index}: #{scene.name || "Unnamed"}")
-        scene
-    end
+
+    scene =
+      case Enum.at(gltf.scenes || [], scene_index) do
+        nil ->
+          IO.puts("        ⚠️  No scenes found, creating default scene")
+          %{nodes: Enum.to_list(0..(length(gltf.nodes || []) - 1))}
+
+        scene ->
+          IO.puts("        📋 Using scene #{scene_index}: #{scene.name || "Unnamed"}")
+          scene
+      end
 
     # Process all nodes and build the transformation hierarchy
     case process_scene_nodes(scene, gltf, meshes_map) do
@@ -452,7 +502,9 @@ defmodule GLBWebDemo do
           nodes: nodes,
           mesh_instances: mesh_instances
         }
+
         {:ok, scene_data}
+
       {:error, reason} ->
         {:error, reason}
     end
@@ -468,6 +520,7 @@ defmodule GLBWebDemo do
       {:ok, all_mesh_instances} ->
         processed_nodes = Enum.map(nodes, &process_node_info/1)
         {:ok, all_mesh_instances, processed_nodes}
+
       {:error, reason} ->
         {:error, reason}
     end
@@ -491,6 +544,7 @@ defmodule GLBWebDemo do
         if node_transform == nil do
           IO.puts("          ❌ Node #{node_index}: extract_node_transform returned nil")
         end
+
         if parent_transform == nil do
           IO.puts("          ❌ Node #{node_index}: parent_transform is nil")
         end
@@ -498,31 +552,38 @@ defmodule GLBWebDemo do
         world_transform = mat4_mul(parent_transform, node_transform)
 
         # Create mesh instance if this node has a mesh
-        new_mesh_instances = case node.mesh do
-          nil -> []
-          mesh_index ->
-            case Map.get(meshes_map, mesh_index) do
-              nil ->
-                IO.puts("          ⚠️  Node #{node_index} references missing mesh #{mesh_index}")
-                []
-              mesh_data ->
-                IO.puts("          ✓ Node #{node_index}: mesh #{mesh_index} with transform")
-                mesh_instance = %{
-                  node_index: node_index,
-                  mesh_index: mesh_index,
-                  mesh: mesh_data,
-                  world_transform: world_transform,
-                  node_name: node.name || "Node#{node_index}"
-                }
-                [mesh_instance]
-            end
-        end
+        new_mesh_instances =
+          case node.mesh do
+            nil ->
+              []
+
+            mesh_index ->
+              case Map.get(meshes_map, mesh_index) do
+                nil ->
+                  IO.puts("          ⚠️  Node #{node_index} references missing mesh #{mesh_index}")
+                  []
+
+                mesh_data ->
+                  IO.puts("          ✓ Node #{node_index}: mesh #{mesh_index} with transform")
+
+                  mesh_instance = %{
+                    node_index: node_index,
+                    mesh_index: mesh_index,
+                    mesh: mesh_data,
+                    world_transform: world_transform,
+                    node_name: node.name || "Node#{node_index}"
+                  }
+
+                  [mesh_instance]
+              end
+          end
 
         # Recursively process child nodes
         case traverse_nodes(node.children || [], nodes, meshes_map, world_transform, []) do
           {:ok, child_mesh_instances} ->
             all_instances = new_mesh_instances ++ child_mesh_instances ++ acc
             traverse_nodes(rest, nodes, meshes_map, parent_transform, all_instances)
+
           {:error, reason} ->
             {:error, reason}
         end
@@ -539,12 +600,25 @@ defmodule GLBWebDemo do
             # glTF matrix is already in column-major order, convert to EAGL format
             [
               {
-                m00, m01, m02, m03,
-                m10, m11, m12, m13,
-                m20, m21, m22, m23,
-                m30, m31, m32, m33
+                m00,
+                m01,
+                m02,
+                m03,
+                m10,
+                m11,
+                m12,
+                m13,
+                m20,
+                m21,
+                m22,
+                m23,
+                m30,
+                m31,
+                m32,
+                m33
               }
             ]
+
           _ ->
             IO.puts("            ⚠️  Invalid matrix format, using identity")
             mat4_identity()
@@ -553,20 +627,25 @@ defmodule GLBWebDemo do
       # TRS transformation (Translation, Rotation, Scale)
       true ->
         # Extract TRS components
-        translation = case node.translation do
-          [x, y, z] -> vec3(x, y, z)
-          _ -> vec3(0.0, 0.0, 0.0)
-        end
+        translation =
+          case node.translation do
+            [x, y, z] -> vec3(x, y, z)
+            _ -> vec3(0.0, 0.0, 0.0)
+          end
 
-        rotation = case node.rotation do
-          [x, y, z, w] -> [x, y, z, w]  # quaternion [x, y, z, w]
-          _ -> [0.0, 0.0, 0.0, 1.0]      # identity quaternion
-        end
+        rotation =
+          case node.rotation do
+            # quaternion [x, y, z, w]
+            [x, y, z, w] -> [x, y, z, w]
+            # identity quaternion
+            _ -> [0.0, 0.0, 0.0, 1.0]
+          end
 
-        scale = case node.scale do
-          [x, y, z] -> vec3(x, y, z)
-          _ -> vec3(1.0, 1.0, 1.0)
-        end
+        scale =
+          case node.scale do
+            [x, y, z] -> vec3(x, y, z)
+            _ -> vec3(1.0, 1.0, 1.0)
+          end
 
         # Build transformation matrix: T * R * S
         scale_matrix = mat4_scale(scale)
@@ -596,10 +675,22 @@ defmodule GLBWebDemo do
     # Return in EAGL mat4 format: list with single 16-element tuple (column-major)
     [
       {
-        1.0 - (yy + zz), xy + wz,         xz - wy,         0.0,
-        xy - wz,         1.0 - (xx + zz), yz + wx,         0.0,
-        xz + wy,         yz - wx,         1.0 - (xx + yy), 0.0,
-        0.0,             0.0,             0.0,             1.0
+        1.0 - (yy + zz),
+        xy + wz,
+        xz - wy,
+        0.0,
+        xy - wz,
+        1.0 - (xx + zz),
+        yz + wx,
+        0.0,
+        xz + wy,
+        yz - wx,
+        1.0 - (xx + yy),
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0
       }
     ]
   end
@@ -609,7 +700,8 @@ defmodule GLBWebDemo do
       name: node.name || "Unnamed",
       mesh_index: node.mesh,
       children_count: length(node.children || []),
-      has_transform: node.matrix != nil or node.translation != nil or node.rotation != nil or node.scale != nil
+      has_transform:
+        node.matrix != nil or node.translation != nil or node.rotation != nil or node.scale != nil
     }
   end
 
@@ -617,6 +709,7 @@ defmodule GLBWebDemo do
     case mesh.primitives do
       [] ->
         {:error, :no_primitives}
+
       [primitive | _] ->
         # For now, extract just the first primitive of each mesh
         extract_primitive_geometry(primitive, gltf, data_store, mesh_index)
@@ -628,7 +721,7 @@ defmodule GLBWebDemo do
     position_accessor = primitive.attributes["POSITION"]
 
     if position_accessor do
-              case extract_vertex_data(primitive, gltf, data_store) do
+      case extract_vertex_data(primitive, gltf, data_store) do
         {:ok, vertex_data, index_data, vertex_count} ->
           case create_gpu_buffers(vertex_data, index_data) do
             {:ok, vao, vbo, ebo} ->
@@ -643,7 +736,9 @@ defmodule GLBWebDemo do
                     has_indices: index_data != nil,
                     material: material_info
                   }
+
                   {:ok, mesh}
+
                 {:error, reason} ->
                   # Clean up buffers if material extraction fails
                   if ebo do
@@ -651,11 +746,14 @@ defmodule GLBWebDemo do
                   else
                     delete_vertex_array(vao, vbo)
                   end
+
                   {:error, "Failed to extract material: #{reason}"}
               end
+
             {:error, reason} ->
               {:error, "Failed to create GPU buffers: #{reason}"}
           end
+
         {:error, reason} ->
           {:error, "Failed to extract vertex data: #{reason}"}
       end
@@ -664,31 +762,39 @@ defmodule GLBWebDemo do
     end
   end
 
-    defp extract_material_info(primitive, gltf, data_store) do
+  defp extract_material_info(primitive, gltf, data_store) do
     case primitive.material do
       nil ->
         IO.puts("          - No material specified, using default PBR material")
-        {:ok, %{
-          base_color_factor: [1.0, 1.0, 1.0, 1.0],  # White
-          metallic_factor: 1.0,                       # Default metallic
-          roughness_factor: 1.0,                      # Default roughness
-          emissive_factor: [0.0, 0.0, 0.0],          # No emission
-          material_type: :default,
-          textures: %{}
-        }}
+
+        {:ok,
+         %{
+           # White
+           base_color_factor: [1.0, 1.0, 1.0, 1.0],
+           # Default metallic
+           metallic_factor: 1.0,
+           # Default roughness
+           roughness_factor: 1.0,
+           # No emission
+           emissive_factor: [0.0, 0.0, 0.0],
+           material_type: :default,
+           textures: %{}
+         }}
 
       material_index ->
         case Enum.at(gltf.materials || [], material_index) do
           nil ->
             IO.puts("          - Material #{material_index} not found, using default")
-            {:ok, %{
-              base_color_factor: [1.0, 1.0, 1.0, 1.0],
-              metallic_factor: 1.0,
-              roughness_factor: 1.0,
-              emissive_factor: [0.0, 0.0, 0.0],
-              material_type: :default,
-              textures: %{}
-            }}
+
+            {:ok,
+             %{
+               base_color_factor: [1.0, 1.0, 1.0, 1.0],
+               metallic_factor: 1.0,
+               roughness_factor: 1.0,
+               emissive_factor: [0.0, 0.0, 0.0],
+               material_type: :default,
+               textures: %{}
+             }}
 
           material ->
             IO.puts("          - Material #{material_index}: #{material.name || "Unnamed"}")
@@ -706,21 +812,26 @@ defmodule GLBWebDemo do
     roughness = pbr.roughness_factor || 1.0
     emissive = material.emissive_factor || [0.0, 0.0, 0.0]
 
-    IO.puts("            Base color: [#{Float.round(Enum.at(base_color, 0), 3)}, #{Float.round(Enum.at(base_color, 1), 3)}, #{Float.round(Enum.at(base_color, 2), 3)}, #{Float.round(Enum.at(base_color, 3), 3)}]")
+    IO.puts(
+      "            Base color: [#{Float.round(Enum.at(base_color, 0), 3)}, #{Float.round(Enum.at(base_color, 1), 3)}, #{Float.round(Enum.at(base_color, 2), 3)}, #{Float.round(Enum.at(base_color, 3), 3)}]"
+    )
+
     IO.puts("            Metallic: #{Float.round(metallic, 3)}")
     IO.puts("            Roughness: #{Float.round(roughness, 3)}")
 
     # Extract textures for Phase 4
     case extract_material_textures(material, gltf, data_store) do
       {:ok, textures} ->
-        {:ok, %{
-          base_color_factor: base_color,
-          metallic_factor: metallic,
-          roughness_factor: roughness,
-          emissive_factor: emissive,
-          material_type: :pbr_metallic_roughness,
-          textures: textures
-        }}
+        {:ok,
+         %{
+           base_color_factor: base_color,
+           metallic_factor: metallic,
+           roughness_factor: roughness,
+           emissive_factor: emissive,
+           material_type: :pbr_metallic_roughness,
+           textures: textures
+         }}
+
       {:error, reason} ->
         {:error, "Failed to extract textures: #{reason}"}
     end
@@ -731,104 +842,124 @@ defmodule GLBWebDemo do
     textures = %{}
 
     # Extract base color texture (albedo/diffuse)
-    textures = try do
-      case get_texture_from_material(material, :base_color_texture, gltf, data_store) do
-        {:ok, texture_id} ->
-          IO.puts("              ✓ Base color texture loaded (ID: #{texture_id})")
-          Map.put(textures, :base_color, texture_id)
-        {:error, :not_found} ->
-          IO.puts("              - No base color texture found, using factor only")
-          textures
-        {:error, reason} ->
-          IO.puts("              ⚠️  Base color texture failed: #{reason}")
+    textures =
+      try do
+        case get_texture_from_material(material, :base_color_texture, gltf, data_store) do
+          {:ok, texture_id} ->
+            IO.puts("              ✓ Base color texture loaded (ID: #{texture_id})")
+            Map.put(textures, :base_color, texture_id)
+
+          {:error, :not_found} ->
+            IO.puts("              - No base color texture found, using factor only")
+            textures
+
+          {:error, reason} ->
+            IO.puts("              ⚠️  Base color texture failed: #{reason}")
+            textures
+        end
+      rescue
+        error ->
+          IO.puts("              ❌ Base color texture extraction crashed: #{inspect(error)}")
           textures
       end
-    rescue
-      error ->
-        IO.puts("              ❌ Base color texture extraction crashed: #{inspect(error)}")
-        textures
-    end
 
     # Extract metallic-roughness texture (packed: G=roughness, B=metallic)
-    textures = try do
-      case get_texture_from_material(material, :metallic_roughness_texture, gltf, data_store) do
-        {:ok, texture_id} ->
-          IO.puts("              ✓ Metallic-roughness texture loaded (ID: #{texture_id})")
-          Map.put(textures, :metallic_roughness, texture_id)
-        {:error, :not_found} ->
-          IO.puts("              - No metallic-roughness texture found, using factors only")
-          textures
-        {:error, reason} ->
-          IO.puts("              ⚠️  Metallic-roughness texture failed: #{reason}")
+    textures =
+      try do
+        case get_texture_from_material(material, :metallic_roughness_texture, gltf, data_store) do
+          {:ok, texture_id} ->
+            IO.puts("              ✓ Metallic-roughness texture loaded (ID: #{texture_id})")
+            Map.put(textures, :metallic_roughness, texture_id)
+
+          {:error, :not_found} ->
+            IO.puts("              - No metallic-roughness texture found, using factors only")
+            textures
+
+          {:error, reason} ->
+            IO.puts("              ⚠️  Metallic-roughness texture failed: #{reason}")
+            textures
+        end
+      rescue
+        error ->
+          IO.puts(
+            "              ❌ Metallic-roughness texture extraction crashed: #{inspect(error)}"
+          )
+
           textures
       end
-    rescue
-      error ->
-        IO.puts("              ❌ Metallic-roughness texture extraction crashed: #{inspect(error)}")
-        textures
-    end
 
     # Extract normal texture
-    textures = try do
-      case get_texture_from_material(material, :normal_texture, gltf, data_store) do
-        {:ok, texture_id} ->
-          IO.puts("              ✓ Normal texture loaded (ID: #{texture_id})")
-          Map.put(textures, :normal, texture_id)
-        {:error, :not_found} ->
-          IO.puts("              - No normal texture found")
-          textures
-        {:error, reason} ->
-          IO.puts("              ⚠️  Normal texture failed: #{reason}")
+    textures =
+      try do
+        case get_texture_from_material(material, :normal_texture, gltf, data_store) do
+          {:ok, texture_id} ->
+            IO.puts("              ✓ Normal texture loaded (ID: #{texture_id})")
+            Map.put(textures, :normal, texture_id)
+
+          {:error, :not_found} ->
+            IO.puts("              - No normal texture found")
+            textures
+
+          {:error, reason} ->
+            IO.puts("              ⚠️  Normal texture failed: #{reason}")
+            textures
+        end
+      rescue
+        error ->
+          IO.puts("              ❌ Normal texture extraction crashed: #{inspect(error)}")
           textures
       end
-    rescue
-      error ->
-        IO.puts("              ❌ Normal texture extraction crashed: #{inspect(error)}")
-        textures
-    end
 
     # Extract emissive texture
-    textures = try do
-      case get_texture_from_material(material, :emissive_texture, gltf, data_store) do
-        {:ok, texture_id} ->
-          IO.puts("              ✓ Emissive texture loaded (ID: #{texture_id})")
-          Map.put(textures, :emissive, texture_id)
-        {:error, :not_found} ->
-          IO.puts("              - No emissive texture found")
-          textures
-        {:error, reason} ->
-          IO.puts("              ⚠️  Emissive texture failed: #{reason}")
+    textures =
+      try do
+        case get_texture_from_material(material, :emissive_texture, gltf, data_store) do
+          {:ok, texture_id} ->
+            IO.puts("              ✓ Emissive texture loaded (ID: #{texture_id})")
+            Map.put(textures, :emissive, texture_id)
+
+          {:error, :not_found} ->
+            IO.puts("              - No emissive texture found")
+            textures
+
+          {:error, reason} ->
+            IO.puts("              ⚠️  Emissive texture failed: #{reason}")
+            textures
+        end
+      rescue
+        error ->
+          IO.puts("              ❌ Emissive texture extraction crashed: #{inspect(error)}")
           textures
       end
-    rescue
-      error ->
-        IO.puts("              ❌ Emissive texture extraction crashed: #{inspect(error)}")
-        textures
-    end
 
     {:ok, textures}
   end
 
   defp get_texture_from_material(material, texture_type, gltf, data_store) do
     # Get texture info from material based on type
-    texture_info = case texture_type do
-      :base_color_texture ->
-        case material.pbr_metallic_roughness do
-          nil -> nil
-          pbr -> pbr.base_color_texture
-        end
-      :metallic_roughness_texture ->
-        case material.pbr_metallic_roughness do
-          nil -> nil
-          pbr -> pbr.metallic_roughness_texture
-        end
-      :normal_texture ->
-        material.normal_texture
-      :emissive_texture ->
-        material.emissive_texture
-      _ ->
-        nil
-    end
+    texture_info =
+      case texture_type do
+        :base_color_texture ->
+          case material.pbr_metallic_roughness do
+            nil -> nil
+            pbr -> pbr.base_color_texture
+          end
+
+        :metallic_roughness_texture ->
+          case material.pbr_metallic_roughness do
+            nil -> nil
+            pbr -> pbr.metallic_roughness_texture
+          end
+
+        :normal_texture ->
+          material.normal_texture
+
+        :emissive_texture ->
+          material.emissive_texture
+
+        _ ->
+          nil
+      end
 
     case texture_info do
       nil ->
@@ -871,6 +1002,7 @@ defmodule GLBWebDemo do
         case load_image_data(image, gltf, data_store) do
           {:ok, image_binary, mime_type} ->
             load_texture_from_glb_binary(image_binary, mime_type)
+
           {:error, reason} ->
             {:error, reason}
         end
@@ -930,9 +1062,11 @@ defmodule GLBWebDemo do
           {:ok, image_binary} ->
             mime_type = extract_mime_type_from_data_uri(header)
             {:ok, image_binary, mime_type}
+
           :error ->
             {:error, "Invalid base64 data in data URI"}
         end
+
       _ ->
         {:error, "Invalid data URI format"}
     end
@@ -941,18 +1075,25 @@ defmodule GLBWebDemo do
   defp extract_mime_type_from_data_uri(header) do
     case Regex.run(~r/data:([^;]+)/, header) do
       [_, mime_type] -> mime_type
-      _ -> "image/png"  # default
+      # default
+      _ -> "image/png"
     end
   end
 
   defp load_texture_from_glb_binary(image_binary, mime_type) do
     # Use the new EAGL.Texture.load_texture_from_binary function for real image decoding
-    IO.puts("                📷 Loading real texture from #{mime_type || "unknown"} image (#{byte_size(image_binary)} bytes)")
+    IO.puts(
+      "                📷 Loading real texture from #{mime_type || "unknown"} image (#{byte_size(image_binary)} bytes)"
+    )
 
     case load_texture_from_binary(image_binary, mime_type: mime_type) do
       {:ok, texture_id, width, height} ->
-        IO.puts("                ✓ Successfully loaded #{width}x#{height} texture (ID: #{texture_id})")
+        IO.puts(
+          "                ✓ Successfully loaded #{width}x#{height} texture (ID: #{texture_id})"
+        )
+
         {:ok, texture_id}
+
       {:error, reason} ->
         IO.puts("                ⚠️  Failed to load texture: #{reason}")
         {:error, reason}
@@ -965,71 +1106,87 @@ defmodule GLBWebDemo do
       {:ok, positions} ->
         IO.puts("          - Extracted positions: #{length(positions) / 3} vertices")
 
-                # Calculate bounding box
+        # Calculate bounding box
         {min_x, max_x} = positions |> Enum.take_every(3) |> Enum.min_max()
         {min_y, max_y} = positions |> Enum.drop(1) |> Enum.take_every(3) |> Enum.min_max()
         {min_z, max_z} = positions |> Enum.drop(2) |> Enum.take_every(3) |> Enum.min_max()
-        IO.puts("          - Bounding box: X[#{Float.round(min_x, 3)}, #{Float.round(max_x, 3)}] Y[#{Float.round(min_y, 3)}, #{Float.round(max_y, 3)}] Z[#{Float.round(min_z, 3)}, #{Float.round(max_z, 3)}]")
+
+        IO.puts(
+          "          - Bounding box: X[#{Float.round(min_x, 3)}, #{Float.round(max_x, 3)}] Y[#{Float.round(min_y, 3)}, #{Float.round(max_y, 3)}] Z[#{Float.round(min_z, 3)}, #{Float.round(max_z, 3)}]"
+        )
 
         # Try to extract normals
-        normals = case primitive.attributes["NORMAL"] do
-          nil ->
-            IO.puts("          - No normals found, generating defaults")
-            generate_default_normals(length(positions) / 3)
-          normal_accessor ->
-                        case extract_accessor_data(gltf, data_store, normal_accessor) do
-                            {:ok, normal_data} ->
-                IO.puts("          - Extracted normals")
-                normal_data
-              _ ->
-                IO.puts("          - Failed to extract normals, using defaults")
-                generate_default_normals(length(positions) / 3)
-            end
-        end
+        normals =
+          case primitive.attributes["NORMAL"] do
+            nil ->
+              IO.puts("          - No normals found, generating defaults")
+              generate_default_normals(length(positions) / 3)
+
+            normal_accessor ->
+              case extract_accessor_data(gltf, data_store, normal_accessor) do
+                {:ok, normal_data} ->
+                  IO.puts("          - Extracted normals")
+                  normal_data
+
+                _ ->
+                  IO.puts("          - Failed to extract normals, using defaults")
+                  generate_default_normals(length(positions) / 3)
+              end
+          end
 
         # Try to extract texture coordinates
-        texcoords = case primitive.attributes["TEXCOORD_0"] do
-          nil ->
-            IO.puts("          - No texture coordinates found, generating defaults")
-            generate_default_texcoords(length(positions) / 3)
-          texcoord_accessor ->
-            case extract_accessor_data(gltf, data_store, texcoord_accessor) do
-              {:ok, texcoord_data} ->
-                IO.puts("          - Extracted texture coordinates")
-                texcoord_data
-              _ ->
-                IO.puts("          - Failed to extract texture coordinates, using defaults")
-                generate_default_texcoords(length(positions) / 3)
-            end
-        end
+        texcoords =
+          case primitive.attributes["TEXCOORD_0"] do
+            nil ->
+              IO.puts("          - No texture coordinates found, generating defaults")
+              generate_default_texcoords(length(positions) / 3)
+
+            texcoord_accessor ->
+              case extract_accessor_data(gltf, data_store, texcoord_accessor) do
+                {:ok, texcoord_data} ->
+                  IO.puts("          - Extracted texture coordinates")
+                  texcoord_data
+
+                _ ->
+                  IO.puts("          - Failed to extract texture coordinates, using defaults")
+                  generate_default_texcoords(length(positions) / 3)
+              end
+          end
 
         # Interleave vertex data: position(3) + normal(3) + texcoord(2) = 8 floats per vertex
         vertex_data = interleave_vertex_data(positions, normals, texcoords)
 
         # Extract indices if present
-        index_data = case primitive.indices do
-          nil ->
-            IO.puts("          - No indices found, using vertex array")
-            nil
-          indices_accessor ->
-            case extract_accessor_data(gltf, data_store, indices_accessor) do
-                            {:ok, indices} ->
-                IO.puts("          - Extracted indices: #{length(indices)} indices")
-                # Convert to binary format for OpenGL
-                for idx <- indices, into: <<>>, do: <<idx::little-unsigned-32>>
-              _ ->
-                IO.puts("          - Failed to extract indices, using vertex array")
-                nil
-            end
-        end
+        index_data =
+          case primitive.indices do
+            nil ->
+              IO.puts("          - No indices found, using vertex array")
+              nil
 
-        vertex_count = if index_data do
-          byte_size(index_data) / 4  # 4 bytes per uint32 index
-        else
-          length(positions) / 3  # 3 floats per vertex
-        end
+            indices_accessor ->
+              case extract_accessor_data(gltf, data_store, indices_accessor) do
+                {:ok, indices} ->
+                  IO.puts("          - Extracted indices: #{length(indices)} indices")
+                  # Convert to binary format for OpenGL
+                  for idx <- indices, into: <<>>, do: <<idx::little-unsigned-32>>
+
+                _ ->
+                  IO.puts("          - Failed to extract indices, using vertex array")
+                  nil
+              end
+          end
+
+        vertex_count =
+          if index_data do
+            # 4 bytes per uint32 index
+            byte_size(index_data) / 4
+          else
+            # 3 floats per vertex
+            length(positions) / 3
+          end
 
         {:ok, vertex_data, index_data, trunc(vertex_count)}
+
       {:error, reason} ->
         {:error, "Failed to extract positions: #{reason}"}
     end
@@ -1041,12 +1198,17 @@ defmodule GLBWebDemo do
         # Get accessor to determine data format
         accessor = Enum.at(gltf.accessors, accessor_index)
         parse_accessor_data(binary_data, accessor)
+
       {:error, reason} ->
         {:error, reason}
     end
   end
 
-  defp parse_accessor_data(binary_data, %{component_type: component_type, type: type, count: count}) do
+  defp parse_accessor_data(binary_data, %{
+         component_type: component_type,
+         type: type,
+         count: count
+       }) do
     case {component_type, type} do
       # Float VEC3 (positions, normals)
       {@gl_float, :vec3} ->
@@ -1111,68 +1273,94 @@ defmodule GLBWebDemo do
 
   defp generate_default_normals(vertex_count) do
     # Generate upward-facing normals for all vertices
-    for _ <- 1..trunc(vertex_count), do: [0.0, 1.0, 0.0]
-    |> List.flatten()
+    for _ <- 1..trunc(vertex_count),
+        do:
+          [0.0, 1.0, 0.0]
+          |> List.flatten()
   end
 
   defp generate_default_texcoords(vertex_count) do
     # Generate simple texture coordinates (0,0) for all vertices - need 2 values per vertex
     # Note: (0,0) in glTF coordinates becomes (0,1) in OpenGL after V-flipping
-    texcoords = for _ <- 1..trunc(vertex_count) do
-      [0.0, 0.0]  # Two float values per vertex (U, V in glTF coordinates)
-    end
-    |> List.flatten()
-    IO.puts("          - Generated #{length(texcoords)} texcoord values for #{vertex_count} vertices (should be #{trunc(vertex_count) * 2})")
+    texcoords =
+      for _ <- 1..trunc(vertex_count) do
+        # Two float values per vertex (U, V in glTF coordinates)
+        [0.0, 0.0]
+      end
+      |> List.flatten()
+
+    IO.puts(
+      "          - Generated #{length(texcoords)} texcoord values for #{vertex_count} vertices (should be #{trunc(vertex_count) * 2})"
+    )
+
     texcoords
   end
 
-    defp interleave_vertex_data(positions, normals, texcoords) do
+  defp interleave_vertex_data(positions, normals, texcoords) do
     # Group into vertices: [x,y,z,nx,ny,nz,u,v, ...]
     vertex_count = length(positions) / 3
 
-            # Debug: Check data lengths and verify interleaving will work correctly
-        IO.puts("          - Positions length: #{length(positions)}")
-        IO.puts("          - Normals length: #{length(normals)}")
-        IO.puts("          - Texcoords length: #{length(texcoords)}")
-        IO.puts("          - Vertex count: #{vertex_count}")
+    # Debug: Check data lengths and verify interleaving will work correctly
+    IO.puts("          - Positions length: #{length(positions)}")
+    IO.puts("          - Normals length: #{length(normals)}")
+    IO.puts("          - Texcoords length: #{length(texcoords)}")
+    IO.puts("          - Vertex count: #{vertex_count}")
 
-        # Verify data alignment for interleaving
-        expected_pos = trunc(vertex_count) * 3
-        expected_norm = trunc(vertex_count) * 3
-        expected_tex = trunc(vertex_count) * 2
+    # Verify data alignment for interleaving
+    expected_pos = trunc(vertex_count) * 3
+    expected_norm = trunc(vertex_count) * 3
+    expected_tex = trunc(vertex_count) * 2
 
-        if length(positions) != expected_pos do
-          IO.puts("          - ⚠️  Position count mismatch: got #{length(positions)}, expected #{expected_pos}")
-        end
-        if length(normals) != expected_norm do
-          IO.puts("          - ⚠️  Normal count mismatch: got #{length(normals)}, expected #{expected_norm}")
-        end
-        if length(texcoords) != expected_tex do
-          IO.puts("          - ⚠️  Texcoord count mismatch: got #{length(texcoords)}, expected #{expected_tex}")
-        end
-
-    vertices = for i <- 0..(trunc(vertex_count) - 1) do
-      pos_idx = i * 3
-      tex_idx = i * 2
-
-      # Flip V coordinate to convert from glTF (V=0 at top) to OpenGL (V=0 at bottom) convention
-      v_coord = Enum.at(texcoords, tex_idx + 1) || 0.0
-      flipped_v = 1.0 - v_coord
-
-      [
-        Enum.at(positions, pos_idx) || 0.0,     # x
-        Enum.at(positions, pos_idx + 1) || 0.0, # y
-        Enum.at(positions, pos_idx + 2) || 0.0, # z
-        Enum.at(normals, pos_idx) || 0.0,       # nx
-        Enum.at(normals, pos_idx + 1) || 1.0,   # ny (default up)
-        Enum.at(normals, pos_idx + 2) || 0.0,   # nz
-        Enum.at(texcoords, tex_idx) || 0.0,     # u
-        flipped_v                               # v (flipped for OpenGL)
-      ]
+    if length(positions) != expected_pos do
+      IO.puts(
+        "          - ⚠️  Position count mismatch: got #{length(positions)}, expected #{expected_pos}"
+      )
     end
 
-        # Debug: Show first few interleaved vertices (V coordinate is flipped for OpenGL)
+    if length(normals) != expected_norm do
+      IO.puts(
+        "          - ⚠️  Normal count mismatch: got #{length(normals)}, expected #{expected_norm}"
+      )
+    end
+
+    if length(texcoords) != expected_tex do
+      IO.puts(
+        "          - ⚠️  Texcoord count mismatch: got #{length(texcoords)}, expected #{expected_tex}"
+      )
+    end
+
+    vertices =
+      for i <- 0..(trunc(vertex_count) - 1) do
+        pos_idx = i * 3
+        tex_idx = i * 2
+
+        # Flip V coordinate to convert from glTF (V=0 at top) to OpenGL (V=0 at bottom) convention
+        v_coord = Enum.at(texcoords, tex_idx + 1) || 0.0
+        flipped_v = 1.0 - v_coord
+
+        [
+          # x
+          Enum.at(positions, pos_idx) || 0.0,
+          # y
+          Enum.at(positions, pos_idx + 1) || 0.0,
+          # z
+          Enum.at(positions, pos_idx + 2) || 0.0,
+          # nx
+          Enum.at(normals, pos_idx) || 0.0,
+          # ny (default up)
+          Enum.at(normals, pos_idx + 1) || 1.0,
+          # nz
+          Enum.at(normals, pos_idx + 2) || 0.0,
+          # u
+          Enum.at(texcoords, tex_idx) || 0.0,
+          # v (flipped for OpenGL)
+          flipped_v
+        ]
+      end
+
+    # Debug: Show first few interleaved vertices (V coordinate is flipped for OpenGL)
     IO.puts("          - First few interleaved vertices (V coordinates flipped for OpenGL):")
+
     vertices
     |> Enum.take(3)
     |> Enum.with_index()
@@ -1184,24 +1372,28 @@ defmodule GLBWebDemo do
           norm_str = "(#{safe_round(nx)}, #{safe_round(ny)}, #{safe_round(nz)})"
           tex_str = "(#{safe_round(u)}, #{safe_round(v)})"
           IO.puts("            Vertex #{i}: pos#{pos_str} norm#{norm_str} tex#{tex_str}")
+
         _ ->
           IO.puts("            Vertex #{i}: unexpected format - #{inspect(vertex)}")
       end
     end)
 
     # Convert to binary format for OpenGL, with safety checks
-    vertex_binary = vertices
-    |> List.flatten()
-    |> Enum.reduce(<<>>, fn
-      float_val, acc when is_number(float_val) ->
-        acc <> <<float_val::little-float-32>>
-      nil, acc ->
-        IO.puts("          - Warning: nil value found, using 0.0")
-        acc <> <<0.0::little-float-32>>
-      invalid, acc ->
-        IO.puts("          - Warning: invalid value #{inspect(invalid)}, using 0.0")
-        acc <> <<0.0::little-float-32>>
-    end)
+    vertex_binary =
+      vertices
+      |> List.flatten()
+      |> Enum.reduce(<<>>, fn
+        float_val, acc when is_number(float_val) ->
+          acc <> <<float_val::little-float-32>>
+
+        nil, acc ->
+          IO.puts("          - Warning: nil value found, using 0.0")
+          acc <> <<0.0::little-float-32>>
+
+        invalid, acc ->
+          IO.puts("          - Warning: invalid value #{inspect(invalid)}, using 0.0")
+          acc <> <<0.0::little-float-32>>
+      end)
 
     IO.puts("          - Final vertex binary size: #{byte_size(vertex_binary)} bytes")
     vertex_binary
@@ -1392,18 +1584,20 @@ defmodule GLBWebDemo do
 
   defp setup_camera do
     IO.puts("  ✓ First-person camera at (0, 0, 8)")
-    camera = Camera.new(
-      position: vec3(0.0, 0.0, 8.0),  # Move further back for better view of scaled cube
-      world_up: vec3(0.0, 1.0, 0.0),
-      yaw: -90.0,
-      pitch: 0.0,
-      movement_speed: 2.5,
-      mouse_sensitivity: 0.1
-    )
+
+    camera =
+      Camera.new(
+        # Move further back for better view of scaled cube
+        position: vec3(0.0, 0.0, 8.0),
+        world_up: vec3(0.0, 1.0, 0.0),
+        yaw: -90.0,
+        pitch: 0.0,
+        movement_speed: 2.5,
+        mouse_sensitivity: 0.1
+      )
+
     {:ok, camera}
   end
-
-
 
   defp create_gpu_buffers(vertex_data, indices) do
     # Debug: Check what we're actually sending to OpenGL
@@ -1425,45 +1619,69 @@ defmodule GLBWebDemo do
     :gl.bufferData(@gl_array_buffer, byte_size(vertex_data), vertex_data, @gl_static_draw)
 
     # Vertex attributes: position(0), normal(1), texcoord(2)
-    stride = 32  # 8 floats * 4 bytes
+    # 8 floats * 4 bytes
+    stride = 32
     IO.puts("            Setting up vertex attributes with stride=#{stride}")
-    :gl.vertexAttribPointer(0, 3, @gl_float, @gl_false, stride, 0)   # position
+    # position
+    :gl.vertexAttribPointer(0, 3, @gl_float, @gl_false, stride, 0)
     :gl.enableVertexAttribArray(0)
-    :gl.vertexAttribPointer(1, 3, @gl_float, @gl_false, stride, 12)  # normal
+    # normal
+    :gl.vertexAttribPointer(1, 3, @gl_float, @gl_false, stride, 12)
     :gl.enableVertexAttribArray(1)
-    :gl.vertexAttribPointer(2, 2, @gl_float, @gl_false, stride, 24)  # texcoord
+    # texcoord
+    :gl.vertexAttribPointer(2, 2, @gl_float, @gl_false, stride, 24)
     :gl.enableVertexAttribArray(2)
 
     # Create EBO if indices provided
-    ebo = case indices do
-      nil -> nil
-      index_data ->
-        [ebo] = :gl.genBuffers(1)
-        :gl.bindBuffer(@gl_element_array_buffer, ebo)
-        :gl.bufferData(@gl_element_array_buffer, byte_size(index_data), index_data, @gl_static_draw)
-        ebo
-    end
+    ebo =
+      case indices do
+        nil ->
+          nil
+
+        index_data ->
+          [ebo] = :gl.genBuffers(1)
+          :gl.bindBuffer(@gl_element_array_buffer, ebo)
+
+          :gl.bufferData(
+            @gl_element_array_buffer,
+            byte_size(index_data),
+            index_data,
+            @gl_static_draw
+          )
+
+          ebo
+      end
 
     :gl.bindVertexArray(0)
     {:ok, vao, vbo, ebo}
   end
 
-  defp render_mesh_with_material(%{vao: vao, index_count: index_count, has_indices: has_indices, material: material}, program) do
+  defp render_mesh_with_material(
+         %{vao: vao, index_count: index_count, has_indices: has_indices, material: material},
+         program
+       ) do
     # Set material-specific uniforms for PBR rendering (Phase 4: with texture support)
     [r, g, b, _a] = material.base_color_factor
     base_color = vec3(r, g, b)
 
-        # Safe emissive factor extraction (convert integers to floats)
-    emissive_vec = case material.emissive_factor do
-      [r, g, b] when is_number(r) and is_number(g) and is_number(b) ->
-        vec3(r * 1.0, g * 1.0, b * 1.0)  # Convert to floats
-      [r, g, b, _a] when is_number(r) and is_number(g) and is_number(b) ->
-        vec3(r * 1.0, g * 1.0, b * 1.0)  # Convert to floats, ignore alpha
-      nil ->
-        vec3(0.0, 0.0, 0.0)
-      _ ->
-        vec3(0.0, 0.0, 0.0)  # Default fallback
-    end
+    # Safe emissive factor extraction (convert integers to floats)
+    emissive_vec =
+      case material.emissive_factor do
+        [r, g, b] when is_number(r) and is_number(g) and is_number(b) ->
+          # Convert to floats
+          vec3(r * 1.0, g * 1.0, b * 1.0)
+
+        [r, g, b, _a] when is_number(r) and is_number(g) and is_number(b) ->
+          # Convert to floats, ignore alpha
+          vec3(r * 1.0, g * 1.0, b * 1.0)
+
+        nil ->
+          vec3(0.0, 0.0, 0.0)
+
+        _ ->
+          # Default fallback
+          vec3(0.0, 0.0, 0.0)
+      end
 
     set_uniforms(program, [
       {"material.baseColor", base_color},
@@ -1479,6 +1697,7 @@ defmodule GLBWebDemo do
     case Map.get(textures, :base_color) do
       nil ->
         set_uniform(program, "hasBaseColorTexture", false)
+
       texture_id ->
         :gl.activeTexture(@gl_texture0)
         :gl.bindTexture(@gl_texture_2d, texture_id)
@@ -1490,6 +1709,7 @@ defmodule GLBWebDemo do
     case Map.get(textures, :metallic_roughness) do
       nil ->
         set_uniform(program, "hasMetallicRoughnessTexture", false)
+
       texture_id ->
         :gl.activeTexture(@gl_texture1)
         :gl.bindTexture(@gl_texture_2d, texture_id)
@@ -1501,6 +1721,7 @@ defmodule GLBWebDemo do
     case Map.get(textures, :normal) do
       nil ->
         set_uniform(program, "hasNormalTexture", false)
+
       texture_id ->
         :gl.activeTexture(@gl_texture2)
         :gl.bindTexture(@gl_texture_2d, texture_id)
@@ -1512,6 +1733,7 @@ defmodule GLBWebDemo do
     case Map.get(textures, :emissive) do
       nil ->
         set_uniform(program, "hasEmissiveTexture", false)
+
       texture_id ->
         :gl.activeTexture(@gl_texture3)
         :gl.bindTexture(@gl_texture_2d, texture_id)
@@ -1533,15 +1755,16 @@ defmodule GLBWebDemo do
     :gl.bindVertexArray(0)
   end
 
-  defp render_mesh_instance(%{mesh: mesh, world_transform: world_transform, node_name: _node_name}, program) do
+  defp render_mesh_instance(
+         %{mesh: mesh, world_transform: world_transform, node_name: _node_name},
+         program
+       ) do
     # Set the model matrix for this specific mesh instance (Phase 5)
     set_uniform(program, "model", world_transform)
 
     # Render the mesh with its material
     render_mesh_with_material(mesh, program)
   end
-
-
 end
 
 # Run the Phase 2 GLB demo

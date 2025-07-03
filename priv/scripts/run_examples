@@ -29,7 +29,6 @@ show_menu() {
     echo -e "${BLUE}0. Non-Learn OpenGL Examples:${NC}"
     echo -e "  ${CYAN}01)${NC} ${GREEN}Math Example${NC} - Comprehensive EAGL.Math functionality demo"
     echo -e "  ${CYAN}02)${NC} ${GREEN}Teapot Example${NC} - 3D teapot with Phong shading"
-    echo -e "  ${CYAN}03)${NC} ${GREEN}GLB Web Demo${NC} - Load and render GLB files from the web"
     echo
     
     # Learn OpenGL examples in compact format
@@ -61,6 +60,14 @@ show_menu() {
     echo -e "  ${YELLOW}Lighting Exercises:${NC} ${CYAN}214)${NC} 2.3 Exercise1 ${CYAN}215)${NC} 2.4 Exercise2  ${CYAN}216)${NC} 2.5 Exercise3"
     echo -e "  ${YELLOW}Materials:${NC}        ${CYAN}217)${NC} 3.1 Materials ${CYAN}218)${NC} 3.2 Exercise1"
     echo
+    
+    # glTF/GLB examples (using '3' prefix since we're not implementing LearnOpenGL chapter 3)
+    echo -e "${BLUE}3. glTF/GLB Examples:${NC}"
+    echo -e "  ${CYAN}301)${NC} ${GREEN}GLB Web Demo${NC} - Load and render GLB files from the web"
+    echo -e "  ${CYAN}302)${NC} ${GREEN}GLB Loader${NC} - Basic GLB file loading example"
+    echo -e "  ${CYAN}303)${NC} ${GREEN}glTF Scene${NC} - Scene graph and node hierarchy"
+    echo -e "  ${CYAN}304)${NC} ${GREEN}Animation${NC} - glTF animation playback"
+    echo
     echo -e "${PURPLE}════════════════════════════════════════════════════════════════${NC}"
 }
 
@@ -76,11 +83,38 @@ run_example() {
         02)
             module="EAGL.Examples.Teapot"
             ;;
-        03)
+        301)
             # Special case - this is a standalone script, not a module
-            echo -e "${GREEN}Running: GLB Web Demo (examples/glb_web_demo.exs)${NC}"
+            echo -e "${GREEN}Running: GLB Web Demo (lib/examples/gltf/glb_web_demo.exs)${NC}"
             echo
-            mix run examples/glb_web_demo.exs
+            elixir lib/examples/gltf/glb_web_demo.exs
+            echo
+            echo -e "${GREEN}Example finished.${NC}"
+            return 0
+            ;;
+        302)
+            # Special case - this is a standalone script, not a module
+            echo -e "${GREEN}Running: GLB Loader Example (lib/examples/gltf/glb_loader_example.exs)${NC}"
+            echo
+            elixir lib/examples/gltf/glb_loader_example.exs
+            echo
+            echo -e "${GREEN}Example finished.${NC}"
+            return 0
+            ;;
+        303)
+            # Special case - this is a standalone script, not a module
+            echo -e "${GREEN}Running: glTF Scene Example (lib/examples/gltf/gltf_scene_example.exs)${NC}"
+            echo
+            elixir lib/examples/gltf/gltf_scene_example.exs
+            echo
+            echo -e "${GREEN}Example finished.${NC}"
+            return 0
+            ;;
+        304)
+            # Special case - this is a standalone script, not a module
+            echo -e "${GREEN}Running: Animation Example (lib/examples/gltf/animation_example.exs)${NC}"
+            echo
+            elixir lib/examples/gltf/animation_example.exs
             echo
             echo -e "${GREEN}Example finished.${NC}"
             return 0
@@ -208,9 +242,10 @@ run_example() {
         *)
             echo -e "${RED}Invalid choice: $choice${NC}"
             echo -e "${YELLOW}Available examples:${NC}"
-            echo -e "${YELLOW}- Non-Learn OpenGL: 01, 02, 03${NC}"
+            echo -e "${YELLOW}- Non-Learn OpenGL: 01, 02${NC}"
             echo -e "${YELLOW}- Learn OpenGL Getting Started: 111, 112, 121-125, 131-136, 141-146, 151-153, 161-164, 171-176${NC}"
             echo -e "${YELLOW}- Learn OpenGL Lighting: 211-218${NC}"
+            echo -e "${YELLOW}- glTF/GLB: 301-304${NC}"
             return 1
             ;;
     esac
@@ -228,7 +263,7 @@ run_example() {
 # Main loop
 while true; do
     show_menu
-    echo -e "Enter code (01, 02, 03, 111-176, 211-218), 'q' to quit, 'r' to refresh:"
+    echo -e "Enter code (01, 02, 111-176, 211-218, 301-304), 'q' to quit, 'r' to refresh:"
     echo -n "> "
     
     read -r choice
@@ -241,7 +276,7 @@ while true; do
         r|R|refresh)
             continue
             ;;
-        01|02|03|111|112|121|122|123|124|125|131|132|133|134|135|136|141|142|143|144|145|146|151|152|153|161|162|163|164|171|172|173|174|175|176|211|212|213|214|215|216|217|218)
+        01|02|301|302|303|304|111|112|121|122|123|124|125|131|132|133|134|135|136|141|142|143|144|145|146|151|152|153|161|162|163|164|171|172|173|174|175|176|211|212|213|214|215|216|217|218)
             clear
             if run_example "$choice"; then
                 echo
@@ -254,7 +289,7 @@ while true; do
             ;;
         *)
             echo -e "${RED}Invalid input.${NC}"
-            echo -e "${YELLOW}Valid codes: 01, 02, 03, 111, 112, 121-125, 131-136, 141-146, 151-153, 161-164, 171-176, 211-218${NC}"
+            echo -e "${YELLOW}Valid codes: 01, 02, 111, 112, 121-125, 131-136, 141-146, 151-153, 161-164, 171-176, 211-218, 301-304${NC}"
             echo -n "Press ENTER to continue..."
             read -r
             ;;

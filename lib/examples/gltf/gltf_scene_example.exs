@@ -26,7 +26,8 @@ defmodule GLTFSceneExample do
   use EAGL.Window
   use EAGL.Const
 
-  import EAGL.{Shader, Math, Camera}
+  import EAGL.{Shader, Math}
+  alias EAGL.Camera
   alias EAGL.{Scene, Node}
 
   # Simple test GLB URL (Khronos sample)
@@ -39,6 +40,7 @@ defmodule GLTFSceneExample do
       size: {1024, 768},
       enter_to_exit: true
     ]
+
     merged_opts = Keyword.merge(default_opts, opts)
 
     EAGL.Window.run(
@@ -76,17 +78,18 @@ defmodule GLTFSceneExample do
     with {:ok, shaders} <- setup_shaders(),
          {:ok, camera} <- setup_camera(),
          {:ok, scene} <- setup_scene(shaders) do
-
       IO.puts("✅ Scene graph setup complete")
       IO.puts("🎮 Use WASD to move, mouse to look around")
 
-      {:ok, %{
-        shaders: shaders,
-        camera: camera,
-        scene: scene,
-        last_mouse: {512, 384},  # Center of default 1024x768 window
-        mouse_captured: false
-      }}
+      {:ok,
+       %{
+         shaders: shaders,
+         camera: camera,
+         scene: scene,
+         # Center of default 1024x768 window
+         last_mouse: {512, 384},
+         mouse_captured: false
+       }}
     else
       {:error, reason} ->
         IO.puts("❌ Setup failed: #{reason}")
@@ -95,11 +98,11 @@ defmodule GLTFSceneExample do
   end
 
   @impl true
-  def render(width, height, %{shaders: shaders, camera: camera, scene: scene} = state) do
+  def render(width, height, %{shaders: _shaders, camera: camera, scene: scene} = state) do
     # Clear screen
     :gl.viewport(0, 0, trunc(width), trunc(height))
     :gl.clearColor(0.1, 0.1, 0.2, 1.0)
-    :gl.clear(@gl_color_buffer_bit ||| @gl_depth_buffer_bit)
+    :gl.clear(Bitwise.bor(@gl_color_buffer_bit, @gl_depth_buffer_bit))
 
     # Set up matrices
     view_matrix = Camera.get_view_matrix(camera)
@@ -114,19 +117,25 @@ defmodule GLTFSceneExample do
   @impl true
   def handle_event(:tick, %{camera: camera} = state) do
     # Update camera with smooth movement
-    updated_camera = Camera.process_keyboard_input(camera, 0.016)  # 60 FPS
+    # 60 FPS
+    updated_camera = Camera.process_keyboard_input(camera, 0.016)
     {:ok, %{state | camera: updated_camera}}
   end
 
-  def handle_event({:key, ?W}, state), do: {:ok, state}  # Handled by process_keyboard_input
+  # Handled by process_keyboard_input
+  def handle_event({:key, ?W}, state), do: {:ok, state}
   def handle_event({:key, ?A}, state), do: {:ok, state}
   def handle_event({:key, ?S}, state), do: {:ok, state}
   def handle_event({:key, ?D}, state), do: {:ok, state}
 
-  def handle_event({:mouse_motion, x, y}, %{camera: camera, last_mouse: {last_x, last_y}, mouse_captured: true} = state) do
+  def handle_event(
+        {:mouse_motion, x, y},
+        %{camera: camera, last_mouse: {last_x, last_y}, mouse_captured: true} = state
+      ) do
     # Mouse look
     dx = x - last_x
-    dy = last_y - y  # Invert Y
+    # Invert Y
+    dy = last_y - y
     updated_camera = Camera.process_mouse_movement(camera, dx, dy, true)
     {:ok, %{state | camera: updated_camera, last_mouse: {x, y}}}
   end
@@ -192,20 +201,28 @@ defmodule GLTFSceneExample do
     }
     """
 
-    with {:ok, vertex_shader} <- create_shader(@gl_vertex_shader, vertex_shader_source),
-         {:ok, fragment_shader} <- create_shader(@gl_fragment_shader, fragment_shader_source),
+    with {:ok, vertex_shader} <-
+           create_shader_from_source(@gl_vertex_shader, vertex_shader_source, "vertex_shader"),
+         {:ok, fragment_shader} <-
+           create_shader_from_source(
+             @gl_fragment_shader,
+             fragment_shader_source,
+             "fragment_shader"
+           ),
          {:ok, program} <- create_attach_link([vertex_shader, fragment_shader]) do
       {:ok, %{program: program}}
     end
   end
 
   defp setup_camera do
-    camera = Camera.new(
-      position: vec3(0.0, 0.0, 5.0),
-      world_up: vec3(0.0, 1.0, 0.0),
-      yaw: -90.0,
-      pitch: 0.0
-    )
+    camera =
+      Camera.new(
+        position: vec3(0.0, 0.0, 5.0),
+        world_up: vec3(0.0, 1.0, 0.0),
+        yaw: -90.0,
+        pitch: 0.0
+      )
+
     {:ok, camera}
   end
 
@@ -213,17 +230,18 @@ defmodule GLTFSceneExample do
     scene = Scene.new(name: "Mixed Content Demo")
 
     # Try to load glTF content
-    scene = case load_gltf_content(program) do
-      {:ok, gltf_nodes} ->
-        Enum.reduce(gltf_nodes, scene, fn node, acc ->
-          Scene.add_root_node(acc, node)
-        end)
+    scene =
+      case load_gltf_content(program) do
+        {:ok, gltf_nodes} ->
+          Enum.reduce(gltf_nodes, scene, fn node, acc ->
+            Scene.add_root_node(acc, node)
+          end)
 
-      {:error, reason} ->
-        IO.puts("⚠️  glTF loading failed: #{reason}")
-        IO.puts("🔧 Creating manual scene content instead...")
-        create_manual_scene_content(scene, program)
-    end
+        {:error, reason} ->
+          IO.puts("⚠️  glTF loading failed: #{reason}")
+          IO.puts("🔧 Creating manual scene content instead...")
+          create_manual_scene_content(scene, program)
+      end
 
     {:ok, scene}
   end
@@ -241,23 +259,27 @@ defmodule GLTFSceneExample do
             case GLTF.EAGL.to_scene(gltf, create_data_store.()) do
               {:ok, gltf_scene} ->
                 # Add shader program to all meshes
-                nodes_with_shaders = Scene.get_all_nodes(gltf_scene)
-                |> Enum.map(fn node ->
-                  case Node.get_mesh(node) do
-                    nil -> node
-                    mesh -> Node.set_mesh(node, Map.put(mesh, :program, program))
-                  end
-                end)
+                nodes_with_shaders =
+                  Scene.get_all_nodes(gltf_scene)
+                  |> Enum.map(fn node ->
+                    case Node.get_mesh(node) do
+                      nil -> node
+                      mesh -> Node.set_mesh(node, Map.put(mesh, :program, program))
+                    end
+                  end)
 
                 {:ok, nodes_with_shaders}
 
-              {:error, reason} -> {:error, reason}
+              {:error, reason} ->
+                {:error, reason}
             end
 
-          {:error, reason} -> {:error, reason}
+          {:error, reason} ->
+            {:error, reason}
         end
 
-      {:error, reason} -> {:error, reason}
+      {:error, reason} ->
+        {:error, reason}
     end
   end
 
@@ -299,32 +321,37 @@ defmodule GLTFSceneExample do
     root_node = Node.new(name: "Root")
 
     # Main cube
-    main_cube = Node.new(
-      mesh: cube_mesh,
-      position: vec3(0.0, 0.0, 0.0),
-      name: "Main Cube"
-    )
+    main_cube =
+      Node.new(
+        mesh: cube_mesh,
+        position: vec3(0.0, 0.0, 0.0),
+        name: "Main Cube"
+      )
 
     # Child cubes with different transforms
-    child1 = Node.new(
-      mesh: cube_mesh,
-      position: vec3(2.0, 1.0, 0.0),
-      scale: vec3(0.5, 0.5, 0.5),
-      name: "Child 1"
-    )
+    child1 =
+      Node.new(
+        mesh: cube_mesh,
+        position: vec3(2.0, 1.0, 0.0),
+        scale: vec3(0.5, 0.5, 0.5),
+        name: "Child 1"
+      )
 
-    child2 = Node.new(
-      mesh: cube_mesh,
-      position: vec3(-2.0, -1.0, 0.0),
-      scale: vec3(0.3, 0.3, 0.3),
-      name: "Child 2"
-    )
+    child2 =
+      Node.new(
+        mesh: cube_mesh,
+        position: vec3(-2.0, -1.0, 0.0),
+        scale: vec3(0.3, 0.3, 0.3),
+        name: "Child 2"
+      )
 
     # Build hierarchy
     root_with_main = Node.add_child(root_node, main_cube)
-    root_with_children = root_with_main
-    |> Node.add_child(child1)
-    |> Node.add_child(child2)
+
+    root_with_children =
+      root_with_main
+      |> Node.add_child(child1)
+      |> Node.add_child(child2)
 
     Scene.add_root_node(scene, root_with_children)
   end
