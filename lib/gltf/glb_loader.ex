@@ -33,8 +33,8 @@ defmodule GLTF.GLBLoader do
 
   Supports multiple HTTP clients for flexibility:
 
-  - **:httpc** (default) - Built into Erlang/OTP, no extra dependencies
-  - **:req** - Modern HTTP client (requires `{:req, "~> 0.4"}` dependency)
+  - **:req** (default) - Modern HTTP client with excellent performance and HTTP/2 support
+  - **:httpc** - Built into Erlang/OTP, but may have compatibility issues with newer versions
   - **:httpoison** - Popular HTTP client (requires `{:httpoison, "~> 2.0"}` dependency)
 
   ## Error Handling
@@ -103,7 +103,7 @@ defmodule GLTF.GLBLoader do
     - :validate - boolean, set to true to validate the parsed structure (default: true)
     - :strict - boolean, set to true for strict validation that rejects any warnings (default: false)
     - :timeout - integer, timeout in milliseconds for HTTP request (default: 30000)
-    - :http_client - atom, HTTP client to use (:httpc, :req, :httpoison) (default: :httpc)
+    - :http_client - atom, HTTP client to use (:httpc, :req, :httpoison) (default: :req)
 
   ## Examples
 
@@ -118,7 +118,7 @@ defmodule GLTF.GLBLoader do
     validate_option = Keyword.get(opts, :validate, true)
     strict = Keyword.get(opts, :strict, false)
     timeout = Keyword.get(opts, :timeout, 30_000)
-    http_client = Keyword.get(opts, :http_client, :httpc)
+    http_client = Keyword.get(opts, :http_client, :req)
 
     try do
       with {:ok, binary_data} <- fetch_url(url, timeout, http_client),

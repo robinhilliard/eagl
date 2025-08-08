@@ -364,26 +364,28 @@ defmodule GLTF.EAGL do
     end
   end
 
-  defp create_vao_from_vertex_data(
-         %{position: pos_data, attributes: attributes, indices: indices},
-         _opts
-       ) do
-    # Convert binary data to float list (simplified - real implementation would parse based on accessor type)
-    vertices = binary_to_float_list(pos_data)
+  defp create_vao_from_vertex_data(vertex_data, _opts) do
+    with {:ok, vertices} <- interleave_vertex_data(vertex_data),
+         {:ok, attributes} <- get_vertex_attributes(vertex_data) do
+      case vertex_data.indices do
+        nil ->
+          # Non-indexed geometry
+          {vao, vbo} = Buffer.create_vertex_array(vertices, attributes)
+          # Calculate vertex count based on total attribute size
+          vertex_count = div(length(vertices), total_attribute_size(attributes))
+          {:ok, %{vao: vao, vbo: vbo, vertex_count: vertex_count}}
 
-    case indices do
-      nil ->
-        # Non-indexed geometry
-        {vao, vbo} = Buffer.create_vertex_array(vertices, attributes)
-        # Assuming 3 floats per vertex for position
-        vertex_count = div(length(vertices), 3)
-        {:ok, %{vao: vao, vbo: vbo, vertex_count: vertex_count}}
+        indices_data ->
+          # Indexed geometry
+          case binary_to_int_list(indices_data) do
+            {:ok, index_list} ->
+              {vao, vbo, ebo} = Buffer.create_indexed_array(vertices, index_list, attributes)
+              {:ok, %{vao: vao, vbo: vbo, ebo: ebo, index_count: length(index_list)}}
 
-      indices_data ->
-        # Indexed geometry
-        index_list = binary_to_int_list(indices_data)
-        {vao, vbo, ebo} = Buffer.create_indexed_array(vertices, index_list, attributes)
-        {:ok, %{vao: vao, vbo: vbo, ebo: ebo, index_count: length(index_list)}}
+            {:error, reason} ->
+              {:error, reason}
+          end
+      end
     end
   end
 
@@ -476,14 +478,162 @@ defmodule GLTF.EAGL do
   defp atom_to_gl_constant(:blend), do: 2
   defp atom_to_gl_constant(_), do: 0
 
-  # Simplified binary parsing (real implementation would use accessor specifications)
-  defp binary_to_float_list(binary) when is_binary(binary) do
-    for <<f::float-32-native <- binary>>, do: f
+  # Interleave vertex data based on available attributes
+  defp interleave_vertex_data(vertex_data) do
+    # Get position data (required)
+    case binary_to_float_list(vertex_data.position) do
+      {:ok, positions} ->
+        vertex_count = div(length(positions), 3)
+
+        # Extract other attribute data
+        normals = extract_attribute_data(vertex_data, "NORMAL", vertex_count, 3, [0.0, 0.0, 1.0])
+        texcoords = extract_attribute_data(vertex_data, "TEXCOORD_0", vertex_count, 2, [0.0, 0.0])
+
+        # Always generate colors for shader compatibility - use gradient like before
+        colors = generate_gradient_colors(vertex_count)
+
+        # Interleave all data
+        vertices =
+          for i <- 0..(vertex_count - 1) do
+            pos_idx = i * 3
+            tex_idx = i * 2
+            color_idx = i * 3
+            norm_idx = i * 3
+
+            # Start with position (location 0)
+            vertex = [
+              Enum.at(positions, pos_idx) || 0.0,
+              Enum.at(positions, pos_idx + 1) || 0.0,
+              Enum.at(positions, pos_idx + 2) || 0.0
+            ]
+
+            # Add color next (location 1) - always present for shader compatibility
+            vertex =
+              vertex ++
+                [
+                  Enum.at(colors, color_idx) || 1.0,
+                  Enum.at(colors, color_idx + 1) || 1.0,
+                  Enum.at(colors, color_idx + 2) || 1.0
+                ]
+
+            # Add normal if available (location 2)
+            vertex =
+              if Map.has_key?(vertex_data, "NORMAL") do
+                vertex ++
+                  [
+                    Enum.at(normals, norm_idx) || 0.0,
+                    Enum.at(normals, norm_idx + 1) || 0.0,
+                    Enum.at(normals, norm_idx + 2) || 1.0
+                  ]
+              else
+                vertex
+              end
+
+            # Add texture coordinates if available (location 3)
+            vertex =
+              if Map.has_key?(vertex_data, "TEXCOORD_0") do
+                vertex ++
+                  [
+                    Enum.at(texcoords, tex_idx) || 0.0,
+                    Enum.at(texcoords, tex_idx + 1) || 0.0
+                  ]
+              else
+                vertex
+              end
+
+            vertex
+          end
+
+        {:ok, List.flatten(vertices)}
+
+      {:error, reason} ->
+        {:error, reason}
+    end
   end
 
-  defp binary_to_int_list(binary) when is_binary(binary) do
-    for <<i::unsigned-32-native <- binary>>, do: i
+  # Generate gradient colors for visual appeal (same as manual conversion)
+  defp generate_gradient_colors(vertex_count) do
+    for i <- 0..(vertex_count - 1) do
+      t = i / max(vertex_count - 1, 1)
+      # Purple to cyan gradient
+      [1.0 - t * 0.5, 0.5 + t * 0.3, 0.8 - t * 0.3]
+    end
+    |> List.flatten()
   end
+
+  # Extract attribute data with defaults
+  defp extract_attribute_data(
+         vertex_data,
+         attr_name,
+         vertex_count,
+         _component_count,
+         default_value
+       ) do
+    case Map.get(vertex_data, attr_name) do
+      nil ->
+        # Generate default values
+        List.duplicate(default_value, vertex_count) |> List.flatten()
+
+      attr_data ->
+        case binary_to_float_list(attr_data) do
+          {:ok, floats} -> floats
+          _ -> List.duplicate(default_value, vertex_count) |> List.flatten()
+        end
+    end
+  end
+
+  # Get vertex attributes based on available data
+  # Note: Order matters for shader compatibility
+  defp get_vertex_attributes(vertex_data) do
+    # Position is always required
+    attr_names = [:position]
+
+    # Add color next (location 1) for shader compatibility
+    # Even if not present in glTF, we generate default colors
+    attr_names = attr_names ++ [:color]
+
+    # Add normal if available (location 2)
+    attr_names =
+      if Map.has_key?(vertex_data, "NORMAL"), do: attr_names ++ [:normal], else: attr_names
+
+    # Add texture coordinates if available (location 3)
+    attr_names =
+      if Map.has_key?(vertex_data, "TEXCOORD_0"),
+        do: attr_names ++ [:texture_coordinate],
+        else: attr_names
+
+    {:ok, Buffer.vertex_attributes(attr_names)}
+  end
+
+  # Calculate total size of all attributes in floats
+  defp total_attribute_size(attributes) do
+    Enum.reduce(attributes, 0, fn attr, acc ->
+      acc + attr.size
+    end)
+  end
+
+  # Improved binary parsing with error handling
+  defp binary_to_float_list(binary) when is_binary(binary) do
+    try do
+      floats = for <<f::float-32-native <- binary>>, do: f
+      {:ok, floats}
+    rescue
+      error -> {:error, "Failed to parse float data: #{inspect(error)}"}
+    end
+  end
+
+  defp binary_to_float_list(_), do: {:error, "Expected binary data for float parsing"}
+
+  defp binary_to_int_list(binary) when is_binary(binary) do
+    try do
+      ints = for <<i::unsigned-32-native <- binary>>, do: i
+      {:ok, ints}
+    rescue
+      error -> {:error, "Failed to parse int data: #{inspect(error)}"}
+    end
+  end
+
+  defp binary_to_int_list(_), do: {:error, "Expected binary data for int parsing"}
 
   # Animation conversion helper functions
 
@@ -518,10 +668,9 @@ defmodule GLTF.EAGL do
 
   defp convert_animation_sampler(gltf, data_store, %GLTF.Animation.Sampler{} = sampler) do
     with {:ok, input_data} <- GLTF.get_accessor_data(gltf, data_store, sampler.input),
-         {:ok, output_data} <- GLTF.get_accessor_data(gltf, data_store, sampler.output) do
-      # Convert binary data to float lists
-      input_times = binary_to_float_list(input_data)
-      output_values = convert_output_values(output_data, sampler.interpolation)
+         {:ok, output_data} <- GLTF.get_accessor_data(gltf, data_store, sampler.output),
+         {:ok, input_times} <- binary_to_float_list(input_data),
+         {:ok, output_values} <- convert_output_values(output_data, sampler.interpolation) do
       interpolation = convert_interpolation_mode(sampler.interpolation)
 
       eagl_sampler = EAGL.Animation.Sampler.new(input_times, output_values, interpolation)
@@ -532,21 +681,20 @@ defmodule GLTF.EAGL do
   defp convert_output_values(binary_data, interpolation) do
     # Convert based on data type - this is simplified
     # Real implementation would use accessor componentType and type
-    case interpolation do
-      :linear ->
-        # Assume vec3 or quaternion data
-        floats = binary_to_float_list(binary_data)
-        group_floats_by_components(floats, 3)
+    with {:ok, floats} <- binary_to_float_list(binary_data) do
+      case interpolation do
+        :linear ->
+          # Assume vec3 or quaternion data
+          {:ok, group_floats_by_components(floats, 3)}
 
-      :step ->
-        floats = binary_to_float_list(binary_data)
-        group_floats_by_components(floats, 3)
+        :step ->
+          {:ok, group_floats_by_components(floats, 3)}
 
-      :cubicspline ->
-        # Cubic spline has 3x more data (in-tangent, value, out-tangent)
-        floats = binary_to_float_list(binary_data)
-        # For now, extract just the middle values
-        extract_cubic_spline_values(floats, 3)
+        :cubicspline ->
+          # Cubic spline has 3x more data (in-tangent, value, out-tangent)
+          # For now, extract just the middle values
+          {:ok, extract_cubic_spline_values(floats, 3)}
+      end
     end
   end
 

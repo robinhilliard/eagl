@@ -281,6 +281,7 @@ defmodule EAGL.Animator do
       new_time >= timeline.duration and state.loop_enabled ->
         # Loop back to beginning
         looped_time = :math.fmod(new_time, timeline.duration)
+
         %{state | current_time: looped_time}
 
       new_time >= timeline.duration ->

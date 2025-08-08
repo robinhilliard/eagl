@@ -11,6 +11,7 @@ defmodule EAGL.MixProject do
       elixir: "~> 1.14",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
+      aliases: aliases(),
       included_files: ["priv/**/*"],
 
       # Hex.pm metadata
@@ -42,6 +43,9 @@ defmodule EAGL.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
+      # HTTP client for GLTF loading
+      {:req, "~> 0.4"},
+
       # Optional dependencies for enhanced functionality
       {:stb_image, "~> 0.6", optional: true},
 
@@ -49,12 +53,16 @@ defmodule EAGL.MixProject do
       {:poison, "~> 5.0", optional: true},
       {:jason, "~> 1.4", optional: true},
 
-      # HTTP client for GLB loading (alternative to broken httpc on some systems)
-      {:req, "~> 0.5", optional: true},
-
       # Development and documentation
       {:ex_doc, "~> 0.31", only: :dev, runtime: false},
       {:excoveralls, "~> 0.18", only: :test}
+    ]
+  end
+
+  # Mix aliases for development convenience
+  defp aliases do
+    [
+      examples: ["run priv/scripts/examples.exs"]
     ]
   end
 

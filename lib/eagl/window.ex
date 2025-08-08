@@ -190,8 +190,11 @@ defmodule EAGL.Window do
 
     try do
       # Initialize wx
+
       :application.start(:wx)
+
       wx = :wx.new()
+
       frame = :wxFrame.new(wx, -1, title, size: size)
 
       IO.puts("Creating OpenGL canvas")
@@ -230,17 +233,21 @@ defmodule EAGL.Window do
       :wxWindow.update(frame)
 
       # Connect to show event and show frame (following wings_gl pattern)
+
       :wxWindow.connect(frame, :show)
       :wxFrame.show(frame)
 
       # Wait for show event with shorter timeout (Wings3D approach)
       # The show event may come before the window is actually displayed
+
       receive do
-        {:wx, _, _, _, {:wxShow, :show}} -> :ok
+        {:wx, _, _, _, {:wxShow, :show}} ->
+          :ok
       after
         1000 ->
           # If no show event after 1 second, continue anyway
           # This is more reliable than waiting indefinitely
+
           :ok
       end
 
@@ -251,6 +258,7 @@ defmodule EAGL.Window do
 
       # Create OpenGL context AFTER window is shown and realized
       # This follows Wings3D pattern more closely
+
       gl_context = :wxGLContext.new(gl_canvas)
 
       # Set focus after window is shown and ensure keyboard events
@@ -356,7 +364,8 @@ defmodule EAGL.Window do
                       callback_module,
                       state,
                       enter_to_exit,
-                      timeout
+                      timeout,
+                      :erlang.monotonic_time(:millisecond) / 1000.0
                     )
                   catch
                     :exit_main_loop -> :ok
@@ -569,9 +578,19 @@ defmodule EAGL.Window do
           module(),
           any(),
           boolean(),
-          integer() | nil
+          integer() | nil,
+          float() | nil
         ) :: :ok
-  defp main_loop(frame, gl_canvas, gl_context, callback_module, state, enter_to_exit, timeout) do
+  defp main_loop(
+         frame,
+         gl_canvas,
+         gl_context,
+         callback_module,
+         state,
+         enter_to_exit,
+         timeout,
+         last_tick_time
+       ) do
     receive do
       # Handle timeout for automated testing
       {:timeout_expired, timeout_ms} ->
@@ -612,7 +631,16 @@ defmodule EAGL.Window do
           :wxGLCanvas.swapBuffers(gl_canvas)
         end
 
-        main_loop(frame, gl_canvas, gl_context, callback_module, state, enter_to_exit, timeout)
+        main_loop(
+          frame,
+          gl_canvas,
+          gl_context,
+          callback_module,
+          state,
+          enter_to_exit,
+          timeout,
+          last_tick_time
+        )
 
       {:wx, _, _, _, {:wxKey, :char_hook, _, _, key_code, _, _, _, _, _, _, _}} ->
         # Handle ENTER key if enter_to_exit is enabled
@@ -651,7 +679,8 @@ defmodule EAGL.Window do
           callback_module,
           new_state,
           enter_to_exit,
-          timeout
+          timeout,
+          last_tick_time
         )
 
       # Handle mouse motion events for camera look around
@@ -685,7 +714,8 @@ defmodule EAGL.Window do
           callback_module,
           new_state,
           enter_to_exit,
-          timeout
+          timeout,
+          last_tick_time
         )
 
       # Handle scroll wheel events for camera zoom
@@ -723,7 +753,8 @@ defmodule EAGL.Window do
           callback_module,
           new_state,
           enter_to_exit,
-          timeout
+          timeout,
+          last_tick_time
         )
 
       {:wx, _, _, _, {:wxClose, :close_window}} ->
@@ -749,13 +780,25 @@ defmodule EAGL.Window do
         callback_module.render(safe_physical_width * 1.0, safe_physical_height * 1.0, state)
         :wxGLCanvas.swapBuffers(gl_canvas)
         # Set timeout to nil after first render to prevent multiple timers
-        main_loop(frame, gl_canvas, gl_context, callback_module, state, enter_to_exit, nil)
+        main_loop(
+          frame,
+          gl_canvas,
+          gl_context,
+          callback_module,
+          state,
+          enter_to_exit,
+          nil,
+          last_tick_time
+        )
 
       :tick ->
+        tick_time = :erlang.monotonic_time(:millisecond) / 1000.0
+        time_delta = if last_tick_time != nil, do: tick_time - last_tick_time, else: 0.0
+
         new_state =
           if function_exported?(callback_module, :handle_event, 2) do
             try do
-              case callback_module.handle_event(:tick, state) do
+              case callback_module.handle_event({:tick, time_delta}, state) do
                 {:ok, updated_state} ->
                   self() |> send({:wx, :ignore, :ignore, :ignore, {:wxPaint, :paint}})
                   updated_state
@@ -784,7 +827,8 @@ defmodule EAGL.Window do
           callback_module,
           new_state,
           enter_to_exit,
-          timeout
+          timeout,
+          tick_time
         )
 
       other ->
@@ -796,7 +840,16 @@ defmodule EAGL.Window do
           _ -> IO.puts("DEBUG: Unhandled event: #{inspect(other)}")
         end
 
-        main_loop(frame, gl_canvas, gl_context, callback_module, state, enter_to_exit, timeout)
+        main_loop(
+          frame,
+          gl_canvas,
+          gl_context,
+          callback_module,
+          state,
+          enter_to_exit,
+          timeout,
+          last_tick_time
+        )
     end
   end
 end

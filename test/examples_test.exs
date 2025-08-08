@@ -157,6 +157,9 @@ defmodule ExamplesTest do
   # Helper function to run an example with timeout and capture output
   defp run_example_with_timeout(module, name) do
     try do
+      # Load the example module if it's not already loaded
+      ensure_example_loaded(module)
+
       output =
         capture_io(fn ->
           # Let the example handle its own timeout - it will return when ready
@@ -181,4 +184,55 @@ defmodule ExamplesTest do
         {"Exit during #{name}: #{inspect(reason)}", {:error, {:exit, reason}}}
     end
   end
+
+  # Helper function to ensure example modules are loaded
+  defp ensure_example_loaded(module) do
+    unless Code.ensure_loaded?(module) do
+      case find_example_file(module) do
+        nil -> :ok  # Module not found, skip
+        file_path -> Code.require_file(file_path)
+      end
+    end
+  end
+
+  # Map module names to their file paths
+  defp find_example_file(EAGL.Examples.Math), do: "examples/math_example.ex"
+  defp find_example_file(EAGL.Examples.Teapot), do: "examples/teapot_example.ex"
+
+  # LearnOpenGL Getting Started examples
+  defp find_example_file(EAGL.Examples.LearnOpenGL.GettingStarted.HelloWindow), do: "examples/learnopengl/1_getting_started/1_1_hello_window.ex"
+  defp find_example_file(EAGL.Examples.LearnOpenGL.GettingStarted.HelloWindowClear), do: "examples/learnopengl/1_getting_started/1_2_hello_window_clear.ex"
+  defp find_example_file(EAGL.Examples.LearnOpenGL.GettingStarted.HelloTriangle), do: "examples/learnopengl/1_getting_started/2_1_hello_triangle.ex"
+  defp find_example_file(EAGL.Examples.LearnOpenGL.GettingStarted.HelloTriangleIndexed), do: "examples/learnopengl/1_getting_started/2_2_hello_triangle_indexed.ex"
+  defp find_example_file(EAGL.Examples.LearnOpenGL.GettingStarted.HelloTriangleExercise1), do: "examples/learnopengl/1_getting_started/2_3_hello_triangle_exercise_1.ex"
+  defp find_example_file(EAGL.Examples.LearnOpenGL.GettingStarted.HelloTriangleExercise2), do: "examples/learnopengl/1_getting_started/2_4_hello_triangle_exercise_2.ex"
+  defp find_example_file(EAGL.Examples.LearnOpenGL.GettingStarted.HelloTriangleExercise3), do: "examples/learnopengl/1_getting_started/2_5_hello_triangle_exercise_3.ex"
+  defp find_example_file(EAGL.Examples.LearnOpenGL.GettingStarted.ShadersUniform), do: "examples/learnopengl/1_getting_started/3_1_shaders_uniform.ex"
+  defp find_example_file(EAGL.Examples.LearnOpenGL.GettingStarted.ShadersInterpolation), do: "examples/learnopengl/1_getting_started/3_2_shaders_interpolation.ex"
+  defp find_example_file(EAGL.Examples.LearnOpenGL.GettingStarted.ShadersClass), do: "examples/learnopengl/1_getting_started/3_3_shaders_class.ex"
+  defp find_example_file(EAGL.Examples.LearnOpenGL.GettingStarted.ShadersExercise1), do: "examples/learnopengl/1_getting_started/3_4_shaders_exercise_1.ex"
+  defp find_example_file(EAGL.Examples.LearnOpenGL.GettingStarted.ShadersExercise2), do: "examples/learnopengl/1_getting_started/3_5_shaders_exercise_2.ex"
+  defp find_example_file(EAGL.Examples.LearnOpenGL.GettingStarted.ShadersExercise3), do: "examples/learnopengl/1_getting_started/3_6_shaders_exercise_3.ex"
+  defp find_example_file(EAGL.Examples.LearnOpenGL.GettingStarted.Textures), do: "examples/learnopengl/1_getting_started/4_1_textures.ex"
+  defp find_example_file(EAGL.Examples.LearnOpenGL.GettingStarted.TexturesCombined), do: "examples/learnopengl/1_getting_started/4_2_textures_combined.ex"
+  defp find_example_file(EAGL.Examples.LearnOpenGL.GettingStarted.TexturesExercise1), do: "examples/learnopengl/1_getting_started/4_3_textures_exercise_1.ex"
+  defp find_example_file(EAGL.Examples.LearnOpenGL.GettingStarted.TexturesExercise2), do: "examples/learnopengl/1_getting_started/4_4_textures_exercise_2.ex"
+  defp find_example_file(EAGL.Examples.LearnOpenGL.GettingStarted.TexturesExercise3), do: "examples/learnopengl/1_getting_started/4_5_textures_exercise_3.ex"
+  defp find_example_file(EAGL.Examples.LearnOpenGL.GettingStarted.TexturesExercise4), do: "examples/learnopengl/1_getting_started/4_6_textures_exercise_4.ex"
+  defp find_example_file(EAGL.Examples.LearnOpenGL.GettingStarted.Transformations), do: "examples/learnopengl/1_getting_started/5_1_transformations.ex"
+  defp find_example_file(EAGL.Examples.LearnOpenGL.GettingStarted.TransformationsExercise1), do: "examples/learnopengl/1_getting_started/5_2_transformations_exercise_1.ex"
+  defp find_example_file(EAGL.Examples.LearnOpenGL.GettingStarted.TransformationsExercise2), do: "examples/learnopengl/1_getting_started/5_2_transformations_exercise_2.ex"
+  defp find_example_file(EAGL.Examples.LearnOpenGL.GettingStarted.CoordinateSystems), do: "examples/learnopengl/1_getting_started/6_1_coordinate_systems.ex"
+  defp find_example_file(EAGL.Examples.LearnOpenGL.GettingStarted.CoordinateSystemsDepth), do: "examples/learnopengl/1_getting_started/6_2_coordinate_systems_depth.ex"
+  defp find_example_file(EAGL.Examples.LearnOpenGL.GettingStarted.CoordinateSystemsMultiple), do: "examples/learnopengl/1_getting_started/6_3_coordinate_systems_multiple.ex"
+  defp find_example_file(EAGL.Examples.LearnOpenGL.GettingStarted.CoordinateSystemsExercise), do: "examples/learnopengl/1_getting_started/6_4_coordinate_systems_exercise.ex"
+  defp find_example_file(EAGL.Examples.LearnOpenGL.GettingStarted.CameraCircle), do: "examples/learnopengl/1_getting_started/7_1_camera_circle.ex"
+  defp find_example_file(EAGL.Examples.LearnOpenGL.GettingStarted.CameraKeyboardDt), do: "examples/learnopengl/1_getting_started/7_2_camera_keyboard_dt.ex"
+  defp find_example_file(EAGL.Examples.LearnOpenGL.GettingStarted.CameraMouseZoom), do: "examples/learnopengl/1_getting_started/7_3_camera_mouse_zoom.ex"
+
+  # LearnOpenGL Lighting examples
+  defp find_example_file(EAGL.Examples.LearnOpenGL.Lighting.Colors), do: "examples/learnopengl/2_lighting/1_1_colors.ex"
+
+  # For any other modules, return nil (not found)
+  defp find_example_file(_module), do: nil
 end

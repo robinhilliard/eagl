@@ -5,6 +5,11 @@
     "elixir.testExUnit.excludeTags": [
         "external"
     ],
+    "elixir.testExUnit.mixTask": "test",
+    "elixir.testExUnit.formatters": [
+        "ExUnit.CLIFormatter"
+    ],
+    "elixir.enableTestLenses": true,
     "files.exclude": {
         "**/.build": true,
         "**/deps": true,

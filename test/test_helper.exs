@@ -4,5 +4,8 @@ ExUnit.start()
 # Basic configuration
 ExUnit.configure(
   exclude: [:external],
-  formatters: [ExUnit.CLIFormatter]
+  formatters: [ExUnit.CLIFormatter],
+  colors: [enabled: true],
+  trace: false,
+  max_failures: :infinity
 )
