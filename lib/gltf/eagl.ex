@@ -43,6 +43,61 @@ defmodule GLTF.EAGL do
   use EAGL.Const
 
   # ============================================================================
+  # STANDARD SHADERS
+  # ============================================================================
+
+  @doc """
+  Create a standard Phong lighting shader for GLTF models without textures.
+
+  The shader matches the GLTF attribute layout (position=0, normal=1) and
+  accepts the following uniforms:
+  - `model`, `view`, `projection` - transformation matrices (set by Scene.render)
+  - `objectColor` - vec3 surface colour
+  - `lightPos`, `lightColor` - vec3 point light position and colour
+  - `viewPos` - vec3 camera position
+
+      {:ok, program} = GLTF.EAGL.create_phong_shader()
+  """
+  @spec create_phong_shader() :: {:ok, non_neg_integer()} | {:error, String.t()}
+  def create_phong_shader do
+    import EAGL.Shader
+
+    with {:ok, vs} <- create_shader(@gl_vertex_shader, "gltf/phong_vertex.glsl"),
+         {:ok, fs} <- create_shader(@gl_fragment_shader, "gltf/phong_fragment.glsl"),
+         {:ok, prog} <- create_attach_link([vs, fs]) do
+      {:ok, prog}
+    end
+  end
+
+  @doc """
+  Create a standard PBR metallic-roughness shader for GLTF models.
+
+  The shader matches the GLTF attribute layout (position=0, normal=1, texcoord=2)
+  and implements the Cook-Torrance BRDF with optional textures.
+
+  Uniforms:
+  - `model`, `view`, `projection` - transformation matrices (set by Scene.render)
+  - `material.baseColor`, `material.metallic`, `material.roughness`, `material.emissive`
+  - `baseColorTexture`, `hasBaseColorTexture` - base colour texture (unit 0)
+  - `metallicRoughnessTexture`, `hasMetallicRoughnessTexture` - packed MR texture (unit 1)
+  - `normalTexture`, `hasNormalTexture` - normal map (unit 2)
+  - `emissiveTexture`, `hasEmissiveTexture` - emissive texture (unit 3)
+  - `lightPos`, `lightColor`, `viewPos` - lighting and camera
+
+      {:ok, program} = GLTF.EAGL.create_pbr_shader()
+  """
+  @spec create_pbr_shader() :: {:ok, non_neg_integer()} | {:error, String.t()}
+  def create_pbr_shader do
+    import EAGL.Shader
+
+    with {:ok, vs} <- create_shader(@gl_vertex_shader, "gltf/pbr_vertex.glsl"),
+         {:ok, fs} <- create_shader(@gl_fragment_shader, "gltf/pbr_fragment.glsl"),
+         {:ok, prog} <- create_attach_link([vs, fs]) do
+      {:ok, prog}
+    end
+  end
+
+  # ============================================================================
   # HIGH-LEVEL LOADING HELPERS
   # ============================================================================
 

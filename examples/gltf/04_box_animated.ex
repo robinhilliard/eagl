@@ -23,7 +23,7 @@ defmodule EAGL.Examples.GLTF.BoxAnimated do
 
   @impl true
   def setup do
-    with {:ok, program} <- create_shader_program(),
+    with {:ok, program} <- GLTF.EAGL.create_phong_shader(),
          {:ok, gltf, data_store} <- GLTF.EAGL.load_glb(@glb_path),
          {:ok, {scene, _all_nodes}} <- GLTF.EAGL.to_scene(gltf, data_store),
          {:ok, animator} <- setup_animations(gltf, data_store) do
@@ -106,60 +106,5 @@ defmodule EAGL.Examples.GLTF.BoxAnimated do
     end
     children = Enum.map(EAGL.Node.get_children(updated), &attach_program(&1, program))
     EAGL.Node.set_children(updated, children)
-  end
-
-  defp create_shader_program do
-    vs_source = """
-    #version 330 core
-    layout (location = 0) in vec3 aPos;
-    layout (location = 1) in vec3 aNormal;
-
-    uniform mat4 model;
-    uniform mat4 view;
-    uniform mat4 projection;
-
-    out vec3 FragPos;
-    out vec3 Normal;
-
-    void main() {
-        FragPos = vec3(model * vec4(aPos, 1.0));
-        Normal = mat3(transpose(inverse(model))) * aNormal;
-        gl_Position = projection * view * vec4(FragPos, 1.0);
-    }
-    """
-
-    fs_source = """
-    #version 330 core
-    out vec4 FragColor;
-    in vec3 FragPos;
-    in vec3 Normal;
-
-    uniform vec3 objectColor;
-    uniform vec3 lightPos;
-    uniform vec3 lightColor;
-    uniform vec3 viewPos;
-
-    void main() {
-        vec3 norm = normalize(Normal);
-        vec3 lightDir = normalize(lightPos - FragPos);
-        float diff = max(dot(norm, lightDir), 0.0);
-        vec3 viewDir = normalize(viewPos - FragPos);
-        vec3 reflectDir = reflect(-lightDir, norm);
-        float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32.0);
-
-        vec3 ambient = 0.15 * lightColor;
-        vec3 diffuse = diff * lightColor;
-        vec3 specular = 0.5 * spec * lightColor;
-
-        vec3 result = (ambient + diffuse + specular) * objectColor;
-        FragColor = vec4(result, 1.0);
-    }
-    """
-
-    with {:ok, vs} <- create_shader_from_source(@gl_vertex_shader, vs_source, "anim_vs"),
-         {:ok, fs} <- create_shader_from_source(@gl_fragment_shader, fs_source, "anim_fs"),
-         {:ok, prog} <- create_attach_link([vs, fs]) do
-      {:ok, prog}
-    end
   end
 end

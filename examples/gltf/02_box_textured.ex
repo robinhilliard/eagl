@@ -22,7 +22,7 @@ defmodule EAGL.Examples.GLTF.BoxTextured do
 
   @impl true
   def setup do
-    with {:ok, program} <- create_shader_program(),
+    with {:ok, program} <- GLTF.EAGL.create_pbr_shader(),
          {:ok, scene, gltf, data_store} <- GLTF.EAGL.load_scene(@glb_path, program),
          {:ok, textures} <- GLTF.EAGL.load_textures(gltf, data_store) do
       camera = Camera.new(position: vec3(2.0, 2.0, 5.0), yaw: -110.0, pitch: -20.0)
@@ -43,14 +43,18 @@ defmodule EAGL.Examples.GLTF.BoxTextured do
     aspect = if height > 0, do: width / height, else: 1.0
     projection = mat4_perspective(radians(camera.zoom), aspect, 0.1, 100.0)
 
-    case Map.get(textures, :base_color) do
-      nil -> set_uniform(program, "hasBaseColorTexture", false)
-      tex_id ->
-        :gl.activeTexture(@gl_texture0)
-        :gl.bindTexture(@gl_texture_2d, tex_id)
-        set_uniform(program, "baseColorTexture", 0)
-        set_uniform(program, "hasBaseColorTexture", true)
-    end
+    set_uniforms(program,
+      "material.baseColor": vec3(1.0, 1.0, 1.0),
+      "material.metallic": 0.0,
+      "material.roughness": 1.0,
+      "material.emissive": vec3(0.0, 0.0, 0.0)
+    )
+
+    bind_texture(textures, :base_color, program, "baseColorTexture", "hasBaseColorTexture", @gl_texture0, 0)
+    bind_texture(textures, :metallic_roughness, program, "metallicRoughnessTexture", "hasMetallicRoughnessTexture", @gl_texture1, 1)
+    bind_texture(textures, :normal, program, "normalTexture", "hasNormalTexture", @gl_texture2, 2)
+    bind_texture(textures, :emissive, program, "emissiveTexture", "hasEmissiveTexture", @gl_texture3, 3)
+    :gl.activeTexture(@gl_texture0)
 
     set_uniforms(program,
       lightPos: vec3(3.0, 5.0, 4.0),
@@ -90,70 +94,14 @@ defmodule EAGL.Examples.GLTF.BoxTextured do
     :ok
   end
 
-  defp create_shader_program do
-    vs_source = """
-    #version 330 core
-    layout (location = 0) in vec3 aPos;
-    layout (location = 1) in vec3 aNormal;
-    layout (location = 2) in vec2 aTexCoord;
-
-    uniform mat4 model;
-    uniform mat4 view;
-    uniform mat4 projection;
-
-    out vec3 FragPos;
-    out vec3 Normal;
-    out vec2 TexCoord;
-
-    void main() {
-        FragPos = vec3(model * vec4(aPos, 1.0));
-        Normal = mat3(transpose(inverse(model))) * aNormal;
-        TexCoord = aTexCoord;
-        gl_Position = projection * view * vec4(FragPos, 1.0);
-    }
-    """
-
-    fs_source = """
-    #version 330 core
-    out vec4 FragColor;
-    in vec3 FragPos;
-    in vec3 Normal;
-    in vec2 TexCoord;
-
-    uniform vec3 lightPos;
-    uniform vec3 lightColor;
-    uniform vec3 viewPos;
-    uniform sampler2D baseColorTexture;
-    uniform bool hasBaseColorTexture;
-
-    void main() {
-        vec3 baseColor = vec3(0.8, 0.8, 0.8);
-        if (hasBaseColorTexture) {
-            vec4 texColor = texture(baseColorTexture, TexCoord);
-            baseColor = pow(texColor.rgb, vec3(2.2));
-        }
-
-        vec3 norm = normalize(Normal);
-        vec3 lightDir = normalize(lightPos - FragPos);
-        float diff = max(dot(norm, lightDir), 0.0);
-        vec3 viewDir = normalize(viewPos - FragPos);
-        vec3 reflectDir = reflect(-lightDir, norm);
-        float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32.0);
-
-        vec3 ambient = 0.15 * lightColor;
-        vec3 diffuse = diff * lightColor;
-        vec3 specular = 0.3 * spec * lightColor;
-
-        vec3 result = (ambient + diffuse + specular) * baseColor;
-        result = pow(result, vec3(1.0/2.2));
-        FragColor = vec4(result, 1.0);
-    }
-    """
-
-    with {:ok, vs} <- create_shader_from_source(@gl_vertex_shader, vs_source, "btex_vs"),
-         {:ok, fs} <- create_shader_from_source(@gl_fragment_shader, fs_source, "btex_fs"),
-         {:ok, prog} <- create_attach_link([vs, fs]) do
-      {:ok, prog}
+  defp bind_texture(textures, key, program, sampler_name, has_name, tex_unit, unit_idx) do
+    case Map.get(textures, key) do
+      nil -> set_uniform(program, has_name, false)
+      tex_id ->
+        :gl.activeTexture(tex_unit)
+        :gl.bindTexture(@gl_texture_2d, tex_id)
+        set_uniform(program, sampler_name, unit_idx)
+        set_uniform(program, has_name, true)
     end
   end
 end

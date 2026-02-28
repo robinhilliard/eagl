@@ -23,7 +23,7 @@ defmodule EAGL.Examples.GLTF.DamagedHelmet do
 
   @impl true
   def setup do
-    with {:ok, program} <- create_shader_program(),
+    with {:ok, program} <- GLTF.EAGL.create_pbr_shader(),
          {:ok, scene, gltf, data_store} <- GLTF.EAGL.load_scene(@glb_path, program),
          {:ok, textures} <- GLTF.EAGL.load_textures(gltf, data_store),
          {:ok, material} <- extract_material(gltf) do
@@ -48,20 +48,20 @@ defmodule EAGL.Examples.GLTF.DamagedHelmet do
     projection = mat4_perspective(radians(camera.zoom), aspect, 0.1, 100.0)
 
     [r, g, b, _a] = material.base_color_factor
+    emissive = material.emissive_factor || [0.0, 0.0, 0.0]
+    [er, eg, eb | _] = emissive
+
     set_uniforms(program,
       "material.baseColor": vec3(r, g, b),
       "material.metallic": material.metallic_factor,
-      "material.roughness": material.roughness_factor
+      "material.roughness": material.roughness_factor,
+      "material.emissive": vec3(er * 1.0, eg * 1.0, eb * 1.0)
     )
 
-    emissive = material.emissive_factor || [0.0, 0.0, 0.0]
-    [er, eg, eb | _] = emissive
-    set_uniform(program, "material.emissive", vec3(er * 1.0, eg * 1.0, eb * 1.0))
-
-    bind_texture(program, textures, :base_color, "baseColorTexture", "hasBaseColorTexture", @gl_texture0, 0)
-    bind_texture(program, textures, :metallic_roughness, "metallicRoughnessTexture", "hasMetallicRoughnessTexture", @gl_texture1, 1)
-    bind_texture(program, textures, :normal, "normalTexture", "hasNormalTexture", @gl_texture2, 2)
-    bind_texture(program, textures, :emissive, "emissiveTexture", "hasEmissiveTexture", @gl_texture3, 3)
+    bind_texture(textures, :base_color, program, "baseColorTexture", "hasBaseColorTexture", @gl_texture0, 0)
+    bind_texture(textures, :metallic_roughness, program, "metallicRoughnessTexture", "hasMetallicRoughnessTexture", @gl_texture1, 1)
+    bind_texture(textures, :normal, program, "normalTexture", "hasNormalTexture", @gl_texture2, 2)
+    bind_texture(textures, :emissive, program, "emissiveTexture", "hasEmissiveTexture", @gl_texture3, 3)
     :gl.activeTexture(@gl_texture0)
 
     set_uniforms(program,
@@ -102,9 +102,7 @@ defmodule EAGL.Examples.GLTF.DamagedHelmet do
     :ok
   end
 
-  # --- Private ---
-
-  defp bind_texture(program, textures, key, sampler_name, has_name, tex_unit, unit_idx) do
+  defp bind_texture(textures, key, program, sampler_name, has_name, tex_unit, unit_idx) do
     case Map.get(textures, key) do
       nil -> set_uniform(program, has_name, false)
       tex_id ->
@@ -128,133 +126,6 @@ defmodule EAGL.Examples.GLTF.DamagedHelmet do
           roughness_factor: Map.get(pbr, :roughness_factor, 1.0),
           emissive_factor: mat.emissive_factor || [0.0, 0.0, 0.0]
         }}
-    end
-  end
-
-  defp create_shader_program do
-    vs_source = """
-    #version 330 core
-    layout (location = 0) in vec3 aPos;
-    layout (location = 1) in vec3 aNormal;
-    layout (location = 2) in vec2 aTexCoord;
-
-    uniform mat4 model;
-    uniform mat4 view;
-    uniform mat4 projection;
-
-    out vec3 FragPos;
-    out vec3 Normal;
-    out vec2 TexCoord;
-
-    void main() {
-        FragPos = vec3(model * vec4(aPos, 1.0));
-        Normal = mat3(transpose(inverse(model))) * aNormal;
-        TexCoord = aTexCoord;
-        gl_Position = projection * view * vec4(FragPos, 1.0);
-    }
-    """
-
-    fs_source = """
-    #version 330 core
-    out vec4 FragColor;
-    in vec3 FragPos;
-    in vec3 Normal;
-    in vec2 TexCoord;
-
-    uniform vec3 lightPos;
-    uniform vec3 lightColor;
-    uniform vec3 viewPos;
-
-    struct Material {
-        vec3 baseColor;
-        float metallic;
-        float roughness;
-        vec3 emissive;
-    };
-    uniform Material material;
-
-    uniform sampler2D baseColorTexture;
-    uniform sampler2D metallicRoughnessTexture;
-    uniform sampler2D normalTexture;
-    uniform sampler2D emissiveTexture;
-    uniform bool hasBaseColorTexture;
-    uniform bool hasMetallicRoughnessTexture;
-    uniform bool hasNormalTexture;
-    uniform bool hasEmissiveTexture;
-
-    const float PI = 3.14159265359;
-
-    vec3 fresnelSchlick(float cosTheta, vec3 F0) {
-        return F0 + (1.0 - F0) * pow(1.0 - cosTheta, 5.0);
-    }
-
-    float distributionGGX(vec3 N, vec3 H, float roughness) {
-        float a = roughness * roughness;
-        float a2 = a * a;
-        float NdotH = max(dot(N, H), 0.0);
-        float denom = (NdotH * NdotH * (a2 - 1.0) + 1.0);
-        return a2 / (PI * denom * denom);
-    }
-
-    float geometrySchlickGGX(float NdotV, float roughness) {
-        float r = (roughness + 1.0);
-        float k = (r * r) / 8.0;
-        return NdotV / (NdotV * (1.0 - k) + k);
-    }
-
-    float geometrySmith(vec3 N, vec3 V, vec3 L, float roughness) {
-        return geometrySchlickGGX(max(dot(N, V), 0.0), roughness)
-             * geometrySchlickGGX(max(dot(N, L), 0.0), roughness);
-    }
-
-    void main() {
-        vec3 N = normalize(Normal);
-        vec3 V = normalize(viewPos - FragPos);
-        vec3 L = normalize(lightPos - FragPos);
-        vec3 H = normalize(V + L);
-
-        vec3 baseColor = material.baseColor;
-        if (hasBaseColorTexture) {
-            baseColor *= pow(texture(baseColorTexture, TexCoord).rgb, vec3(2.2));
-        }
-
-        float metallic = material.metallic;
-        float roughness = material.roughness;
-        if (hasMetallicRoughnessTexture) {
-            vec3 mr = texture(metallicRoughnessTexture, TexCoord).rgb;
-            roughness *= mr.g;
-            metallic *= mr.b;
-        }
-
-        vec3 emissive = material.emissive;
-        if (hasEmissiveTexture) {
-            emissive *= pow(texture(emissiveTexture, TexCoord).rgb, vec3(2.2));
-        }
-
-        vec3 F0 = mix(vec3(0.04), baseColor, metallic);
-        float NDF = distributionGGX(N, H, roughness);
-        float G = geometrySmith(N, V, L, roughness);
-        vec3 F = fresnelSchlick(max(dot(H, V), 0.0), F0);
-
-        vec3 kD = (vec3(1.0) - F) * (1.0 - metallic);
-        float denom = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0) + 0.001;
-        vec3 specular = (NDF * G * F) / denom;
-
-        float NdotL = max(dot(N, L), 0.0);
-        vec3 Lo = (kD * baseColor / PI + specular) * lightColor * NdotL;
-
-        vec3 color = vec3(0.03) * baseColor + Lo + emissive;
-        color = color / (color + vec3(1.0));
-        color = pow(color, vec3(1.0/2.2));
-
-        FragColor = vec4(color, 1.0);
-    }
-    """
-
-    with {:ok, vs} <- create_shader_from_source(@gl_vertex_shader, vs_source, "pbr_vs"),
-         {:ok, fs} <- create_shader_from_source(@gl_fragment_shader, fs_source, "pbr_fs"),
-         {:ok, prog} <- create_attach_link([vs, fs]) do
-      {:ok, prog}
     end
   end
 end
