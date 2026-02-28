@@ -73,7 +73,6 @@ defmodule EAGL.Examples.GLTF.BoxAnimated do
     dt = 0.016
     updated_camera = Camera.process_keyboard_input(camera, dt)
 
-    # Update animation
     :ok = Animator.update(animator, dt)
     animated_scene = Animator.apply_to_scene(animator, scene)
 

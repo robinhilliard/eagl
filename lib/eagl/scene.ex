@@ -183,20 +183,15 @@ defmodule EAGL.Scene do
   end
 
   defp render_node_recursive(%Node{} = node, parent_transform, view_matrix, projection_matrix) do
-    # Calculate this node's world transform
     local_transform = Node.get_local_transform_matrix(node)
     world_transform = mat4_mul(parent_transform, local_transform)
 
-    # Render this node's mesh if it has one
     case Node.get_mesh(node) do
       nil -> :ok
       mesh -> render_mesh(mesh, world_transform, view_matrix, projection_matrix)
     end
 
-    # Recursively render children
-    children = Node.get_children(node)
-
-    Enum.each(children, fn child ->
+    Enum.each(Node.get_children(node), fn child ->
       render_node_recursive(child, world_transform, view_matrix, projection_matrix)
     end)
   end

@@ -455,10 +455,12 @@ defmodule GLTF.EAGL do
           end)
           |> Enum.into(%{})
 
-        # Second, establish parent-child relationships
+        # Establish parent-child relationships bottom-up so children
+        # have their subtrees resolved before being added to parents
         node_data_with_children =
           nodes
           |> Enum.with_index()
+          |> Enum.reverse()
           |> Enum.reduce(node_data, fn {gltf_node, parent_index}, acc_node_data ->
             case gltf_node.children do
               nil ->
@@ -467,7 +469,6 @@ defmodule GLTF.EAGL do
               children when is_list(children) ->
                 parent_node = Map.get(acc_node_data, parent_index)
 
-                # Add all children to the parent node
                 updated_parent =
                   Enum.reduce(children, parent_node, fn child_index, parent_acc ->
                     case Map.get(acc_node_data, child_index) do
