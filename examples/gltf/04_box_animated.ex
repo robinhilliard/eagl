@@ -2,17 +2,17 @@ defmodule EAGL.Examples.GLTF.BoxAnimated do
   @moduledoc """
   GLTF Example 4: Load and display the BoxAnimated model using EAGL GLTF bridge.
 
-  Builds on Example 3 by testing GLTF animation channel/sampler extraction,
-  EAGL.Animator timeline loading and playback, and animated transforms
-  applied through the scene hierarchy.
+  Tests GLTF animation channel/sampler extraction, EAGL.Animator timeline
+  loading and playback, and animated transforms through the scene hierarchy.
   """
 
   use EAGL.Window
   use EAGL.Const
+  use EAGL.OrbitCamera
 
   import Bitwise
-  import EAGL.{Shader, Math}
-  alias EAGL.{Camera, Scene, Animator}
+  import EAGL.Shader
+  alias EAGL.{Scene, Animator}
 
   @glb_path "test/fixtures/samples/BoxAnimated.glb"
 
@@ -29,60 +29,43 @@ defmodule EAGL.Examples.GLTF.BoxAnimated do
          {:ok, animator} <- setup_animations(gltf, data_store) do
       updated_roots = Enum.map(scene.root_nodes, &attach_program(&1, program))
       scene = %{scene | root_nodes: updated_roots}
-      camera = Camera.new(position: vec3(3.0, 3.0, 6.0), yaw: -110.0, pitch: -20.0)
-      {:ok, %{program: program, scene: scene, camera: camera, animator: animator, time: 0.0, last_mouse: nil, mouse_down: false}}
+      orbit = EAGL.OrbitCamera.fit_to_gltf(gltf)
+      {:ok, %{program: program, scene: scene, orbit: orbit, animator: animator}}
     end
   end
 
   @impl true
-  def render(width, height, %{program: program, scene: scene, camera: camera} = state) do
-    :gl.viewport(0, 0, trunc(width), trunc(height))
+  def render(w, h, %{program: prog, scene: scene, orbit: orbit} = state) do
+    :gl.viewport(0, 0, trunc(w), trunc(h))
     :gl.clearColor(0.15, 0.15, 0.2, 1.0)
     :gl.clear(@gl_color_buffer_bit ||| @gl_depth_buffer_bit)
     :gl.enable(@gl_cull_face)
     :gl.cullFace(@gl_back)
 
-    :gl.useProgram(program)
-    view = Camera.get_view_matrix(camera)
-    aspect = if height > 0, do: width / height, else: 1.0
-    projection = mat4_perspective(radians(camera.zoom), aspect, 0.1, 100.0)
+    :gl.useProgram(prog)
+    view = EAGL.OrbitCamera.get_view_matrix(orbit)
+    proj = EAGL.OrbitCamera.get_projection_matrix(orbit, w / max(h, 1))
 
-    GLTF.EAGL.set_phong_uniforms(program,
-      object_color: vec3(0.6, 0.8, 0.3),
-      light_pos: vec3(3.0, 5.0, 4.0),
-      view_pos: camera.position
+    GLTF.EAGL.set_phong_uniforms(prog,
+      object_color: EAGL.Math.vec3(0.6, 0.8, 0.3),
+      view_pos: EAGL.OrbitCamera.get_position(orbit)
     )
 
-    Scene.render(scene, view, projection)
+    Scene.render(scene, view, proj)
     {:ok, state}
   end
 
+  # Override the tick handler from use EAGL.OrbitCamera to add animation updates
   @impl true
-  def handle_event({:tick, _dt}, %{camera: camera, scene: scene, animator: animator, time: time} = state) do
-    dt = 0.016
-    :ok = Animator.update(animator, dt)
+  def handle_event({:tick, _dt}, %{scene: scene, animator: animator} = state) do
+    :ok = Animator.update(animator, 0.016)
     animated_scene = Animator.apply_to_scene(animator, scene)
-    {:ok, %{state | camera: Camera.process_keyboard_input(camera, dt), scene: animated_scene, time: time + dt}}
+    {:ok, %{state | scene: animated_scene}}
   end
-
-  def handle_event({:mouse_motion, x, y}, %{camera: camera, last_mouse: last_mouse, mouse_down: true} = state) do
-    {lx, ly} = last_mouse || {x, y}
-    {:ok, %{state | camera: Camera.process_mouse_movement(camera, x - lx, ly - y, true), last_mouse: {x, y}}}
-  end
-
-  def handle_event({:mouse_motion, x, y}, state), do: {:ok, %{state | last_mouse: {x, y}}}
-  def handle_event({:mouse_down, _, _}, state), do: {:ok, %{state | mouse_down: true}}
-  def handle_event({:mouse_up, _, _}, state), do: {:ok, %{state | mouse_down: false, last_mouse: nil}}
-
-  def handle_event({:mouse_wheel, _, _, _, wd}, %{camera: camera} = state) do
-    {:ok, %{state | camera: Camera.process_mouse_scroll(camera, wd)}}
-  end
-
-  def handle_event(_event, state), do: {:ok, state}
 
   @impl true
-  def cleanup(%{program: program, animator: animator}) do
-    cleanup_program(program)
+  def cleanup(%{program: p, animator: animator}) do
+    cleanup_program(p)
     Animator.stop(animator)
     :ok
   end

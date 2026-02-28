@@ -2,16 +2,16 @@ defmodule EAGL.Examples.GLTF.Duck do
   @moduledoc """
   GLTF Example 3: Load and display the Duck model using EAGL GLTF bridge.
 
-  Builds on Example 2 by testing multi-node scene graph with parent-child
-  transforms, node transform hierarchy, and larger mesh geometry.
+  Tests multi-node scene graph with parent-child transforms and larger geometry.
   """
 
   use EAGL.Window
   use EAGL.Const
+  use EAGL.OrbitCamera
 
   import Bitwise
-  import EAGL.{Shader, Math}
-  alias EAGL.{Camera, Scene}
+  import EAGL.Shader
+  alias EAGL.Scene
 
   @glb_path "test/fixtures/samples/Duck.glb"
 
@@ -23,63 +23,40 @@ defmodule EAGL.Examples.GLTF.Duck do
   @impl true
   def setup do
     with {:ok, program} <- GLTF.EAGL.create_pbr_shader(),
-         {:ok, scene, gltf, data_store} <- GLTF.EAGL.load_scene(@glb_path, program),
-         {:ok, textures} <- GLTF.EAGL.load_textures(gltf, data_store) do
-      camera = Camera.new(position: vec3(0.0, 100.0, 300.0), yaw: -90.0, pitch: -15.0, movement_speed: 50.0)
-      {:ok, %{program: program, scene: scene, camera: camera, textures: textures, time: 0.0, last_mouse: nil, mouse_down: false}}
+         {:ok, scene, gltf, ds} <- GLTF.EAGL.load_scene(@glb_path, program),
+         {:ok, textures} <- GLTF.EAGL.load_textures(gltf, ds) do
+      orbit = EAGL.OrbitCamera.fit_to_gltf(gltf)
+      {:ok, %{program: program, scene: scene, orbit: orbit, textures: textures}}
     end
   end
 
   @impl true
-  def render(width, height, %{program: program, scene: scene, camera: camera, textures: textures} = state) do
-    :gl.viewport(0, 0, trunc(width), trunc(height))
+  def render(w, h, %{program: prog, scene: scene, orbit: orbit, textures: tex} = state) do
+    :gl.viewport(0, 0, trunc(w), trunc(h))
     :gl.clearColor(0.15, 0.15, 0.2, 1.0)
     :gl.clear(@gl_color_buffer_bit ||| @gl_depth_buffer_bit)
     :gl.enable(@gl_cull_face)
     :gl.cullFace(@gl_back)
 
-    :gl.useProgram(program)
-    view = Camera.get_view_matrix(camera)
-    aspect = if height > 0, do: width / height, else: 1.0
-    projection = mat4_perspective(radians(camera.zoom), aspect, 1.0, 1000.0)
+    :gl.useProgram(prog)
+    view = EAGL.OrbitCamera.get_view_matrix(orbit)
+    proj = EAGL.OrbitCamera.get_projection_matrix(orbit, w / max(h, 1))
 
-    GLTF.EAGL.set_pbr_uniforms(program,
+    GLTF.EAGL.set_pbr_uniforms(prog,
       metallic: 0.0,
-      textures: textures,
-      light_pos: vec3(200.0, 300.0, 400.0),
-      view_pos: camera.position
+      textures: tex,
+      view_pos: EAGL.OrbitCamera.get_position(orbit)
     )
 
-    Scene.render(scene, view, projection)
+    Scene.render(scene, view, proj)
     {:ok, state}
   end
 
   @impl true
-  def handle_event({:tick, _dt}, %{camera: camera, time: time} = state) do
-    {:ok, %{state | camera: Camera.process_keyboard_input(camera, 0.016), time: time + 0.016}}
-  end
-
-  def handle_event({:mouse_motion, x, y}, %{camera: camera, last_mouse: last_mouse, mouse_down: true} = state) do
-    {lx, ly} = last_mouse || {x, y}
-    {:ok, %{state | camera: Camera.process_mouse_movement(camera, x - lx, ly - y, true), last_mouse: {x, y}}}
-  end
-
-  def handle_event({:mouse_motion, x, y}, state), do: {:ok, %{state | last_mouse: {x, y}}}
-  def handle_event({:mouse_down, _, _}, state), do: {:ok, %{state | mouse_down: true}}
-  def handle_event({:mouse_up, _, _}, state), do: {:ok, %{state | mouse_down: false, last_mouse: nil}}
-
-  def handle_event({:mouse_wheel, _, _, _, wd}, %{camera: camera} = state) do
-    {:ok, %{state | camera: Camera.process_mouse_scroll(camera, wd)}}
-  end
-
-  def handle_event(_event, state), do: {:ok, state}
-
-  @impl true
-  def cleanup(%{program: program, textures: textures}) do
-    cleanup_program(program)
-    tex_ids = Map.values(textures) |> Enum.filter(&is_integer/1)
-    if tex_ids != [], do: :gl.deleteTextures(tex_ids)
+  def cleanup(%{program: p, textures: t}) do
+    cleanup_program(p)
+    ids = Map.values(t) |> Enum.filter(&is_integer/1)
+    if ids != [], do: :gl.deleteTextures(ids)
     :ok
   end
-
 end
