@@ -314,11 +314,13 @@ defmodule EAGL.Animator do
     Map.get(timelines, name)
   end
 
+  # Performance note: this does O(K*N) work per frame where K = animated nodes,
+  # N = total scene nodes, because Scene.find_node and Scene.update_node each
+  # traverse the tree linearly. For large scenes, consider adding a node ID map
+  # to Scene for O(1) lookup and batched updates.
   defp apply_timeline_to_scene(timeline, current_time, scene) do
-    # Group channels by target node for efficiency
     channels_by_node = Enum.group_by(timeline.channels, & &1.target_node_id)
 
-    # Apply animations to each affected node
     Enum.reduce(channels_by_node, scene, fn {node_id, channels}, acc_scene ->
       apply_channels_to_node(acc_scene, node_id, channels, current_time)
     end)
@@ -327,7 +329,6 @@ defmodule EAGL.Animator do
   defp apply_channels_to_node(scene, node_id, channels, current_time) do
     case Scene.find_node(scene, node_id) do
       nil ->
-        # Node not found, skip
         scene
 
       node ->

@@ -544,54 +544,49 @@ defmodule GLTF.EAGL do
   """
   @spec interleave_vertex_data(map()) :: {:ok, [float()]} | {:error, String.t()}
   def interleave_vertex_data(vertex_data) do
-    # Get position data (required)
     case binary_to_float_list(vertex_data.position) do
       {:ok, positions} ->
         vertex_count = div(length(positions), 3)
 
-        # Extract other attribute data with defaults matching web demo behavior
         normals = extract_attribute_data(vertex_data, "NORMAL", vertex_count, 3, [0.0, 0.0, 1.0])
         texcoords = extract_attribute_data(vertex_data, "TEXCOORD_0", vertex_count, 2, [0.0, 0.0])
 
-        # Interleave data to match web demo layout: position|normal|texture (no color)
+        # Convert to tuples for O(1) indexed access instead of O(n) Enum.at
+        pos_t = List.to_tuple(positions)
+        norm_t = List.to_tuple(normals)
+        tex_t = List.to_tuple(texcoords)
+
+        has_normals = Map.has_key?(vertex_data, "NORMAL")
+        has_texcoords = Map.has_key?(vertex_data, "TEXCOORD_0")
+
         vertices =
           for i <- 0..(vertex_count - 1) do
             pos_idx = i * 3
             tex_idx = i * 2
-            norm_idx = i * 3
 
-            # Start with position (location 0)
             vertex = [
-              Enum.at(positions, pos_idx) || 0.0,
-              Enum.at(positions, pos_idx + 1) || 0.0,
-              Enum.at(positions, pos_idx + 2) || 0.0
+              elem(pos_t, pos_idx),
+              elem(pos_t, pos_idx + 1),
+              elem(pos_t, pos_idx + 2)
             ]
 
-            # Add normal if available (location 1) - matches web demo layout
             vertex =
-              if Map.has_key?(vertex_data, "NORMAL") do
-                vertex ++
-                  [
-                    Enum.at(normals, norm_idx) || 0.0,
-                    Enum.at(normals, norm_idx + 1) || 1.0,
-                    Enum.at(normals, norm_idx + 2) || 0.0
-                  ]
+              if has_normals do
+                vertex ++ [
+                  elem(norm_t, pos_idx),
+                  elem(norm_t, pos_idx + 1),
+                  elem(norm_t, pos_idx + 2)
+                ]
               else
                 vertex
               end
 
-            # Add texture coordinates if available (location 2) - matches web demo layout
             vertex =
-              if Map.has_key?(vertex_data, "TEXCOORD_0") do
-                # Apply V-flip to match OpenGL convention (like web demo does)
-                v_coord = Enum.at(texcoords, tex_idx + 1) || 0.0
-                flipped_v = 1.0 - v_coord
-
-                vertex ++
-                  [
-                    Enum.at(texcoords, tex_idx) || 0.0,
-                    flipped_v
-                  ]
+              if has_texcoords do
+                vertex ++ [
+                  elem(tex_t, tex_idx),
+                  1.0 - elem(tex_t, tex_idx + 1)
+                ]
               else
                 vertex
               end

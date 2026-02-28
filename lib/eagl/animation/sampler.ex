@@ -3,12 +3,14 @@ defmodule EAGL.Animation.Sampler do
   Defines keyframe data and interpolation method for animation.
 
   Contains timestamp inputs, value outputs, and interpolation algorithm.
+  Internally stores values as tuples for O(1) indexed access during per-frame sampling.
   """
 
   defstruct [
     :input_times,
     :output_values,
     :interpolation,
+    :duration,
     :metadata
   ]
 
@@ -18,20 +20,25 @@ defmodule EAGL.Animation.Sampler do
 
   @type t :: %__MODULE__{
           input_times: [timestamp()],
-          output_values: keyframe_data(),
+          output_values: tuple(),
           interpolation: interpolation_mode(),
+          duration: float(),
           metadata: map()
         }
 
   @doc """
   Create a new animation sampler.
+
+  Accepts lists for `input_times` and `output_values`. Values are converted
+  to tuples internally for O(1) access during per-frame sampling.
   """
   @spec new([timestamp()], keyframe_data(), interpolation_mode(), keyword()) :: t()
   def new(input_times, output_values, interpolation \\ :linear, opts \\ []) do
     %__MODULE__{
       input_times: input_times,
-      output_values: output_values,
+      output_values: List.to_tuple(output_values),
       interpolation: interpolation,
+      duration: List.last(input_times) || 0.0,
       metadata: Keyword.get(opts, :metadata, %{})
     }
   end
@@ -40,64 +47,47 @@ defmodule EAGL.Animation.Sampler do
   Get the duration of this sampler.
   """
   @spec duration(t()) :: float()
-  def duration(%__MODULE__{input_times: []}), do: 0.0
-  def duration(%__MODULE__{input_times: times}), do: List.last(times)
+  def duration(%__MODULE__{duration: d}), do: d
 
   @doc """
   Sample the animation at a specific time with proper interpolation.
   """
   @spec sample(t(), timestamp()) :: any()
   def sample(%__MODULE__{} = sampler, time) do
-    case find_keyframe_indices(sampler.input_times, time) do
+    case find_keyframe_indices(sampler.input_times, sampler.duration, time) do
       {:exact, index} ->
-        # Exact keyframe match
-        Enum.at(sampler.output_values, index)
+        elem(sampler.output_values, index)
 
       {:between, index1, index2, factor} ->
-        # Interpolate between keyframes
-        value1 = Enum.at(sampler.output_values, index1)
-        value2 = Enum.at(sampler.output_values, index2)
+        value1 = elem(sampler.output_values, index1)
+        value2 = elem(sampler.output_values, index2)
         EAGL.Animation.interpolate(value1, value2, factor, sampler.interpolation)
 
-      {:before_start} ->
-        # Before first keyframe
-        List.first(sampler.output_values)
+      :before_start ->
+        elem(sampler.output_values, 0)
 
-      {:after_end} ->
-        # After last keyframe
-        List.last(sampler.output_values)
+      :after_end ->
+        elem(sampler.output_values, tuple_size(sampler.output_values) - 1)
     end
   end
 
-  # Find the appropriate keyframe indices for a given time
-  defp find_keyframe_indices([], _time), do: {:before_start}
+  defp find_keyframe_indices([], _duration, _time), do: :before_start
 
-  defp find_keyframe_indices([single_time], time) do
-    if abs(time - single_time) < 0.001 do
-      {:exact, 0}
-    else
-      {:before_start}
-    end
+  defp find_keyframe_indices([single_time], _duration, time) do
+    if abs(time - single_time) < 0.001, do: {:exact, 0}, else: :before_start
   end
 
-  defp find_keyframe_indices(times, time) do
-    first_time = List.first(times)
-    last_time = List.last(times)
+  defp find_keyframe_indices(times, duration, time) do
+    [first_time | _] = times
 
     cond do
       time <= first_time ->
-        if abs(time - first_time) < 0.001 do
-          {:exact, 0}
-        else
-          {:before_start}
-        end
+        if abs(time - first_time) < 0.001, do: {:exact, 0}, else: :before_start
 
-      time >= last_time ->
-        if abs(time - last_time) < 0.001 do
-          {:exact, length(times) - 1}
-        else
-          {:after_end}
-        end
+      time >= duration ->
+        if abs(time - duration) < 0.001,
+          do: {:exact, length(times) - 1},
+          else: :after_end
 
       true ->
         find_surrounding_keyframes(times, time, 0)

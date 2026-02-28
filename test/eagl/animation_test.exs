@@ -12,7 +12,7 @@ defmodule EAGL.AnimationTest do
       sampler = Sampler.new(times, keyframes, :linear)
 
       assert sampler.input_times == times
-      assert sampler.output_values == keyframes
+      assert sampler.output_values == List.to_tuple(keyframes)
       assert sampler.interpolation == :linear
     end
 

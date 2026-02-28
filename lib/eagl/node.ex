@@ -142,13 +142,13 @@ defmodule EAGL.Node do
     matrix
   end
 
+  # Performance note: recomputes T * R * S every call (per-node per-frame).
+  # For large scenes, consider caching with a dirty flag on transform changes.
   def get_local_transform_matrix(%__MODULE__{position: pos, rotation: rot, scale: scale}) do
-    # Follow glTF spec: T * R * S order
     translation_matrix = mat4_translate(pos || vec3(0, 0, 0))
     rotation_matrix = quat_to_mat4(rot || quat_identity())
     scale_matrix = mat4_scale(scale || vec3(1, 1, 1))
 
-    # Use nested function calls instead of pipe to ensure correct matrix multiplication
     mat4_mul(mat4_mul(translation_matrix, rotation_matrix), scale_matrix)
   end
 
