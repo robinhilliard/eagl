@@ -24,17 +24,21 @@ defmodule EAGL.BufferTest do
     ]
 
     # Add OpenGL 3.3 Core Profile request on macOS for proper VAO support
-    macos_attributes = case :os.type() do
-      {:unix, :darwin} ->
-        [
-          # Request OpenGL 3.3 Core Profile on macOS
-          @wx_gl_major_version, 3,
-          @wx_gl_minor_version, 3,
-          @wx_gl_core_profile
-        ]
-      _ ->
-        []
-    end
+    macos_attributes =
+      case :os.type() do
+        {:unix, :darwin} ->
+          [
+            # Request OpenGL 3.3 Core Profile on macOS
+            @wx_gl_major_version,
+            3,
+            @wx_gl_minor_version,
+            3,
+            @wx_gl_core_profile
+          ]
+
+        _ ->
+          []
+      end
 
     base_attributes ++ macos_attributes ++ [0]
   end

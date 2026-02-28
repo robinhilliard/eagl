@@ -14,8 +14,8 @@ defmodule EAGLExamplesRunner do
   @moduledoc """
   Standalone script for running EAGL OpenGL examples.
 
-  This Mix task provides a cross-platform replacement for the bash `run_examples` script,
-  offering identical functionality while being completely platform-independent.
+  Interactive examples runner for EAGL. Run via `mix examples` or
+  `mix run priv/scripts/examples.exs`.
 
   ## Usage
 

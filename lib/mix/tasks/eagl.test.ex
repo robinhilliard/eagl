@@ -23,7 +23,7 @@ defmodule Mix.Tasks.Eagl.Test do
 
     Mix.shell().info("🧪 Running EAGL unit tests (quick development feedback)")
     Mix.shell().info("📝 For all tests including examples: mix test")
-    Mix.shell().info("📝 For interactive examples: ./priv/scripts/run_examples")
+    Mix.shell().info("📝 For interactive examples: mix examples")
     Mix.shell().info("")
 
     # Run the test task with our arguments

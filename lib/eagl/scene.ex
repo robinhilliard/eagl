@@ -1,4 +1,7 @@
 defmodule EAGL.Scene do
+  import EAGL.Math
+  import EAGL.Const
+
   @moduledoc """
   Scene graph management for hierarchical 3D scenes.
 
@@ -199,36 +202,25 @@ defmodule EAGL.Scene do
   end
 
   defp render_mesh(mesh, model_matrix, view_matrix, projection_matrix) do
-    # Use existing EAGL shader system
     case mesh do
       %{vao: vao, vertex_count: count, program: program} ->
         :gl.useProgram(program)
-
-        # Set standard matrices
-        EAGL.Shader.set_uniforms(program,
-          model: model_matrix,
-          view: view_matrix,
-          projection: projection_matrix
-        )
-
-        # Render using existing OpenGL calls
+        EAGL.Shader.set_uniform(program, "model", model_matrix)
+        EAGL.Shader.set_uniform(program, "view", view_matrix)
+        EAGL.Shader.set_uniform(program, "projection", projection_matrix)
         :gl.bindVertexArray(vao)
         :gl.drawArrays(@gl_triangles, 0, count)
 
       %{vao: vao, index_count: count, program: program} ->
+        index_type = Map.get(mesh, :index_type, @gl_unsigned_int)
         :gl.useProgram(program)
-
-        EAGL.Shader.set_uniforms(program,
-          model: model_matrix,
-          view: view_matrix,
-          projection: projection_matrix
-        )
-
+        EAGL.Shader.set_uniform(program, "model", model_matrix)
+        EAGL.Shader.set_uniform(program, "view", view_matrix)
+        EAGL.Shader.set_uniform(program, "projection", projection_matrix)
         :gl.bindVertexArray(vao)
-        :gl.drawElements(@gl_triangles, count, @gl_unsigned_int, 0)
+        :gl.drawElements(@gl_triangles, count, index_type, 0)
 
       _ ->
-        # Fallback for meshes without shader programs
         :ok
     end
   end

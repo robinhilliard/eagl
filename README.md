@@ -31,7 +31,7 @@ The following are non-goals:
 EAGL includes several examples to demonstrate its capabilities. Use the unified examples runner:
 
 ```
-./priv/scripts/run_examples
+mix examples
 ════════════════════════════════════════════════════════════════
                          EAGL Examples Menu
 ════════════════════════════════════════════════════════════════
@@ -301,7 +301,8 @@ check("After generating mipmaps")
 ```
 
 ### Model Loading
-Currently we only support the .obj format.
+
+#### OBJ Format
 
 ```elixir
 import EAGL.Model
@@ -313,6 +314,41 @@ import EAGL.Model
 :gl.bindVertexArray(model.vao)
 :gl.drawElements(@gl_triangles, model.vertex_count, @gl_unsigned_int, 0)
 ```
+
+#### glTF 2.0 / GLB Format
+
+EAGL supports loading glTF 2.0 models via the `GLTF.EAGL` bridge module, which converts
+glTF data structures into EAGL scene graphs with proper VAO/VBO creation.
+
+```elixir
+alias EAGL.{Scene, Node}
+
+# 1. Load and parse the GLB file
+{:ok, glb} = GLTF.GLBLoader.parse_file("model.glb")
+{:ok, gltf} = GLTF.GLBLoader.load_gltf("model.glb", json_library: :poison)
+
+# 2. Create a data store with the binary buffer data
+data_store = GLTF.DataStore.new()
+data_store = GLTF.DataStore.store_glb_buffer(data_store, 0, GLTF.Binary.get_binary(glb))
+
+# 3. Convert to an EAGL scene graph (creates VAOs/VBOs via EAGL.Buffer)
+{:ok, {scene, all_nodes}} = GLTF.EAGL.to_scene(gltf, data_store)
+
+# 4. Attach your shader program to mesh nodes
+scene = %{scene | root_nodes:
+  Enum.map(scene.root_nodes, fn node ->
+    case Node.get_mesh(node) do
+      nil -> node
+      mesh -> Node.set_mesh(node, Map.put(mesh, :program, shader_program))
+    end
+  end)
+}
+
+# 5. Render using EAGL.Scene (handles transform hierarchy and uniforms)
+Scene.render(scene, view_matrix, projection_matrix)
+```
+
+See `examples/gltf/` for progressive examples from a simple box to a PBR-textured helmet.
 
 ### Buffer Management
 
@@ -630,7 +666,7 @@ OpenGL is typically available through graphics drivers. If you encounter issues,
 
 5. Try the examples:
    ```bash
-   ./priv/scripts/run_examples
+   mix examples
    ```
 
 ## Project Structure
@@ -687,7 +723,7 @@ test/
 priv/
 ├── models/                 # 3D model files (.obj)
 ├── scripts/                # Convenience scripts
-│   └── run_examples        # Unified examples runner
+│   └── examples.exs        # Unified examples runner (mix examples)
 └── shaders/                # GLSL shader files
     └── learnopengl/        # LearnOpenGL tutorial shaders
 ```
@@ -697,7 +733,7 @@ priv/
 - ✅ **Camera System**: First-person camera with WASD movement, mouse look, and scroll zoom
 - ✅ **Shader Management**: Automatic compilation, linking, and error reporting
 - ✅ **Texture Management**: Comprehensive texture creation, configuration, and loading
-- ✅ **3D Model Loading**: Wavefront OBJ format with normals and texture coordinates
+- ✅ **3D Model Loading**: Wavefront OBJ and glTF 2.0 (GLB) formats with scene graph support
 - ✅ **Math Library**: GLM-compatible vectors, matrices, quaternions with full OpenGL integration
 - ✅ **Buffer Helpers**: Wings3D-inspired VAO/VBO management functions
 - ✅ **Error Handling**: Comprehensive OpenGL error checking and reporting
@@ -720,7 +756,7 @@ The current focus is to:
   - ✅ Coordinate Systems (6.1-6.4): 4 examples
   - ✅ Camera (7.1-7.6): 6 examples completed
 - [ ] Continue with "Lighting" chapter examples
-- [ ] Load common model types like GLTF
+- [x] Load glTF 2.0 models via GLTF.EAGL bridge (GLB format, PBR materials, scene graphs)
 
 And in future:
 
@@ -787,7 +823,7 @@ Please read through these guidelines before submitting changes.
 1. Fork and clone the repository
 2. Install dependencies: `mix deps.get`
 3. Run tests to ensure everything works: `mix test`
-4. Try the examples: `./priv/scripts/run_examples`
+4. Try the examples: `mix examples`
 
 ### Code Standards
 
@@ -1021,12 +1057,13 @@ The GLTF library follows these design principles:
 
 ### Roadmap
 
-- [ ] **JSON Serialization**: Import/export to GLTF JSON format
-- [ ] **GLB Support**: Binary GLTF container format support
-- [ ] **Validation**: Extended validation with detailed error reporting
+- [x] **GLB Support**: Binary GLTF container format loading and parsing
+- [x] **Integration**: GLTF.EAGL bridge module for scene graph and VAO creation
+- [x] **Validation**: Structure validation with index and extension checking
+- [ ] **JSON Serialization**: Import/export to GLTF JSON format (non-binary)
 - [ ] **Extensions**: Built-in support for common GLTF extensions
-- [ ] **Utilities**: Helper functions for common operations
-- [ ] **Integration**: Integration with EAGL rendering pipeline
+- [ ] **Multi-primitive meshes**: Support meshes with more than one primitive
+- [ ] **Buffer view stride**: Support strided buffer views for interleaved data
 
 ##### GLB Loading HTTP Client Issue
 

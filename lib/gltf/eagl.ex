@@ -187,9 +187,10 @@ defmodule GLTF.EAGL do
             name: gltf_node.name
           )
 
-        matrix when is_list(matrix) ->
-          # Use matrix transform
-          Node.with_matrix(matrix, name: gltf_node.name)
+        matrix when is_list(matrix) and length(matrix) == 16 ->
+          # Convert GLTF flat list [m0..m15] to EAGL tuple-in-list format [{m0..m15}]
+          eagl_matrix = [List.to_tuple(matrix)]
+          Node.with_matrix(eagl_matrix, name: gltf_node.name)
       end
 
     # Attach mesh if present
@@ -209,12 +210,14 @@ defmodule GLTF.EAGL do
   This creates a full scene graph with all nodes, meshes, and transforms.
   """
   @spec to_scene(GLTF.t(), GLTF.DataStore.t(), keyword()) ::
-          {:ok, Scene.t()} | {:error, String.t()}
+          {:ok, {Scene.t(), [Node.t()]}} | {:error, String.t()}
   def to_scene(%GLTF{} = gltf, data_store, opts \\ []) do
     with {:ok, mesh_lookup} <- create_mesh_lookup(gltf, data_store, opts),
          {:ok, node_lookup} <- create_node_lookup(gltf, mesh_lookup),
          {:ok, scene} <- build_scene_graph(gltf, node_lookup, opts) do
-      {:ok, scene}
+      # Also return all converted nodes for shader assignment
+      all_nodes = Map.values(node_lookup)
+      {:ok, {scene, all_nodes}}
     end
   end
 
@@ -276,8 +279,19 @@ defmodule GLTF.EAGL do
     end
   end
 
-  defp extract_vertex_data(gltf, data_store, primitive) do
-    # Extract position data (required)
+  @doc """
+  Extract vertex data from a GLTF primitive into a map ready for interleaving.
+
+  Returns `{:ok, vertex_data}` where vertex_data contains:
+  - `:position` - binary position data (required)
+  - `"NORMAL"` - binary normal data (if present)
+  - `"TEXCOORD_0"` - binary texcoord data (if present)
+  - `:indices` - binary index data (if present)
+  - `:index_component_type` - GL constant for index type (if indices present)
+  """
+  @spec extract_vertex_data(GLTF.t(), GLTF.DataStore.t(), GLTF.Mesh.Primitive.t()) ::
+          {:ok, map()} | {:error, String.t()}
+  def extract_vertex_data(gltf, data_store, primitive) do
     with {:ok, positions} <- get_attribute_data(gltf, data_store, primitive, "POSITION"),
          {:ok, vertex_data} <- build_vertex_data(gltf, data_store, primitive, positions) do
       {:ok, vertex_data}
@@ -336,16 +350,23 @@ defmodule GLTF.EAGL do
         &Buffer.color_attribute/0
       )
 
-    # Add indices if present
+    # Add indices if present, tracking the component type for correct parsing
     vertex_data =
       case primitive.indices do
         nil ->
           vertex_data
 
-        indices_accessor ->
-          case GLTF.get_accessor_data(gltf, data_store, indices_accessor) do
-            {:ok, indices_data} -> %{vertex_data | indices: indices_data}
-            _ -> vertex_data
+        indices_accessor_idx ->
+          accessor = Enum.at(gltf.accessors, indices_accessor_idx)
+
+          case GLTF.get_accessor_data(gltf, data_store, indices_accessor_idx) do
+            {:ok, indices_data} ->
+              vertex_data
+              |> Map.put(:indices, indices_data)
+              |> Map.put(:index_component_type, accessor.component_type)
+
+            _ ->
+              vertex_data
           end
       end
 
@@ -369,18 +390,25 @@ defmodule GLTF.EAGL do
          {:ok, attributes} <- get_vertex_attributes(vertex_data) do
       case vertex_data.indices do
         nil ->
-          # Non-indexed geometry
           {vao, vbo} = Buffer.create_vertex_array(vertices, attributes)
-          # Calculate vertex count based on total attribute size
           vertex_count = div(length(vertices), total_attribute_size(attributes))
           {:ok, %{vao: vao, vbo: vbo, vertex_count: vertex_count}}
 
         indices_data ->
-          # Indexed geometry
-          case binary_to_int_list(indices_data) do
+          component_type = Map.get(vertex_data, :index_component_type, @gl_unsigned_int)
+
+          case binary_to_index_list(indices_data, component_type) do
             {:ok, index_list} ->
               {vao, vbo, ebo} = Buffer.create_indexed_array(vertices, index_list, attributes)
-              {:ok, %{vao: vao, vbo: vbo, ebo: ebo, index_count: length(index_list)}}
+
+              {:ok,
+               %{
+                 vao: vao,
+                 vbo: vbo,
+                 ebo: ebo,
+                 index_count: length(index_list),
+                 index_type: @gl_unsigned_int
+               }}
 
             {:error, reason} ->
               {:error, reason}
@@ -399,10 +427,12 @@ defmodule GLTF.EAGL do
           meshes
           |> Enum.with_index()
           |> Enum.map(fn {_mesh, mesh_index} ->
-            # Convert first primitive of each mesh (simplified)
             case primitive_to_vao(gltf, data_store, mesh_index, 0, opts) do
-              {:ok, vao_data} -> {mesh_index, vao_data}
-              _ -> {mesh_index, nil}
+              {:ok, vao_data} ->
+                {mesh_index, vao_data}
+
+              {:error, _reason} ->
+                {mesh_index, nil}
             end
           end)
           |> Enum.into(%{})
@@ -417,6 +447,7 @@ defmodule GLTF.EAGL do
         {:ok, %{}}
 
       nodes ->
+        # First, create all nodes without children
         node_data =
           nodes
           |> Enum.with_index()
@@ -426,7 +457,32 @@ defmodule GLTF.EAGL do
           end)
           |> Enum.into(%{})
 
-        {:ok, node_data}
+        # Second, establish parent-child relationships
+        node_data_with_children =
+          nodes
+          |> Enum.with_index()
+          |> Enum.reduce(node_data, fn {gltf_node, parent_index}, acc_node_data ->
+            case gltf_node.children do
+              nil ->
+                acc_node_data
+
+              children when is_list(children) ->
+                parent_node = Map.get(acc_node_data, parent_index)
+
+                # Add all children to the parent node
+                updated_parent =
+                  Enum.reduce(children, parent_node, fn child_index, parent_acc ->
+                    case Map.get(acc_node_data, child_index) do
+                      nil -> parent_acc
+                      child_node -> Node.add_child(parent_acc, child_node)
+                    end
+                  end)
+
+                Map.put(acc_node_data, parent_index, updated_parent)
+            end
+          end)
+
+        {:ok, node_data_with_children}
     end
   end
 
@@ -478,26 +534,31 @@ defmodule GLTF.EAGL do
   defp atom_to_gl_constant(:blend), do: 2
   defp atom_to_gl_constant(_), do: 0
 
-  # Interleave vertex data based on available attributes
-  defp interleave_vertex_data(vertex_data) do
+  @doc """
+  Interleave vertex attributes into a flat list of floats for GPU upload.
+
+  Takes a vertex_data map with binary attribute data and produces an interleaved
+  list matching the layout: position | normal (if present) | texcoord (if present).
+
+  Texture V coordinates are flipped (1.0 - v) to convert from GLTF convention
+  (V=0 at top) to OpenGL convention (V=0 at bottom).
+  """
+  @spec interleave_vertex_data(map()) :: {:ok, [float()]} | {:error, String.t()}
+  def interleave_vertex_data(vertex_data) do
     # Get position data (required)
     case binary_to_float_list(vertex_data.position) do
       {:ok, positions} ->
         vertex_count = div(length(positions), 3)
 
-        # Extract other attribute data
+        # Extract other attribute data with defaults matching web demo behavior
         normals = extract_attribute_data(vertex_data, "NORMAL", vertex_count, 3, [0.0, 0.0, 1.0])
         texcoords = extract_attribute_data(vertex_data, "TEXCOORD_0", vertex_count, 2, [0.0, 0.0])
 
-        # Always generate colors for shader compatibility - use gradient like before
-        colors = generate_gradient_colors(vertex_count)
-
-        # Interleave all data
+        # Interleave data to match web demo layout: position|normal|texture (no color)
         vertices =
           for i <- 0..(vertex_count - 1) do
             pos_idx = i * 3
             tex_idx = i * 2
-            color_idx = i * 3
             norm_idx = i * 3
 
             # Start with position (location 0)
@@ -507,35 +568,30 @@ defmodule GLTF.EAGL do
               Enum.at(positions, pos_idx + 2) || 0.0
             ]
 
-            # Add color next (location 1) - always present for shader compatibility
-            vertex =
-              vertex ++
-                [
-                  Enum.at(colors, color_idx) || 1.0,
-                  Enum.at(colors, color_idx + 1) || 1.0,
-                  Enum.at(colors, color_idx + 2) || 1.0
-                ]
-
-            # Add normal if available (location 2)
+            # Add normal if available (location 1) - matches web demo layout
             vertex =
               if Map.has_key?(vertex_data, "NORMAL") do
                 vertex ++
                   [
                     Enum.at(normals, norm_idx) || 0.0,
-                    Enum.at(normals, norm_idx + 1) || 0.0,
-                    Enum.at(normals, norm_idx + 2) || 1.0
+                    Enum.at(normals, norm_idx + 1) || 1.0,
+                    Enum.at(normals, norm_idx + 2) || 0.0
                   ]
               else
                 vertex
               end
 
-            # Add texture coordinates if available (location 3)
+            # Add texture coordinates if available (location 2) - matches web demo layout
             vertex =
               if Map.has_key?(vertex_data, "TEXCOORD_0") do
+                # Apply V-flip to match OpenGL convention (like web demo does)
+                v_coord = Enum.at(texcoords, tex_idx + 1) || 0.0
+                flipped_v = 1.0 - v_coord
+
                 vertex ++
                   [
                     Enum.at(texcoords, tex_idx) || 0.0,
-                    Enum.at(texcoords, tex_idx + 1) || 0.0
+                    flipped_v
                   ]
               else
                 vertex
@@ -549,16 +605,6 @@ defmodule GLTF.EAGL do
       {:error, reason} ->
         {:error, reason}
     end
-  end
-
-  # Generate gradient colors for visual appeal (same as manual conversion)
-  defp generate_gradient_colors(vertex_count) do
-    for i <- 0..(vertex_count - 1) do
-      t = i / max(vertex_count - 1, 1)
-      # Purple to cyan gradient
-      [1.0 - t * 0.5, 0.5 + t * 0.3, 0.8 - t * 0.3]
-    end
-    |> List.flatten()
   end
 
   # Extract attribute data with defaults
@@ -582,27 +628,30 @@ defmodule GLTF.EAGL do
     end
   end
 
-  # Get vertex attributes based on available data
-  # Note: Order matters for shader compatibility
-  defp get_vertex_attributes(vertex_data) do
-    # Position is always required
+  @doc """
+  Build the EAGL vertex attribute list based on which attributes are present.
+
+  Uses `EAGL.Buffer.vertex_attributes/1` for automatic stride/offset calculation.
+  The layout order is: position (0), normal (1), texture_coordinate (2).
+  This matches GLTF convention and produces sequential shader locations.
+  """
+  @spec get_vertex_attributes(map()) :: {:ok, [EAGL.Buffer.vertex_attribute()]}
+  def get_vertex_attributes(vertex_data) do
+    # Position is always required (location 0)
     attr_names = [:position]
 
-    # Add color next (location 1) for shader compatibility
-    # Even if not present in glTF, we generate default colors
-    attr_names = attr_names ++ [:color]
-
-    # Add normal if available (location 2)
+    # Add normal if available (location 1) - matches web demo layout
     attr_names =
       if Map.has_key?(vertex_data, "NORMAL"), do: attr_names ++ [:normal], else: attr_names
 
-    # Add texture coordinates if available (location 3)
+    # Add texture coordinates if available (location 2) - matches web demo layout
     attr_names =
       if Map.has_key?(vertex_data, "TEXCOORD_0"),
         do: attr_names ++ [:texture_coordinate],
         else: attr_names
 
-    {:ok, Buffer.vertex_attributes(attr_names)}
+    attributes = Buffer.vertex_attributes(attr_names)
+    {:ok, attributes}
   end
 
   # Calculate total size of all attributes in floats
@@ -612,28 +661,45 @@ defmodule GLTF.EAGL do
     end)
   end
 
-  # Improved binary parsing with error handling
-  defp binary_to_float_list(binary) when is_binary(binary) do
-    try do
-      floats = for <<f::float-32-native <- binary>>, do: f
-      {:ok, floats}
-    rescue
-      error -> {:error, "Failed to parse float data: #{inspect(error)}"}
+  @doc """
+  Parse binary data as a list of little-endian float32 values.
+
+  GLTF spec requires little-endian byte order for all binary data.
+  """
+  @spec binary_to_float_list(binary()) :: {:ok, [float()]} | {:error, String.t()}
+  def binary_to_float_list(binary) when is_binary(binary) do
+    floats = for <<f::little-float-32 <- binary>>, do: f
+    {:ok, floats}
+  end
+
+  def binary_to_float_list(_), do: {:error, "Expected binary data for float parsing"}
+
+  @doc """
+  Parse binary index data according to the accessor's component type.
+
+  GLTF indices can be UNSIGNED_BYTE (5121), UNSIGNED_SHORT (5123),
+  or UNSIGNED_INT (5125). The component type determines how to interpret
+  the binary data.
+  """
+  @spec binary_to_index_list(binary(), non_neg_integer()) ::
+          {:ok, [non_neg_integer()]} | {:error, String.t()}
+  def binary_to_index_list(binary, component_type) when is_binary(binary) do
+    case component_type do
+      @gl_unsigned_byte ->
+        {:ok, for(<<i::unsigned-8 <- binary>>, do: i)}
+
+      @gl_unsigned_short ->
+        {:ok, for(<<i::little-unsigned-16 <- binary>>, do: i)}
+
+      @gl_unsigned_int ->
+        {:ok, for(<<i::little-unsigned-32 <- binary>>, do: i)}
+
+      other ->
+        {:error, "Unsupported index component type: #{other}"}
     end
   end
 
-  defp binary_to_float_list(_), do: {:error, "Expected binary data for float parsing"}
-
-  defp binary_to_int_list(binary) when is_binary(binary) do
-    try do
-      ints = for <<i::unsigned-32-native <- binary>>, do: i
-      {:ok, ints}
-    rescue
-      error -> {:error, "Failed to parse int data: #{inspect(error)}"}
-    end
-  end
-
-  defp binary_to_int_list(_), do: {:error, "Expected binary data for int parsing"}
+  def binary_to_index_list(_, _), do: {:error, "Expected binary data for index parsing"}
 
   # Animation conversion helper functions
 

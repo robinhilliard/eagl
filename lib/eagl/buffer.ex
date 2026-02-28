@@ -422,7 +422,7 @@ defmodule EAGL.Buffer do
   """
   @spec vertices_to_binary(list(float())) :: binary()
   def vertices_to_binary(vertices) do
-    for v <- vertices, into: <<>>, do: <<v::float-32-native>>
+    for v <- vertices, into: <<>>, do: <<v::little-float-32>>
   end
 
   @doc """
@@ -430,7 +430,7 @@ defmodule EAGL.Buffer do
   """
   @spec indices_to_binary(list(integer())) :: binary()
   def indices_to_binary(indices) do
-    for i <- indices, into: <<>>, do: <<i::unsigned-32-native>>
+    for i <- indices, into: <<>>, do: <<i::little-unsigned-32>>
   end
 
   @doc """

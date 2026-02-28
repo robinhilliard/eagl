@@ -207,7 +207,7 @@ This testing framework provides a foundation for comprehensive automated testing
 
 ## Current Test Coverage
 
-The automated test suite currently includes **ALL 23 examples** available from the `run_examples` script:
+The automated test suite currently includes **ALL 23 examples** available from `mix examples`:
 
 ### Non-Learn OpenGL Examples (2)
 1. **Math Example** - Comprehensive EAGL.Math functionality demo
@@ -253,7 +253,7 @@ All examples run in parallel with a 500ms timeout and verify:
 - Expected timeout message output
 - No GL errors during startup phase
 
-This provides **complete coverage** of all examples available through the `run_examples` script, ensuring comprehensive automated testing of the entire EAGL example suite.
+This provides **complete coverage** of all examples available through `mix examples`, ensuring comprehensive automated testing of the entire EAGL example suite.
 
 # GLTF Module Testing Strategy
 

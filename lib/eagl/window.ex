@@ -216,9 +216,12 @@ defmodule EAGL.Window do
       # Mouse event handlers for camera control
       :wxFrame.connect(frame, :motion)
       :wxFrame.connect(frame, :mousewheel)
-      # Also try connecting to canvas
+      :wxFrame.connect(frame, :left_down)
+      :wxFrame.connect(frame, :left_up)
       :wxGLCanvas.connect(gl_canvas, :motion)
       :wxGLCanvas.connect(gl_canvas, :mousewheel)
+      :wxGLCanvas.connect(gl_canvas, :left_down)
+      :wxGLCanvas.connect(gl_canvas, :left_up)
 
       # Create a sizer and add the canvas to it
       sizer = :wxBoxSizer.new(@wx_vertical)
@@ -757,6 +760,39 @@ defmodule EAGL.Window do
           last_tick_time
         )
 
+      # Handle mouse button events for click-to-drag camera control
+      {:wx, _, _, _, {:wxMouse, button_event, x, y, _, _, _, _, _, _, _, _, _, _}}
+      when button_event in [:left_down, :left_up] ->
+        event_name = if button_event == :left_down, do: :mouse_down, else: :mouse_up
+
+        new_state =
+          if function_exported?(callback_module, :handle_event, 2) do
+            try do
+              case callback_module.handle_event({event_name, x, y}, state) do
+                {:ok, updated_state} -> updated_state
+                _ -> state
+              end
+            rescue
+              _e in [FunctionClauseError] -> state
+            catch
+              :close_window ->
+                cleanup_and_exit(frame, gl_canvas, gl_context, callback_module, state)
+            end
+          else
+            state
+          end
+
+        main_loop(
+          frame,
+          gl_canvas,
+          gl_context,
+          callback_module,
+          new_state,
+          enter_to_exit,
+          timeout,
+          last_tick_time
+        )
+
       {:wx, _, _, _, {:wxClose, :close_window}} ->
         cleanup_and_close(frame, gl_canvas, gl_context, callback_module, state)
 
@@ -832,11 +868,11 @@ defmodule EAGL.Window do
         )
 
       other ->
-        # Only debug non-tick, non-show, and non-mouse events to avoid spam
         case other do
           :tick -> :ok
           {:wx, _, _, _, {:wxShow, :show, _}} -> :ok
           {:wx, _, _, _, {:wxMouse, _, _, _, _, _, _, _, _, _, _, _, _, _}} -> :ok
+          {:_wxe_error_, _, _, _} -> :ok
           _ -> IO.puts("DEBUG: Unhandled event: #{inspect(other)}")
         end
 

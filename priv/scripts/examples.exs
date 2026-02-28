@@ -17,8 +17,8 @@ defmodule EAGLExamplesRunner do
   @moduledoc """
   Standalone script for running EAGL OpenGL examples.
 
-  This script provides a cross-platform replacement for the bash `run_examples` script,
-  offering identical functionality while being completely platform-independent.
+  Interactive examples runner for EAGL. Run via `mix examples` or
+  `mix run priv/scripts/examples.exs`.
 
   ## Usage
 
@@ -371,29 +371,40 @@ defmodule EAGLExamplesRunner do
     # GLTF/GLB loading and rendering demonstrations
     # ============================================================================
 
-    "301" => %{
-      type: :standalone,
-      file: "examples/gltf/animation_example.exs",
-      name: "Animation Example",
-      description: "GLTF animation playback and control"
+    "311" => %{
+      type: :top_level,
+      file: "examples/gltf/01_box.ex",
+      module: EAGL.Examples.GLTF.Box,
+      name: "Box",
+      description: "Simple indexed box with normals via GLTF.EAGL bridge"
     },
-    "302" => %{
-      type: :standalone,
-      file: "examples/gltf/glb_loader_example.exs",
-      name: "GLB Loader Example",
-      description: "Basic GLB file loading and rendering"
+    "312" => %{
+      type: :top_level,
+      file: "examples/gltf/02_box_textured.ex",
+      module: EAGL.Examples.GLTF.BoxTextured,
+      name: "Box Textured",
+      description: "Textured box with embedded GLB textures"
     },
-    "303" => %{
-      type: :standalone,
-      file: "examples/gltf/glb_web_demo.exs",
-      name: "GLB Web Demo",
-      description: "Load and render GLB files from the web"
+    "313" => %{
+      type: :top_level,
+      file: "examples/gltf/03_duck.ex",
+      module: EAGL.Examples.GLTF.Duck,
+      name: "Duck",
+      description: "Multi-node scene graph with transform hierarchy"
     },
-    "304" => %{
-      type: :standalone,
-      file: "examples/gltf/gltf_scene_example.exs",
-      name: "GLTF Scene Example",
-      description: "Complete GLTF scene rendering"
+    "314" => %{
+      type: :top_level,
+      file: "examples/gltf/04_box_animated.ex",
+      module: EAGL.Examples.GLTF.BoxAnimated,
+      name: "Box Animated",
+      description: "GLTF animation via EAGL.Animator"
+    },
+    "315" => %{
+      type: :top_level,
+      file: "examples/gltf/05_damaged_helmet.ex",
+      module: EAGL.Examples.GLTF.DamagedHelmet,
+      name: "Damaged Helmet",
+      description: "Complex PBR model with multiple textures"
     }
   }
 
@@ -415,7 +426,7 @@ defmodule EAGLExamplesRunner do
     loop = fn loop_fn ->
       clear_screen()
       show_menu()
-      choice = get_user_input("Enter code (01, 02, 111-176, 211-218, 301-304), 'q' to quit, 'r' to refresh: ")
+      choice = get_user_input("Enter code (01-02, 111-176, 211-218, 311-315), 'q' to quit, 'r' to refresh: ")
 
       case String.trim(choice) do
         choice when choice in ["q", "Q", "quit", "exit"] ->
@@ -487,8 +498,8 @@ defmodule EAGLExamplesRunner do
     IO.puts("")
 
     # GLTF Support
-    IO.puts(colorize("3. GLTF Support Examples:", :blue))
-    show_example_group(["301", "302", "303", "304"])
+    IO.puts(colorize("3. GLTF Examples:", :blue))
+    show_example_group(["311", "312", "313", "314", "315"])
     IO.puts("")
 
     IO.puts(colorize("════════════════════════════════════════════════════════════════════════════════════════════════════════════════════", :purple))

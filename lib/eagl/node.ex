@@ -137,7 +137,7 @@ defmodule EAGL.Node do
   @doc """
   Get the local transformation matrix for this node.
   """
-  @spec get_local_transform_matrix(t()) :: list(float())
+  @spec get_local_transform_matrix(t()) :: [{tuple()}] | list()
   def get_local_transform_matrix(%__MODULE__{matrix: matrix}) when is_list(matrix) do
     matrix
   end
@@ -148,9 +148,8 @@ defmodule EAGL.Node do
     rotation_matrix = quat_to_mat4(rot || quat_identity())
     scale_matrix = mat4_scale(scale || vec3(1, 1, 1))
 
-    translation_matrix
-    |> mat4_mul(rotation_matrix)
-    |> mat4_mul(scale_matrix)
+    # Use nested function calls instead of pipe to ensure correct matrix multiplication
+    mat4_mul(mat4_mul(translation_matrix, rotation_matrix), scale_matrix)
   end
 
   @doc """
