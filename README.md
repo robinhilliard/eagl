@@ -321,31 +321,14 @@ EAGL supports loading glTF 2.0 models via the `GLTF.EAGL` bridge module, which c
 glTF data structures into EAGL scene graphs with proper VAO/VBO creation.
 
 ```elixir
-alias EAGL.{Scene, Node}
+# Load GLB, create scene graph, and attach shader program in one call
+{:ok, scene, gltf, data_store} = GLTF.EAGL.load_scene("model.glb", shader_program)
 
-# 1. Load and parse the GLB file
-{:ok, glb} = GLTF.GLBLoader.parse_file("model.glb")
-{:ok, gltf} = GLTF.GLBLoader.load_gltf("model.glb", json_library: :poison)
+# Load textures from the first material
+{:ok, textures} = GLTF.EAGL.load_textures(gltf, data_store)
 
-# 2. Create a data store with the binary buffer data
-data_store = GLTF.DataStore.new()
-data_store = GLTF.DataStore.store_glb_buffer(data_store, 0, GLTF.Binary.get_binary(glb))
-
-# 3. Convert to an EAGL scene graph (creates VAOs/VBOs via EAGL.Buffer)
-{:ok, {scene, all_nodes}} = GLTF.EAGL.to_scene(gltf, data_store)
-
-# 4. Attach your shader program to mesh nodes
-scene = %{scene | root_nodes:
-  Enum.map(scene.root_nodes, fn node ->
-    case Node.get_mesh(node) do
-      nil -> node
-      mesh -> Node.set_mesh(node, Map.put(mesh, :program, shader_program))
-    end
-  end)
-}
-
-# 5. Render using EAGL.Scene (handles transform hierarchy and uniforms)
-Scene.render(scene, view_matrix, projection_matrix)
+# Render using EAGL.Scene (handles transform hierarchy and uniforms)
+EAGL.Scene.render(scene, view_matrix, projection_matrix)
 ```
 
 See `examples/gltf/` for progressive examples from a simple box to a PBR-textured helmet.

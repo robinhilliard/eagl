@@ -42,6 +42,164 @@ defmodule GLTF.EAGL do
   import EAGL.Math
   use EAGL.Const
 
+  # ============================================================================
+  # HIGH-LEVEL LOADING HELPERS
+  # ============================================================================
+
+  @doc """
+  Load a GLB file and return the parsed GLTF document with a ready-to-use DataStore.
+
+  Handles GLB parsing, JSON decoding, and binary data store creation in one call.
+
+      {:ok, gltf, data_store} = GLTF.EAGL.load_glb("model.glb")
+      {:ok, gltf, data_store} = GLTF.EAGL.load_glb("https://example.com/model.glb", http_client: :req)
+  """
+  @spec load_glb(String.t(), keyword()) :: {:ok, GLTF.t(), GLTF.DataStore.t()} | {:error, term()}
+  def load_glb(path_or_url, opts \\ []) do
+    json_library = Keyword.get(opts, :json_library, :poison)
+
+    with {:ok, glb} <- GLTF.GLBLoader.parse(path_or_url, opts),
+         {:ok, gltf} <- GLTF.GLBLoader.load_gltf_from_glb(glb, json_library) do
+      data_store = GLTF.DataStore.new()
+
+      data_store =
+        case GLTF.Binary.get_binary(glb) do
+          nil -> data_store
+          bin -> GLTF.DataStore.store_glb_buffer(data_store, 0, bin)
+        end
+
+      {:ok, gltf, data_store}
+    end
+  end
+
+  @doc """
+  Load a GLB file and convert it to a renderable EAGL scene in one call.
+
+  Combines GLB loading, scene graph conversion, and shader program attachment.
+  Returns the scene plus the GLTF document and DataStore for further use
+  (e.g. texture loading).
+
+      {:ok, scene, gltf, data_store} = GLTF.EAGL.load_scene("model.glb", shader_program)
+  """
+  @spec load_scene(String.t(), non_neg_integer(), keyword()) ::
+          {:ok, Scene.t(), GLTF.t(), GLTF.DataStore.t()} | {:error, term()}
+  def load_scene(path_or_url, shader_program, opts \\ []) do
+    with {:ok, gltf, data_store} <- load_glb(path_or_url, opts),
+         {:ok, {scene, _all_nodes}} <- to_scene(gltf, data_store, opts) do
+      updated_roots =
+        Enum.map(scene.root_nodes, fn node ->
+          attach_program_recursive(node, shader_program)
+        end)
+
+      {:ok, %{scene | root_nodes: updated_roots}, gltf, data_store}
+    end
+  end
+
+  @doc """
+  Load textures from a GLTF document's materials.
+
+  Walks the specified material (default: first material, index 0) and loads all
+  available texture types from the GLB binary data. Returns a map of texture IDs
+  keyed by type.
+
+      {:ok, textures} = GLTF.EAGL.load_textures(gltf, data_store)
+      # => {:ok, %{base_color: 1, metallic_roughness: 2, normal: 3}}
+
+  Options:
+  - `:material_index` - which material to load textures from (default: 0)
+  """
+  @spec load_textures(GLTF.t(), GLTF.DataStore.t(), keyword()) :: {:ok, map()}
+  def load_textures(%GLTF{} = gltf, data_store, opts \\ []) do
+    material_index = Keyword.get(opts, :material_index, 0)
+    material = Enum.at(gltf.materials || [], material_index)
+
+    if material do
+      textures = %{}
+
+      pbr = material.pbr_metallic_roughness
+
+      textures =
+        try_load_material_texture(
+          textures,
+          :base_color,
+          pbr && pbr.base_color_texture,
+          gltf,
+          data_store
+        )
+
+      textures =
+        try_load_material_texture(
+          textures,
+          :metallic_roughness,
+          pbr && pbr.metallic_roughness_texture,
+          gltf,
+          data_store
+        )
+
+      textures =
+        try_load_material_texture(textures, :normal, material.normal_texture, gltf, data_store)
+
+      textures =
+        try_load_material_texture(
+          textures,
+          :emissive,
+          material.emissive_texture,
+          gltf,
+          data_store
+        )
+
+      {:ok, textures}
+    else
+      {:ok, %{}}
+    end
+  end
+
+  defp try_load_material_texture(textures, _key, nil, _gltf, _data_store), do: textures
+
+  defp try_load_material_texture(textures, key, tex_info, gltf, data_store) do
+    with texture when not is_nil(texture) <- Enum.at(gltf.textures || [], tex_info.index),
+         image when not is_nil(image) <- Enum.at(gltf.images || [], texture.source),
+         {:ok, image_binary} <- load_glb_image_data(image, gltf, data_store),
+         {:ok, tex_id, _w, _h} <-
+           EAGL.Texture.load_texture_from_binary(image_binary, mime_type: image.mime_type) do
+      Map.put(textures, key, tex_id)
+    else
+      _ -> textures
+    end
+  end
+
+  defp load_glb_image_data(image, gltf, data_store) do
+    if image.buffer_view do
+      bv = Enum.at(gltf.buffer_views, image.buffer_view)
+
+      case GLTF.DataStore.get_buffer_slice(data_store, bv.buffer, bv.byte_offset, bv.byte_length) do
+        nil -> {:error, :buffer_slice_failed}
+        data -> {:ok, data}
+      end
+    else
+      {:error, :no_image_source}
+    end
+  end
+
+  defp attach_program_recursive(node, program) do
+    updated_node =
+      case Node.get_mesh(node) do
+        nil -> node
+        mesh -> Node.set_mesh(node, Map.put(mesh, :program, program))
+      end
+
+    updated_children =
+      Enum.map(Node.get_children(updated_node), fn child ->
+        attach_program_recursive(child, program)
+      end)
+
+    Node.set_children(updated_node, updated_children)
+  end
+
+  # ============================================================================
+  # LOWER-LEVEL CONVERSION FUNCTIONS
+  # ============================================================================
+
   @doc """
   Convert a glTF mesh primitive to EAGL VAO/VBO structure.
 
@@ -572,21 +730,23 @@ defmodule GLTF.EAGL do
 
             vertex =
               if has_normals do
-                vertex ++ [
-                  elem(norm_t, pos_idx),
-                  elem(norm_t, pos_idx + 1),
-                  elem(norm_t, pos_idx + 2)
-                ]
+                vertex ++
+                  [
+                    elem(norm_t, pos_idx),
+                    elem(norm_t, pos_idx + 1),
+                    elem(norm_t, pos_idx + 2)
+                  ]
               else
                 vertex
               end
 
             vertex =
               if has_texcoords do
-                vertex ++ [
-                  elem(tex_t, tex_idx),
-                  1.0 - elem(tex_t, tex_idx + 1)
-                ]
+                vertex ++
+                  [
+                    elem(tex_t, tex_idx),
+                    1.0 - elem(tex_t, tex_idx + 1)
+                  ]
               else
                 vertex
               end
@@ -733,7 +893,8 @@ defmodule GLTF.EAGL do
     with {:ok, input_data} <- GLTF.get_accessor_data(gltf, data_store, sampler.input),
          {:ok, output_data} <- GLTF.get_accessor_data(gltf, data_store, sampler.output),
          {:ok, input_times} <- binary_to_float_list(input_data),
-         {:ok, output_values} <- convert_output_values(output_data, sampler.interpolation, component_count) do
+         {:ok, output_values} <-
+           convert_output_values(output_data, sampler.interpolation, component_count) do
       interpolation = convert_interpolation_mode(sampler.interpolation)
 
       eagl_sampler = EAGL.Animation.Sampler.new(input_times, output_values, interpolation)

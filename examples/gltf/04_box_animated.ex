@@ -2,13 +2,9 @@ defmodule EAGL.Examples.GLTF.BoxAnimated do
   @moduledoc """
   GLTF Example 4: Load and display the BoxAnimated model using EAGL GLTF bridge.
 
-  Builds on Example 3 by testing:
-  - GLTF animation channel/sampler extraction
-  - EAGL.Animator timeline loading and playback
-  - Scene graph animation updates per frame
-  - Animated transforms applied through the scene hierarchy
-
-  Run with: mix run examples/gltf/04_box_animated.ex
+  Builds on Example 3 by testing GLTF animation channel/sampler extraction,
+  EAGL.Animator timeline loading and playback, and animated transforms
+  applied through the scene hierarchy.
   """
 
   use EAGL.Window
@@ -16,28 +12,24 @@ defmodule EAGL.Examples.GLTF.BoxAnimated do
 
   import Bitwise
   import EAGL.{Shader, Math}
-  alias EAGL.{Camera, Scene, Node, Animator}
+  alias EAGL.{Camera, Scene, Animator}
 
   @glb_path "test/fixtures/samples/BoxAnimated.glb"
 
   def run_example(opts \\ []) do
     default_opts = [depth_testing: true, size: {1024, 768}, enter_to_exit: true]
-    merged_opts = Keyword.merge(default_opts, opts)
-    EAGL.Window.run(__MODULE__, "EAGL GLTF Example 4: Animated Box", merged_opts)
+    EAGL.Window.run(__MODULE__, "EAGL GLTF Example 4: Animated Box", Keyword.merge(default_opts, opts))
   end
 
   @impl true
   def setup do
     with {:ok, program} <- create_shader_program(),
-         {:ok, scene, animator, info} <- load_gltf_scene(program) do
-      camera =
-        Camera.new(
-          position: vec3(3.0, 3.0, 6.0),
-          yaw: -110.0,
-          pitch: -20.0
-        )
-
-      IO.puts("Setup complete: #{info}")
+         {:ok, gltf, data_store} <- GLTF.EAGL.load_glb(@glb_path),
+         {:ok, {scene, _all_nodes}} <- GLTF.EAGL.to_scene(gltf, data_store),
+         {:ok, animator} <- setup_animations(gltf, data_store) do
+      updated_roots = Enum.map(scene.root_nodes, &attach_program(&1, program))
+      scene = %{scene | root_nodes: updated_roots}
+      camera = Camera.new(position: vec3(3.0, 3.0, 6.0), yaw: -110.0, pitch: -20.0)
       {:ok, %{program: program, scene: scene, camera: camera, animator: animator, time: 0.0, last_mouse: nil, mouse_down: false}}
     end
   end
@@ -51,7 +43,6 @@ defmodule EAGL.Examples.GLTF.BoxAnimated do
     :gl.cullFace(@gl_back)
 
     :gl.useProgram(program)
-
     view = Camera.get_view_matrix(camera)
     aspect = if height > 0, do: width / height, else: 1.0
     projection = mat4_perspective(radians(camera.zoom), aspect, 0.1, 100.0)
@@ -64,31 +55,23 @@ defmodule EAGL.Examples.GLTF.BoxAnimated do
     )
 
     Scene.render(scene, view, projection)
-
     {:ok, state}
   end
 
   @impl true
   def handle_event({:tick, _dt}, %{camera: camera, scene: scene, animator: animator, time: time} = state) do
     dt = 0.016
-    updated_camera = Camera.process_keyboard_input(camera, dt)
-
     :ok = Animator.update(animator, dt)
     animated_scene = Animator.apply_to_scene(animator, scene)
-
-    {:ok, %{state | camera: updated_camera, scene: animated_scene, time: time + dt}}
+    {:ok, %{state | camera: Camera.process_keyboard_input(camera, dt), scene: animated_scene, time: time + dt}}
   end
 
   def handle_event({:mouse_motion, x, y}, %{camera: camera, last_mouse: last_mouse, mouse_down: true} = state) do
     {lx, ly} = last_mouse || {x, y}
-    updated_camera = Camera.process_mouse_movement(camera, x - lx, ly - y, true)
-    {:ok, %{state | camera: updated_camera, last_mouse: {x, y}}}
+    {:ok, %{state | camera: Camera.process_mouse_movement(camera, x - lx, ly - y, true), last_mouse: {x, y}}}
   end
 
-  def handle_event({:mouse_motion, x, y}, state) do
-    {:ok, %{state | last_mouse: {x, y}}}
-  end
-
+  def handle_event({:mouse_motion, x, y}, state), do: {:ok, %{state | last_mouse: {x, y}}}
   def handle_event({:mouse_down, _, _}, state), do: {:ok, %{state | mouse_down: true}}
   def handle_event({:mouse_up, _, _}, state), do: {:ok, %{state | mouse_down: false, last_mouse: nil}}
 
@@ -105,7 +88,25 @@ defmodule EAGL.Examples.GLTF.BoxAnimated do
     :ok
   end
 
-  # --- Private ---
+  defp setup_animations(gltf, data_store) do
+    timelines = GLTF.EAGL.convert_animations(gltf, data_store)
+    {:ok, animator} = Animator.new(loop: true)
+    Enum.each(timelines, fn t -> :ok = Animator.load_timeline(animator, t) end)
+    case timelines do
+      [first | _] -> :ok = Animator.play(animator, first.name)
+      [] -> :ok
+    end
+    {:ok, animator}
+  end
+
+  defp attach_program(node, program) do
+    updated = case EAGL.Node.get_mesh(node) do
+      nil -> node
+      mesh -> EAGL.Node.set_mesh(node, Map.put(mesh, :program, program))
+    end
+    children = Enum.map(EAGL.Node.get_children(updated), &attach_program(&1, program))
+    EAGL.Node.set_children(updated, children)
+  end
 
   defp create_shader_program do
     vs_source = """
@@ -130,7 +131,6 @@ defmodule EAGL.Examples.GLTF.BoxAnimated do
     fs_source = """
     #version 330 core
     out vec4 FragColor;
-
     in vec3 FragPos;
     in vec3 Normal;
 
@@ -161,79 +161,5 @@ defmodule EAGL.Examples.GLTF.BoxAnimated do
          {:ok, prog} <- create_attach_link([vs, fs]) do
       {:ok, prog}
     end
-  end
-
-  defp load_gltf_scene(program) do
-    with {:ok, gltf, data_store} <- load_glb_file(),
-         {:ok, {scene, all_nodes}} <- GLTF.EAGL.to_scene(gltf, data_store),
-         {:ok, animator} <- setup_animations(gltf, data_store) do
-      updated_roots =
-        Enum.map(scene.root_nodes, fn node ->
-          attach_program_recursive(node, program)
-        end)
-
-      scene = %{scene | root_nodes: updated_roots}
-      mesh_count = Enum.count(all_nodes, fn n -> Node.get_mesh(n) != nil end)
-      anim_count = length(gltf.animations || [])
-      {:ok, scene, animator, "#{mesh_count} mesh(es), #{anim_count} animation(s)"}
-    end
-  end
-
-  defp load_glb_file do
-    case GLTF.GLBLoader.parse_file(@glb_path) do
-      {:ok, glb} ->
-        case GLTF.GLBLoader.load_gltf(@glb_path, json_library: :poison) do
-          {:ok, gltf} ->
-            data_store = GLTF.DataStore.new()
-
-            data_store =
-              case GLTF.Binary.get_binary(glb) do
-                nil -> data_store
-                bin -> GLTF.DataStore.store_glb_buffer(data_store, 0, bin)
-              end
-
-            {:ok, gltf, data_store}
-
-          {:error, reason} ->
-            {:error, "Failed to load GLTF: #{inspect(reason)}"}
-        end
-
-      {:error, reason} ->
-        {:error, "Failed to parse GLB: #{inspect(reason)}"}
-    end
-  end
-
-  defp setup_animations(gltf, data_store) do
-    timelines = GLTF.EAGL.convert_animations(gltf, data_store)
-    {:ok, animator} = Animator.new(loop: true)
-
-    Enum.each(timelines, fn timeline ->
-      :ok = Animator.load_timeline(animator, timeline)
-    end)
-
-    case timelines do
-      [first | _] ->
-        :ok = Animator.play(animator, first.name)
-
-      [] ->
-        :ok
-    end
-
-    {:ok, animator}
-  end
-
-  defp attach_program_recursive(node, program) do
-    updated_node =
-      case Node.get_mesh(node) do
-        nil -> node
-        mesh -> Node.set_mesh(node, Map.put(mesh, :program, program))
-      end
-
-    updated_children =
-      Enum.map(Node.get_children(updated_node), fn child ->
-        attach_program_recursive(child, program)
-      end)
-
-    Node.set_children(updated_node, updated_children)
   end
 end
