@@ -43,11 +43,10 @@ defmodule EAGL.Examples.GLTF.Box do
     aspect = if height > 0, do: width / height, else: 1.0
     projection = mat4_perspective(radians(camera.zoom), aspect, 0.1, 100.0)
 
-    set_uniforms(program,
-      objectColor: vec3(0.8, 0.3, 0.2),
-      lightPos: vec3(3.0, 5.0, 4.0),
-      lightColor: vec3(1.0, 1.0, 1.0),
-      viewPos: camera.position
+    GLTF.EAGL.set_phong_uniforms(program,
+      object_color: vec3(0.8, 0.3, 0.2),
+      light_pos: vec3(3.0, 5.0, 4.0),
+      view_pos: camera.position
     )
 
     Scene.render(scene, view, projection)

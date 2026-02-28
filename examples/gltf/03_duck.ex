@@ -43,23 +43,11 @@ defmodule EAGL.Examples.GLTF.Duck do
     aspect = if height > 0, do: width / height, else: 1.0
     projection = mat4_perspective(radians(camera.zoom), aspect, 1.0, 1000.0)
 
-    set_uniforms(program,
-      "material.baseColor": vec3(1.0, 1.0, 1.0),
-      "material.metallic": 0.0,
-      "material.roughness": 1.0,
-      "material.emissive": vec3(0.0, 0.0, 0.0)
-    )
-
-    bind_texture(textures, :base_color, program, "baseColorTexture", "hasBaseColorTexture", @gl_texture0, 0)
-    bind_texture(textures, :metallic_roughness, program, "metallicRoughnessTexture", "hasMetallicRoughnessTexture", @gl_texture1, 1)
-    bind_texture(textures, :normal, program, "normalTexture", "hasNormalTexture", @gl_texture2, 2)
-    bind_texture(textures, :emissive, program, "emissiveTexture", "hasEmissiveTexture", @gl_texture3, 3)
-    :gl.activeTexture(@gl_texture0)
-
-    set_uniforms(program,
-      lightPos: vec3(200.0, 300.0, 400.0),
-      lightColor: vec3(1.0, 1.0, 1.0),
-      viewPos: camera.position
+    GLTF.EAGL.set_pbr_uniforms(program,
+      metallic: 0.0,
+      textures: textures,
+      light_pos: vec3(200.0, 300.0, 400.0),
+      view_pos: camera.position
     )
 
     Scene.render(scene, view, projection)
@@ -94,14 +82,4 @@ defmodule EAGL.Examples.GLTF.Duck do
     :ok
   end
 
-  defp bind_texture(textures, key, program, sampler_name, has_name, tex_unit, unit_idx) do
-    case Map.get(textures, key) do
-      nil -> set_uniform(program, has_name, false)
-      tex_id ->
-        :gl.activeTexture(tex_unit)
-        :gl.bindTexture(@gl_texture_2d, tex_id)
-        set_uniform(program, sampler_name, unit_idx)
-        set_uniform(program, has_name, true)
-    end
-  end
 end

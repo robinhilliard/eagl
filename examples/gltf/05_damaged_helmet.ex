@@ -48,26 +48,15 @@ defmodule EAGL.Examples.GLTF.DamagedHelmet do
     projection = mat4_perspective(radians(camera.zoom), aspect, 0.1, 100.0)
 
     [r, g, b, _a] = material.base_color_factor
-    emissive = material.emissive_factor || [0.0, 0.0, 0.0]
-    [er, eg, eb | _] = emissive
+    [er, eg, eb | _] = material.emissive_factor || [0.0, 0.0, 0.0]
 
-    set_uniforms(program,
-      "material.baseColor": vec3(r, g, b),
-      "material.metallic": material.metallic_factor,
-      "material.roughness": material.roughness_factor,
-      "material.emissive": vec3(er * 1.0, eg * 1.0, eb * 1.0)
-    )
-
-    bind_texture(textures, :base_color, program, "baseColorTexture", "hasBaseColorTexture", @gl_texture0, 0)
-    bind_texture(textures, :metallic_roughness, program, "metallicRoughnessTexture", "hasMetallicRoughnessTexture", @gl_texture1, 1)
-    bind_texture(textures, :normal, program, "normalTexture", "hasNormalTexture", @gl_texture2, 2)
-    bind_texture(textures, :emissive, program, "emissiveTexture", "hasEmissiveTexture", @gl_texture3, 3)
-    :gl.activeTexture(@gl_texture0)
-
-    set_uniforms(program,
-      lightPos: vec3(5.0, 5.0, 5.0),
-      lightColor: vec3(1.0, 1.0, 1.0),
-      viewPos: camera.position
+    GLTF.EAGL.set_pbr_uniforms(program,
+      base_color: vec3(r, g, b),
+      metallic: material.metallic_factor,
+      roughness: material.roughness_factor,
+      emissive: vec3(er * 1.0, eg * 1.0, eb * 1.0),
+      textures: textures,
+      view_pos: camera.position
     )
 
     Scene.render(scene, view, projection)
@@ -100,17 +89,6 @@ defmodule EAGL.Examples.GLTF.DamagedHelmet do
     tex_ids = Map.values(textures) |> Enum.filter(&is_integer/1)
     if tex_ids != [], do: :gl.deleteTextures(tex_ids)
     :ok
-  end
-
-  defp bind_texture(textures, key, program, sampler_name, has_name, tex_unit, unit_idx) do
-    case Map.get(textures, key) do
-      nil -> set_uniform(program, has_name, false)
-      tex_id ->
-        :gl.activeTexture(tex_unit)
-        :gl.bindTexture(@gl_texture_2d, tex_id)
-        set_uniform(program, sampler_name, unit_idx)
-        set_uniform(program, has_name, true)
-    end
   end
 
   defp extract_material(gltf) do

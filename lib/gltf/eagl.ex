@@ -97,6 +97,90 @@ defmodule GLTF.EAGL do
     end
   end
 
+  @doc """
+  Set uniforms for the standard Phong shader created by `create_phong_shader/0`.
+
+      GLTF.EAGL.set_phong_uniforms(program,
+        object_color: vec3(0.8, 0.3, 0.2),
+        light_pos: vec3(3.0, 5.0, 4.0),
+        light_color: vec3(1.0, 1.0, 1.0),
+        view_pos: camera.position
+      )
+
+  All options have defaults: white object, white light at (5, 5, 5), camera at origin.
+  """
+  @spec set_phong_uniforms(non_neg_integer(), keyword()) :: :ok
+  def set_phong_uniforms(program, opts \\ []) do
+    import EAGL.Shader
+
+    set_uniforms(program,
+      objectColor: Keyword.get(opts, :object_color, vec3(1.0, 1.0, 1.0)),
+      lightPos: Keyword.get(opts, :light_pos, vec3(5.0, 5.0, 5.0)),
+      lightColor: Keyword.get(opts, :light_color, vec3(1.0, 1.0, 1.0)),
+      viewPos: Keyword.get(opts, :view_pos, vec3(0.0, 0.0, 0.0))
+    )
+  end
+
+  @doc """
+  Set uniforms for the standard PBR shader created by `create_pbr_shader/0`.
+
+  Handles material properties, texture binding, and lighting in one call.
+
+      GLTF.EAGL.set_pbr_uniforms(program,
+        base_color: vec3(1.0, 1.0, 1.0),
+        metallic: 0.0,
+        roughness: 1.0,
+        emissive: vec3(0.0, 0.0, 0.0),
+        textures: textures,           # map from load_textures/3
+        light_pos: vec3(5.0, 5.0, 5.0),
+        light_color: vec3(1.0, 1.0, 1.0),
+        view_pos: camera.position
+      )
+
+  All options have defaults. Pass `:textures` from `load_textures/3` to
+  automatically bind base_color, metallic_roughness, normal, and emissive
+  textures to the correct units.
+  """
+  @spec set_pbr_uniforms(non_neg_integer(), keyword()) :: :ok
+  def set_pbr_uniforms(program, opts \\ []) do
+    import EAGL.Shader
+
+    set_uniforms(program,
+      "material.baseColor": Keyword.get(opts, :base_color, vec3(1.0, 1.0, 1.0)),
+      "material.metallic": Keyword.get(opts, :metallic, 1.0),
+      "material.roughness": Keyword.get(opts, :roughness, 1.0),
+      "material.emissive": Keyword.get(opts, :emissive, vec3(0.0, 0.0, 0.0))
+    )
+
+    textures = Keyword.get(opts, :textures, %{})
+    bind_pbr_texture(program, textures, :base_color, "baseColorTexture", "hasBaseColorTexture", @gl_texture0, 0)
+    bind_pbr_texture(program, textures, :metallic_roughness, "metallicRoughnessTexture", "hasMetallicRoughnessTexture", @gl_texture1, 1)
+    bind_pbr_texture(program, textures, :normal, "normalTexture", "hasNormalTexture", @gl_texture2, 2)
+    bind_pbr_texture(program, textures, :emissive, "emissiveTexture", "hasEmissiveTexture", @gl_texture3, 3)
+    :gl.activeTexture(@gl_texture0)
+
+    set_uniforms(program,
+      lightPos: Keyword.get(opts, :light_pos, vec3(5.0, 5.0, 5.0)),
+      lightColor: Keyword.get(opts, :light_color, vec3(1.0, 1.0, 1.0)),
+      viewPos: Keyword.get(opts, :view_pos, vec3(0.0, 0.0, 0.0))
+    )
+  end
+
+  defp bind_pbr_texture(program, textures, key, sampler_name, has_name, tex_unit, unit_idx) do
+    import EAGL.Shader
+
+    case Map.get(textures, key) do
+      nil ->
+        set_uniform(program, has_name, false)
+
+      tex_id ->
+        :gl.activeTexture(tex_unit)
+        :gl.bindTexture(@gl_texture_2d, tex_id)
+        set_uniform(program, sampler_name, unit_idx)
+        set_uniform(program, has_name, true)
+    end
+  end
+
   # ============================================================================
   # HIGH-LEVEL LOADING HELPERS
   # ============================================================================
