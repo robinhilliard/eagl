@@ -173,22 +173,22 @@ defmodule GLTF.EAGL do
 
   Handles both matrix and TRS transform representations.
   """
-  @spec node_to_eagl_node(GLTF.Node.t(), map()) :: Node.t()
-  def node_to_eagl_node(%GLTF.Node{} = gltf_node, mesh_lookup \\ %{}) do
-    # Convert transforms
+  @spec node_to_eagl_node(GLTF.Node.t(), map(), non_neg_integer()) :: Node.t()
+  def node_to_eagl_node(%GLTF.Node{} = gltf_node, mesh_lookup \\ %{}, node_index \\ 0) do
+    node_name = gltf_node.name || "node_#{node_index}"
+
     node =
       case gltf_node.matrix do
         nil ->
-          # Use TRS properties
           Node.new(
             position: list_to_vec3(gltf_node.translation || [0.0, 0.0, 0.0]),
             rotation: list_to_quat(gltf_node.rotation || [0.0, 0.0, 0.0, 1.0]),
             scale: list_to_vec3(gltf_node.scale || [1.0, 1.0, 1.0]),
-            name: gltf_node.name
+            name: node_name
           )
 
         matrix when is_list(matrix) ->
-          Node.with_matrix(matrix, name: gltf_node.name)
+          Node.with_matrix(matrix, name: node_name)
       end
 
     # Attach mesh if present
@@ -450,7 +450,7 @@ defmodule GLTF.EAGL do
           nodes
           |> Enum.with_index()
           |> Enum.map(fn {node, index} ->
-            eagl_node = node_to_eagl_node(node, mesh_lookup)
+            eagl_node = node_to_eagl_node(node, mesh_lookup, index)
             {index, eagl_node}
           end)
           |> Enum.into(%{})
@@ -731,10 +731,13 @@ defmodule GLTF.EAGL do
   end
 
   defp convert_animation_sampler(gltf, data_store, %GLTF.Animation.Sampler{} = sampler) do
+    output_accessor = Enum.at(gltf.accessors, sampler.output)
+    component_count = GLTF.Accessor.type_component_count(output_accessor.type)
+
     with {:ok, input_data} <- GLTF.get_accessor_data(gltf, data_store, sampler.input),
          {:ok, output_data} <- GLTF.get_accessor_data(gltf, data_store, sampler.output),
          {:ok, input_times} <- binary_to_float_list(input_data),
-         {:ok, output_values} <- convert_output_values(output_data, sampler.interpolation) do
+         {:ok, output_values} <- convert_output_values(output_data, sampler.interpolation, component_count) do
       interpolation = convert_interpolation_mode(sampler.interpolation)
 
       eagl_sampler = EAGL.Animation.Sampler.new(input_times, output_values, interpolation)
@@ -742,22 +745,14 @@ defmodule GLTF.EAGL do
     end
   end
 
-  defp convert_output_values(binary_data, interpolation) do
-    # Convert based on data type - this is simplified
-    # Real implementation would use accessor componentType and type
+  defp convert_output_values(binary_data, interpolation, component_count) do
     with {:ok, floats} <- binary_to_float_list(binary_data) do
       case interpolation do
-        :linear ->
-          # Assume vec3 or quaternion data
-          {:ok, group_floats_by_components(floats, 3)}
-
-        :step ->
-          {:ok, group_floats_by_components(floats, 3)}
-
         :cubicspline ->
-          # Cubic spline has 3x more data (in-tangent, value, out-tangent)
-          # For now, extract just the middle values
-          {:ok, extract_cubic_spline_values(floats, 3)}
+          {:ok, extract_cubic_spline_values(floats, component_count)}
+
+        _ ->
+          {:ok, group_floats_by_components(floats, component_count)}
       end
     end
   end

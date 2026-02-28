@@ -206,7 +206,7 @@ defmodule EAGL.Examples.GLTF.BoxAnimated do
 
   defp setup_animations(gltf, data_store) do
     timelines = GLTF.EAGL.convert_animations(gltf, data_store)
-    {:ok, animator} = Animator.new()
+    {:ok, animator} = Animator.new(loop: true)
 
     Enum.each(timelines, fn timeline ->
       :ok = Animator.load_timeline(animator, timeline)
