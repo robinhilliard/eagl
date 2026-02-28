@@ -279,8 +279,9 @@ defmodule EAGL.OrbitCamera do
         {:ok, %{state | orbit: EAGL.OrbitCamera.handle_mouse_up(orbit)}}
       end
 
-      def handle_event({:mouse_wheel, _, _, _, wd}, %{orbit: orbit} = state) do
-        {:ok, %{state | orbit: EAGL.OrbitCamera.handle_scroll(orbit, wd)}}
+      def handle_event({:mouse_wheel, _, _, wheel_rotation, _wd}, %{orbit: orbit} = state) do
+        scroll_delta = wheel_rotation / 120.0
+        {:ok, %{state | orbit: EAGL.OrbitCamera.handle_scroll(orbit, scroll_delta)}}
       end
 
       def handle_event(_event, state), do: {:ok, state}
@@ -298,7 +299,7 @@ defmodule EAGL.OrbitCamera do
   defp compute_gltf_bounds(%GLTF{meshes: nil}), do: :no_bounds
   defp compute_gltf_bounds(%GLTF{meshes: []}), do: :no_bounds
 
-  defp compute_gltf_bounds(%GLTF{meshes: meshes, accessors: accessors}) do
+  defp compute_gltf_bounds(%GLTF{meshes: meshes, accessors: accessors, nodes: nodes, scenes: scenes, scene: scene_idx}) do
     position_accessor_indices =
       meshes
       |> Enum.flat_map(fn mesh ->
@@ -330,8 +331,37 @@ defmodule EAGL.OrbitCamera do
       end)
 
     case bounds do
-      nil -> :no_bounds
-      {min_point, max_point} -> {:ok, min_point, max_point}
+      nil ->
+        :no_bounds
+
+      {min_point, max_point} ->
+        scale = estimate_root_scale(nodes, scenes, scene_idx)
+        {sx, sy, sz} = min_point
+        {bx, by, bz} = max_point
+        {:ok, {sx * scale, sy * scale, sz * scale}, {bx * scale, by * scale, bz * scale}}
     end
   end
+
+  # Extract an approximate uniform scale from the scene's root node transform
+  defp estimate_root_scale(nodes, scenes, scene_idx) when is_list(nodes) and is_list(scenes) do
+    scene = Enum.at(scenes, scene_idx || 0)
+    root_idx = scene && List.first(scene.nodes || [])
+    root = root_idx && Enum.at(nodes, root_idx)
+
+    cond do
+      root == nil -> 1.0
+
+      root.matrix != nil ->
+        [{m0, _, _, _, _, m5, _, _, _, _, m10, _, _, _, _, _}] = root.matrix
+        (abs(m0) + abs(m5) + abs(m10)) / 3.0
+
+      root.scale != nil ->
+        [sx, sy, sz] = root.scale
+        (abs(sx) + abs(sy) + abs(sz)) / 3.0
+
+      true -> 1.0
+    end
+  end
+
+  defp estimate_root_scale(_, _, _), do: 1.0
 end
