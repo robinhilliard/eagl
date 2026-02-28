@@ -98,9 +98,9 @@ defmodule EAGL.Node do
   end
 
   @doc """
-  Create a node with a transformation matrix.
+  Create a node with a transformation matrix in EAGL format [{m0..m15}].
   """
-  @spec with_matrix(list(float()), keyword()) :: t()
+  @spec with_matrix([{tuple()}] | list(), keyword()) :: t()
   def with_matrix(matrix, opts \\ []) when is_list(matrix) do
     %__MODULE__{
       position: nil,

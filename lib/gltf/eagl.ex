@@ -187,10 +187,8 @@ defmodule GLTF.EAGL do
             name: gltf_node.name
           )
 
-        matrix when is_list(matrix) and length(matrix) == 16 ->
-          # Convert GLTF flat list [m0..m15] to EAGL tuple-in-list format [{m0..m15}]
-          eagl_matrix = [List.to_tuple(matrix)]
-          Node.with_matrix(eagl_matrix, name: gltf_node.name)
+        matrix when is_list(matrix) ->
+          Node.with_matrix(matrix, name: gltf_node.name)
       end
 
     # Attach mesh if present

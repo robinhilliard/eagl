@@ -18,11 +18,13 @@ defmodule GLTF.Node do
     :extras
   ]
 
+  # Matrix is stored in EAGL format: [{m0, m1, ..., m15}] (tuple-in-list)
+  # Converted from GLTF JSON flat list [m0, m1, ..., m15] at parse time
   @type t :: %__MODULE__{
           camera: non_neg_integer() | nil,
           children: [non_neg_integer()] | nil,
           skin: non_neg_integer() | nil,
-          matrix: [float()] | nil,
+          matrix: [{tuple()}] | nil,
           mesh: non_neg_integer() | nil,
           rotation: [float()] | nil,
           scale: [float()] | nil,
@@ -54,9 +56,9 @@ defmodule GLTF.Node do
   end
 
   @doc """
-  Create a node with transformation matrix.
+  Create a node with transformation matrix in EAGL format [{m0, ..., m15}].
   """
-  def with_matrix(matrix, opts \\ []) when is_list(matrix) and length(matrix) == 16 do
+  def with_matrix([{_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _}] = matrix, opts) do
     %__MODULE__{
       matrix: matrix,
       camera: Keyword.get(opts, :camera),
@@ -92,7 +94,7 @@ defmodule GLTF.Node do
   @doc """
   Check if node uses matrix transformation (mutually exclusive with TRS).
   """
-  def uses_matrix?(%__MODULE__{matrix: matrix}) when is_list(matrix), do: true
+  def uses_matrix?(%__MODULE__{matrix: [{_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _}]}), do: true
   def uses_matrix?(%__MODULE__{}), do: false
 
   @doc """
@@ -104,8 +106,7 @@ defmodule GLTF.Node do
   @doc """
   Validate that matrix and TRS are not both specified.
   """
-  def validate_transform(%__MODULE__{matrix: matrix}) when is_list(matrix) do
-    # When matrix is defined, TRS should not be present
+  def validate_transform(%__MODULE__{matrix: [{_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _}]}) do
     :ok
   end
 
@@ -129,7 +130,7 @@ defmodule GLTF.Node do
       camera: json_data["camera"],
       children: json_data["children"],
       skin: json_data["skin"],
-      matrix: json_data["matrix"],
+      matrix: to_eagl_matrix(json_data["matrix"]),
       mesh: json_data["mesh"],
       rotation: json_data["rotation"],
       scale: json_data["scale"],
@@ -150,7 +151,15 @@ defmodule GLTF.Node do
     end
   end
 
-  # Check if the node has any TRS (translation/rotation/scale) properties
+  # Convert a GLTF JSON flat matrix [m0..m15] to EAGL format [{m0..m15}]
+  defp to_eagl_matrix(nil), do: nil
+
+  defp to_eagl_matrix(flat_list) when is_list(flat_list) and length(flat_list) == 16 do
+    [List.to_tuple(flat_list)]
+  end
+
+  defp to_eagl_matrix(_), do: nil
+
   defp has_trs_properties?(%__MODULE__{translation: t, rotation: r, scale: s}) do
     t != nil or r != nil or s != nil
   end
