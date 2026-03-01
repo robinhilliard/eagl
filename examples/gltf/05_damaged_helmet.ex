@@ -5,6 +5,7 @@ defmodule EAGL.Examples.GLTF.DamagedHelmet do
   Full PBR pipeline: complex geometry, multiple PBR textures, Cook-Torrance BRDF.
   """
 
+  # --- COMMON: Same as other examples ---
   use EAGL.Window
   use EAGL.Const
   use EAGL.OrbitCamera
@@ -22,6 +23,9 @@ defmodule EAGL.Examples.GLTF.DamagedHelmet do
 
   @impl true
   def setup do
+    # --- SAME AS 02/03: PBR + load_scene + load_textures ---
+    # PLUS: DamagedHelmet has rich per-material factors (baseColor, metallic, roughness,
+    # emissive) that affect the final look. We extract them for set_pbr_uniforms.
     with {:ok, program} <- GLTF.EAGL.create_pbr_shader(),
          {:ok, scene, gltf, ds} <- GLTF.EAGL.load_scene(@glb_path, program),
          {:ok, textures} <- GLTF.EAGL.load_textures(gltf, ds),
@@ -33,6 +37,7 @@ defmodule EAGL.Examples.GLTF.DamagedHelmet do
 
   @impl true
   def render(w, h, %{program: prog, scene: scene, orbit: orbit, textures: tex, material: mat} = state) do
+    # --- COMMON: Same as other examples ---
     :gl.viewport(0, 0, trunc(w), trunc(h))
     :gl.clearColor(0.1, 0.1, 0.15, 1.0)
     :gl.clear(@gl_color_buffer_bit ||| @gl_depth_buffer_bit)
@@ -43,6 +48,9 @@ defmodule EAGL.Examples.GLTF.DamagedHelmet do
     view = EAGL.OrbitCamera.get_view_matrix(orbit)
     proj = EAGL.OrbitCamera.get_projection_matrix(orbit, w / max(h, 1))
 
+    # --- EXAMPLE-SPECIFIC: Pass material factors from GLTF to PBR shader ---
+    # set_pbr_uniforms can use defaults, but DamagedHelmet looks better with the
+    # model's actual baseColor, metallic, roughness, and emissive values.
     [r, g, b, _a] = mat.base_color_factor
     [er, eg, eb | _] = mat.emissive_factor || [0.0, 0.0, 0.0]
 
@@ -67,6 +75,10 @@ defmodule EAGL.Examples.GLTF.DamagedHelmet do
     :ok
   end
 
+  # --- EXAMPLE-SPECIFIC: Read PBR material factors from the first GLTF material ---
+  # load_textures gives us the texture images; the material JSON holds scalar
+  # factors (baseColor tint, metallic/roughness, emissive). For simple models
+  # you can skip this and use set_pbr_uniforms defaults.
   defp extract_material(gltf) do
     case Enum.at(gltf.materials || [], 0) do
       nil ->

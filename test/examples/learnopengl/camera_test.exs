@@ -1,7 +1,7 @@
-defmodule EAGL.CameraTest do
+defmodule EAGL.Examples.LearnOpenGL.CameraTest do
   use ExUnit.Case, async: true
   import EAGL.Math
-  alias EAGL.Camera
+  alias EAGL.Examples.LearnOpenGL.Camera, as: Camera
 
   # Helper function for floating point comparison
   defp assert_float_equal(a, b, tolerance \\ 1.0e-6) do
@@ -279,12 +279,11 @@ defmodule EAGL.CameraTest do
     test "constrains pitch to prevent camera flipping" do
       camera = Camera.new()
 
-      # Large upward movement that would exceed 89° (with sensitivity 0.005, need 18000+ to exceed 89°)
-      moved_camera = Camera.process_mouse_movement(camera, 0.0, 20000.0)
+      # With sensitivity 0.2, need 445+ vertical to exceed 89°
+      moved_camera = Camera.process_mouse_movement(camera, 0.0, 500.0)
       assert_float_equal(moved_camera.pitch, 89.0)
 
-      # Large downward movement that would exceed -89°
-      moved_camera = Camera.process_mouse_movement(camera, 0.0, -20000.0)
+      moved_camera = Camera.process_mouse_movement(camera, 0.0, -500.0)
       assert_float_equal(moved_camera.pitch, -89.0)
     end
 
@@ -292,11 +291,9 @@ defmodule EAGL.CameraTest do
       camera = Camera.new()
       constrain_pitch = false
 
-      # Large movement without constraint (with sensitivity 0.005, need 20000+ to exceed 89°)
-      moved_camera = Camera.process_mouse_movement(camera, 0.0, 20000.0, constrain_pitch)
+      moved_camera = Camera.process_mouse_movement(camera, 0.0, 500.0, constrain_pitch)
 
-      # Pitch should exceed normal constraints
-      expected_pitch = camera.pitch + 20000.0 * camera.mouse_sensitivity
+      expected_pitch = camera.pitch + 500.0 * camera.mouse_sensitivity
       assert_float_equal(moved_camera.pitch, expected_pitch)
       assert moved_camera.pitch > 89.0
     end
@@ -319,8 +316,8 @@ defmodule EAGL.CameraTest do
     test "updates camera vectors after rotation" do
       camera = Camera.new()
 
-      # Rotate camera 90 degrees to the right (with sensitivity 0.005, need 18000 for 90°)
-      moved_camera = Camera.process_mouse_movement(camera, 18000.0, 0.0)
+      # With sensitivity 0.2, 450 gives 90° rotation
+      moved_camera = Camera.process_mouse_movement(camera, 450.0, 0.0)
 
       # Front vector should have changed
       refute moved_camera.front == camera.front
@@ -352,20 +349,16 @@ defmodule EAGL.CameraTest do
 
       scrolled_camera = Camera.process_mouse_scroll(camera, y_offset)
 
-      # Zoom should decrease (narrower field of view)
       expected_zoom = camera.zoom - y_offset
       assert_float_equal(scrolled_camera.zoom, expected_zoom)
     end
 
     test "increases zoom with negative scroll" do
-      # Start with zoom that can increase
       camera = Camera.new(zoom: 30.0)
       y_offset = -3.0
 
       scrolled_camera = Camera.process_mouse_scroll(camera, y_offset)
 
-      # Zoom should increase (wider field of view)
-      # 30.0 - (-3.0) = 33.0
       expected_zoom = camera.zoom - y_offset
       assert_float_equal(scrolled_camera.zoom, expected_zoom)
     end
@@ -373,27 +366,22 @@ defmodule EAGL.CameraTest do
     test "constrains zoom to minimum value" do
       camera = Camera.new()
 
-      # Large positive scroll that would make zoom negative
       scrolled_camera = Camera.process_mouse_scroll(camera, 100.0)
 
-      # Zoom should be clamped to 1.0
       assert_float_equal(scrolled_camera.zoom, 1.0)
     end
 
     test "constrains zoom to maximum value" do
       camera = Camera.new()
 
-      # Large negative scroll that would make zoom very large
       scrolled_camera = Camera.process_mouse_scroll(camera, -100.0)
 
-      # Zoom should be clamped to 45.0
       assert_float_equal(scrolled_camera.zoom, 45.0)
     end
 
     test "allows zoom within valid range" do
       camera = Camera.new(zoom: 30.0)
 
-      # Small adjustments should work normally
       scrolled_in = Camera.process_mouse_scroll(camera, 5.0)
       assert_float_equal(scrolled_in.zoom, 25.0)
 
@@ -417,13 +405,11 @@ defmodule EAGL.CameraTest do
           pitch: pitch_value
         )
 
-      # Test direct field access (idiomatic Elixir)
       assert_float_equal(camera.zoom, zoom_value)
       assert camera.position == position
       assert_float_equal(camera.yaw, yaw_value)
       assert_float_equal(camera.pitch, pitch_value)
 
-      # Test computed vectors are accessible
       assert_float_equal(vec_length(camera.front), 1.0)
       assert_float_equal(vec_length(camera.right), 1.0)
       assert_float_equal(vec_length(camera.up), 1.0)
@@ -432,11 +418,9 @@ defmodule EAGL.CameraTest do
 
   describe "edge cases and validation" do
     test "extreme yaw values work correctly" do
-      # Test wraparound behavior
       camera = Camera.new(yaw: 370.0)
       assert_float_equal(camera.yaw, 370.0)
 
-      # Camera should still function normally
       moved_camera = Camera.process_mouse_movement(camera, 10.0, 0.0)
       assert moved_camera.front != camera.front
     end
@@ -444,17 +428,14 @@ defmodule EAGL.CameraTest do
     test "camera vectors remain orthonormal after operations" do
       camera = Camera.new()
 
-      # Apply various transformations
       camera = Camera.process_mouse_movement(camera, 45.0, 30.0)
       camera = Camera.process_keyboard(camera, :forward, 1.0)
       camera = Camera.process_mouse_scroll(camera, 5.0)
 
-      # Vectors should still be normalized
       assert_float_equal(vec_length(camera.front), 1.0, 1.0e-5)
       assert_float_equal(vec_length(camera.right), 1.0, 1.0e-5)
       assert_float_equal(vec_length(camera.up), 1.0, 1.0e-5)
 
-      # Vectors should be orthogonal
       assert_float_equal(dot(camera.front, camera.right), 0.0, 1.0e-5)
       assert_float_equal(dot(camera.front, camera.up), 0.0, 1.0e-5)
       assert_float_equal(dot(camera.right, camera.up), 0.0, 1.0e-5)
@@ -463,18 +444,13 @@ defmodule EAGL.CameraTest do
     test "camera maintains correct handedness" do
       camera = Camera.new()
 
-      # Right-handed coordinate system: front × up should equal right
-      # This is because: right = cross(front, world_up), up = cross(right, front)
-      # So: front × up = front × cross(right, front) = -cross(front, right) = -(-right) = right
       cross_result = cross(camera.front, camera.up)
-
       assert_vec3_equal(cross_result, camera.right, 1.0e-5)
     end
 
     test "zero delta time movement" do
       camera = Camera.new()
 
-      # Zero delta time should not move camera
       moved_camera = Camera.process_keyboard(camera, :forward, 0.0)
 
       assert_vec3_equal(moved_camera.position, camera.position)
@@ -483,7 +459,6 @@ defmodule EAGL.CameraTest do
     test "zero mouse movement" do
       camera = Camera.new()
 
-      # Zero mouse movement should not change camera orientation
       moved_camera = Camera.process_mouse_movement(camera, 0.0, 0.0)
 
       assert_float_equal(moved_camera.yaw, camera.yaw)
@@ -494,7 +469,6 @@ defmodule EAGL.CameraTest do
     test "zero scroll input" do
       camera = Camera.new()
 
-      # Zero scroll should not change zoom
       scrolled_camera = Camera.process_mouse_scroll(camera, 0.0)
 
       assert_float_equal(scrolled_camera.zoom, camera.zoom)

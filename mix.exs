@@ -9,6 +9,7 @@ defmodule EAGL.MixProject do
       app: :eagl,
       version: @version,
       elixir: "~> 1.14",
+      elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       aliases: aliases(),
@@ -31,6 +32,15 @@ defmodule EAGL.MixProject do
         "eagl.test": :test
       ]
     ]
+  end
+
+  defp elixirc_paths(_) do
+    # Examples are in the repo but not in the Hex package; only include when present
+    if File.exists?("examples") do
+      ["lib", "examples"]
+    else
+      ["lib"]
+    end
   end
 
   # Run "mix help compile.app" to learn about applications.

@@ -2,7 +2,7 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.CameraClass do
   @moduledoc """
   LearnOpenGL 7.4 - Camera Class
 
-  This example demonstrates the power of proper camera abstraction using the EAGL.Camera
+  This example demonstrates the power of proper camera abstraction using the LearnOpenGL Camera
   module. It provides smooth, natural first-person camera controls with WASD movement,
   mouse look, and scroll zoom functionality.
 
@@ -99,7 +99,7 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.CameraClass do
   import EAGL.Buffer
   import EAGL.Math
   import EAGL.Error
-  alias EAGL.Camera
+  alias EAGL.Examples.LearnOpenGL.Camera, as: Camera
 
   def run_example(opts \\ []) do
     EAGL.Window.run(
@@ -115,7 +115,7 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.CameraClass do
 
     === LearnOpenGL 7.4: Camera Class ===
     This example demonstrates the benefits of camera abstraction and
-    code organisation using the EAGL.Camera module.
+    code organisation using the LearnOpenGL Camera module.
 
     Learning Focus:
       • Camera abstraction and encapsulation
@@ -237,7 +237,7 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.CameraClass do
       vec3(-1.3, 1.0, -1.5)
     ]
 
-    # Create camera using EAGL.Camera module
+    # Create camera using LearnOpenGL Camera module
     # This encapsulates the manual camera state from example 7.3
     camera =
       Camera.new(

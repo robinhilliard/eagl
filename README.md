@@ -1,20 +1,18 @@
-<div align="center">
-  <h1>EAGL</h1>
-  <img src="assets/eagl_logo.png" alt="EAGL Logo" title="EAGL Logo" width="200">
-  <p>
-    Make it EAsier to work<br>
-    with OpenGL in Elixir.
-  </p>
-</div>
+# EAGL
+
+Make it EAsier to work  
+with OpenGL in Elixir.
 
 ## Overview
 
 Most examples of working with OpenGL are written in C++ or C# (Unity). The purpose of the EAGL library is to:
+
 - Make it easier to translate OpenGL tutorials and examples from resources like [Learn OpenGL](https://learnopengl.com) into Elixir. 
 - Provide basic helper functions to bridge the gap between idiomatic Elixir and OpenGL's state machine, using the Wings 3D Erlang source as a guide to prescriptive vs helpful additions
 - Enable other libraries and apps to build on this one and libraries like [ECSx](https://github.com/ecsx-framework/ECSx) and the list at [Awesome Elixir Gaming](https://github.com/njwest/Awesome-Elixir-Gaming)
 
 The following are non-goals:
+
 - Focussing on 2D GPU graphics (see [Scenic](https://github.com/ScenicFramework/scenic) for that)
 - Wrapping of the Erlang wx library
 - A Shader DSL
@@ -25,7 +23,7 @@ The following are non-goals:
 
 ```elixir
 # Add to mix.exs
-{:eagl, "~> 0.9.0"}
+{:eagl, "~> 0.10.0"}
 ```
 
 EAGL includes several examples to demonstrate its capabilities. Use the unified examples runner:
@@ -151,72 +149,31 @@ projection = mat4_perspective(radians(45.0), 16.0/9.0, 0.1, 100.0)
 
 ### Camera System
 
-EAGL provides a first-person camera system based on the LearnOpenGL camera class.
+EAGL provides `EAGL.OrbitCamera` for inspecting 3D models and scenes:
 
-- **Euler Angle Camera**: Uses yaw and pitch angles for smooth rotation
-- **WASD Movement**: Standard FPS keyboard controls with frame-rate independent movement  
-- **Simplified Input**: `process_keyboard_input()` handles all WASD keys in one function call
-- **FPS Constraints**: `process_fps_keyboard_input()` for ground-based movement (Y-locked)
-- **Mouse Look**: Mouse movement for camera rotation with pitch constraints
-- **Scroll Zoom**: Field of view adjustment via scroll wheel
+- **Orbit**: Left-drag to rotate around the target
+- **Zoom**: Scroll to move closer or further
+- **Pan**: Middle-drag to shift the target point
+- **Fit to bounds**: `fit_to_gltf/1` or `fit_to_bounds/2` for automatic framing
 
 ```elixir
-import EAGL.Camera
-import EAGL.Math
+use EAGL.OrbitCamera
 
-# Create camera with default settings (origin, looking down -Z)
-camera = Camera.new()
+# In setup - frame a GLTF model
+orbit = EAGL.OrbitCamera.fit_to_gltf(gltf)
 
-# Create camera with custom position and settings
-camera = Camera.new(
-  position: vec3(0.0, 5.0, 10.0),
-  yaw: 180.0,
-  pitch: -30.0,
-  movement_speed: 5.0
-)
+# Or frame a bounding box
+orbit = EAGL.OrbitCamera.fit_to_bounds({-1, -1, -1}, {1, 1, 1})
 
-# Get view and projection matrices for rendering
-view = Camera.get_view_matrix(camera)
-projection = mat4_perspective(radians(camera.zoom), aspect_ratio, 0.1, 100.0)
-
-# Handle keyboard movement (WASD) - two approaches available:
-
-# APPROACH 1: Simplified keyboard input (recommended)
-# Process all WASD keys at once in tick handler for smoother movement
-def handle_event(:tick, %{camera: camera, delta_time: dt} = state) do
-  updated_camera = Camera.process_keyboard_input(camera, dt)
-  {:ok, %{state | camera: updated_camera}}
-end
-
-# For FPS-style ground-based movement (constrains Y position)
-def handle_event(:tick, %{camera: camera, delta_time: dt, ground_level: ground} = state) do
-  updated_camera = Camera.process_fps_keyboard_input(camera, dt, ground)
-  {:ok, %{state | camera: updated_camera}}
-end
-
-# APPROACH 2: Individual key processing (for custom key handling)
-def handle_event({:key, key_code}, %{camera: camera, delta_time: dt} = state) do
-  updated_camera = case key_code do
-    ?W -> Camera.process_keyboard(camera, :forward, dt)
-    ?S -> Camera.process_keyboard(camera, :backward, dt)  
-    ?A -> Camera.process_keyboard(camera, :left, dt)
-    ?D -> Camera.process_keyboard(camera, :right, dt)
-    _ -> camera
-  end
-  {:ok, %{state | camera: updated_camera}}
-end
-
-# Handle mouse look and scroll zoom
-def handle_event({:mouse_motion, x, y}, %{camera: camera, last_mouse: {last_x, last_y}} = state) do
-  camera = Camera.process_mouse_movement(camera, x - last_x, last_y - y)
-  {:ok, %{state | camera: camera, last_mouse: {x, y}}}
-end
-
-def handle_event({:mouse_wheel, _, _, _, wheel_delta}, %{camera: camera} = state) do
-  camera = Camera.process_mouse_scroll(camera, wheel_delta)
-  {:ok, %{state | camera: camera}}
-end
+# In render
+view = EAGL.OrbitCamera.get_view_matrix(orbit)
+proj = EAGL.OrbitCamera.get_projection_matrix(orbit, w / h)
+view_pos = EAGL.OrbitCamera.get_position(orbit)
 ```
+
+Add `use EAGL.OrbitCamera` to inject default mouse/scroll event handlers. Override `on_tick/2` for per-frame logic (e.g. animation updates) without losing those handlers—see example 04 (animated box) for the pattern. See the GLTF examples (01-05) for the full setup.
+
+For LearnOpenGL tutorial examples (7.4-7.6, lighting chapter), a first-person WASD camera lives in `examples/learnopengl/camera.ex` as `EAGL.Examples.LearnOpenGL.Camera`.
 
 ### Shader Management
 
@@ -253,6 +210,7 @@ set_uniforms(program, [
 ### Texture Management
 
 EAGL provides meaningful texture abstractions:
+
 - **Image Loading**: `load_texture_from_file()` with automatic fallback to checkerboard patterns
 - **Texture Creation**: `create_texture()` returns `{:ok, id}` tuples for error handling
 - **Type-Safe Parameters**: `set_texture_parameters()` with compile-time validated options
@@ -260,7 +218,6 @@ EAGL provides meaningful texture abstractions:
 - **Procedural Textures**: `create_checkerboard_texture()` generates test patterns
 - **Graceful Degradation**: Helpful warnings when optional dependencies aren't available
 - **Direct OpenGL**: Use `:gl` functions directly for binding, mipmaps, and cleanup
-
 
 ```elixir
 import EAGL.Texture
@@ -337,6 +294,114 @@ EAGL.Scene.render(scene, view_matrix, projection_matrix)
 ```
 
 See `examples/gltf/` for progressive examples from a simple box to a PBR-textured helmet.
+
+### GLTF 2.0 Library
+
+EAGL includes a comprehensive GLTF 2.0 library for representing complex 3D models and scenes. The library provides complete support for all GLTF 2.0 properties and follows the official specification.
+
+#### GLTF Features
+
+- **Complete Property Support**: All GLTF 2.0 properties from section 5 of the specification
+- **Type Safety**: Elixir structs with proper type specifications for all properties
+- **Extensions Support**: Built-in extensions mechanism with validation
+- **PBR Materials**: Full physically-based rendering material support
+- **Animations**: Keyframe animations with multiple interpolation modes
+- **Skinning**: Vertex skinning with joint hierarchies
+- **Multiple Cameras**: Perspective and orthographic camera types
+- **Texture Management**: Complete texture pipeline with samplers and filtering
+- **Buffer Views**: Efficient binary data management with accessors
+- **Scene Graphs**: Hierarchical node structures with transformations
+- **Validation**: Built-in validation functions for document integrity
+
+#### Basic Usage
+
+```elixir
+# Create a basic GLTF document
+gltf = GLTF.new("2.0", generator: "EAGL", copyright: "2024")
+
+# Create a perspective camera
+camera = GLTF.Camera.perspective(
+  :math.pi() / 4,  # 45 degree field of view
+  0.1,             # near plane
+  aspect_ratio: 16.0 / 9.0,
+  zfar: 100.0
+)
+
+# Create a scene with nodes
+scene = GLTF.Scene.with_nodes([0, 1], name: "Main Scene")
+
+# Create a material with PBR properties
+pbr = GLTF.Material.PbrMetallicRoughness.new(
+  base_color_factor: [0.8, 0.2, 0.2, 1.0],  # Red material
+  metallic_factor: 0.0,
+  roughness_factor: 0.5
+)
+material = GLTF.Material.new(pbr_metallic_roughness: pbr)
+
+# Create nodes with transformations
+camera_node = GLTF.Node.with_trs(
+  [0.0, 2.0, 5.0],           # translation
+  [0.0, 0.0, 0.0, 1.0],      # rotation (quaternion)
+  [1.0, 1.0, 1.0],           # scale
+  camera: 0
+)
+
+mesh_node = GLTF.Node.new(
+  mesh: 0,
+  material: 0
+)
+
+# Assemble the complete document
+gltf = %{gltf |
+  cameras: [camera],
+  materials: [material],
+  nodes: [camera_node, mesh_node],
+  scenes: [scene],
+  scene: 0
+}
+
+# Validate the document
+case GLTF.validate(gltf) do
+  :ok -> IO.puts("Valid GLTF document!")
+  {:error, reason} -> IO.puts("Validation error: #{inspect(reason)}")
+end
+```
+
+#### GLTF Properties Reference
+
+The library implements all GLTF 2.0 properties as Elixir modules:
+
+**Core Document Structure:** `GLTF`, `GLTF.Asset`, `GLTF.Extension`, `GLTF.Extras`
+
+**Scene and Hierarchy:** `GLTF.Scene`, `GLTF.Node`, `GLTF.Camera`, `GLTF.Camera.Perspective`, `GLTF.Camera.Orthographic`
+
+**Geometry and Meshes:** `GLTF.Mesh`, `GLTF.Mesh.Primitive`, `GLTF.Accessor`, `GLTF.Accessor.Sparse`, `GLTF.Buffer`, `GLTF.BufferView`
+
+**Materials and Textures:** `GLTF.Material`, `GLTF.Material.PbrMetallicRoughness`, `GLTF.Material.NormalTextureInfo`, `GLTF.Material.OcclusionTextureInfo`, `GLTF.Texture`, `GLTF.TextureInfo`, `GLTF.Image`, `GLTF.Sampler`
+
+**Animation and Skinning:** `GLTF.Animation`, `GLTF.Animation.Channel`, `GLTF.Animation.Sampler`, `GLTF.Skin`
+
+#### Design Principles
+
+- **Specification Compliance**: Strict adherence to GLTF 2.0 specification
+- **Elixir Idiomatic**: Uses Elixir conventions and patterns
+- **Type Safety**: Comprehensive type specifications and validation
+- **Extensibility**: Support for GLTF extensions mechanism
+- **Performance**: Efficient structures for runtime use
+
+#### GLTF Roadmap
+
+- **GLB Support**: Binary GLTF container format loading and parsing
+- **Integration**: GLTF.EAGL bridge module for scene graph and VAO creation
+- **Validation**: Structure validation with index and extension checking
+- **JSON Serialization**: Import/export to GLTF JSON format (non-binary)
+- **Extensions**: Built-in support for common GLTF extensions
+- **Multi-primitive meshes**: Support meshes with more than one primitive
+- **Buffer view stride**: Support strided buffer views for interleaved data
+
+#### GLB Loading HTTP Client Issue
+
+On some macOS systems, Erlang's built-in `:httpc` HTTP client has a bug where `http_util.timestamp/0` fails during HTTPS requests, causing GLB web loading to fail. Add the `:req` dependency and use `http_client: :req` when loading from URLs. See [Troubleshooting: GLB Loading HTTP Client](#glb-loading-http-client-issue) for details.
 
 ### Buffer Management
 
@@ -422,6 +487,7 @@ delete_indexed_array(vao, vbo, ebo)  # For indexed arrays
 ```
 
 **Standard Attribute Helpers:**
+
 - `position_attribute()` - 3 floats (x, y, z), defaults to location 0 but can be overridden
 - `color_attribute()` - 3 floats (r, g, b), defaults to location 1 but can be overridden  
 - `texture_coordinate_attribute()` - 2 floats (s, t), defaults to location 2 but can be overridden
@@ -433,6 +499,7 @@ delete_indexed_array(vao, vbo, ebo)  # For indexed arrays
 2. **Manual Layout**: Individual attribute helpers allow custom locations, stride, and offset for non-standard layouts
 
 **Key Benefits:**
+
 - **Flexible locations**: Default locations can be overridden with `location:` option
 - **Automatic calculation**: `vertex_attributes()` eliminates manual stride/offset math for standard layouts
 - **Type safety**: Compile-time checks for attribute configuration  
@@ -552,10 +619,13 @@ end
 ### Platform-specific Notes
 
 #### All Platforms
+
 EAGL uses Erlang's built-in `wx` module for windowing, which is included with standard Erlang/OTP installations. No additional GUI libraries need to be installed.
 
 #### Linux
+
 Ensure you have OpenGL drivers installed:
+
 ```bash
 # Ubuntu/Debian
 sudo apt-get install libgl1-mesa-dev libglu1-mesa-dev
@@ -564,7 +634,18 @@ sudo apt-get install libgl1-mesa-dev libglu1-mesa-dev
 sudo dnf install mesa-libGL-devel mesa-libGLU-devel
 ```
 
+##### WSL2 (Windows Subsystem for Linux)
+
+EAGL runs on WSL2, but OpenGL performance is limited. Rendering goes through a software layer (WSLg or similar) rather than direct GPU access, which can cause:
+
+- **Input lag**: Mouse orbit/pan and scroll may feel sluggish, especially at high resolutions
+- **Lower frame rates**: Adaptive tick timing helps, but expect lower FPS than native Linux or Windows
+- **Stilted interaction**: Large windows can amplify the lag
+
+For the smoothest experience, use native Linux, macOS, or Windows. WSL2 is fine for development and testing, but performance-sensitive applications may feel noticeably slower.
+
 #### macOS
+
 OpenGL is included with macOS. No additional setup required.
 
 **Important**: EAGL automatically detects macOS and enables forward compatibility for OpenGL 3.0+ contexts, which is required by Apple's OpenGL implementation. This matches the behaviour of the `#ifdef __APPLE__` code commonly found in OpenGL tutorials.
@@ -574,9 +655,10 @@ OpenGL is included with macOS. No additional setup required.
 macOS requires **exact version matching** between Erlang/OTP and Elixir for OpenGL Native Implemented Functions (NIFs) to load properly. Version mismatches will cause `{:nif_not_loaded, :module, :gl, :line, N}` errors when examples try to run.
 
 **Symptoms of version mismatch:**
+
 - Examples fail with `{:nif_not_loaded, :module, :gl, :line, 356}` or similar errors
 - `wx` module loads successfully but OpenGL calls fail
-- Error occurs immediately when trying to use any `:gl.*` functions
+- Error occurs immediately when trying to use any `:gl.`* functions
 
 **Solution:**
 Use matching Erlang/OTP and Elixir versions. Check your current versions:
@@ -606,6 +688,7 @@ echo "elixir 1.15.7-otp-26" >> .tool-versions
 ```
 
 **Recommended version combinations:**
+
 - **Erlang/OTP 26.2.1** + **Elixir 1.15.7-otp-26**
 - **Erlang/OTP 25.3** + **Elixir 1.14.5-otp-25**
 
@@ -614,11 +697,13 @@ echo "elixir 1.15.7-otp-26" >> .tool-versions
 EAGL automatically handles retina display scaling on macOS. The viewport will correctly fill the entire window regardless of display pixel density.
 
 **How it works:**
+
 - **Logical size**: What you see (e.g., 1024×768)
 - **Physical size**: Actual pixels (e.g., 2048×1536 on 2× retina)
 - **Automatic scaling**: EAGL detects the content scale factor and passes physical dimensions to render functions
 
 **What this means:**
+
 - ✅ Viewport fills entire window on retina displays
 - ✅ Text and graphics appear crisp at native resolution  
 - ✅ No manual scaling required in your render functions
@@ -626,36 +711,33 @@ EAGL automatically handles retina display scaling on macOS. The viewport will co
 
 If you're using EAGL, retina support is automatic. If you're calling `:gl.viewport()` directly, use the dimensions passed to your `render/3` function rather than calling `:wxWindow.getSize()` yourself.
 
-#### Windows  
+#### Windows
+
 OpenGL is typically available through graphics drivers. If you encounter issues, ensure your graphics drivers are up to date.
 
 ## Installation
 
 1. Clone the repository:
-   ```bash
+  ```bash
    git clone https://github.com/yourusername/eagl.git
    cd eagl
-   ```
-
+  ```
 2. Install dependencies:
-   ```bash
+  ```bash
    mix deps.get
-   ```
-
+  ```
 3. Compile the project:
-   ```bash
+  ```bash
    mix compile
-   ```
-
+  ```
 4. Run tests to verify everything works:
-   ```bash
+  ```bash
    mix test
-   ```
-
+  ```
 5. Try the examples:
-   ```bash
+  ```bash
    mix examples
-   ```
+  ```
 
 ## Project Structure
 
@@ -710,11 +792,13 @@ examples/
 │   ├── 04_box_animated.ex  # GLTF animation playback
 │   └── 05_damaged_helmet.ex # Full PBR rendering
 └── learnopengl/            # LearnOpenGL tutorial ports
+    ├── camera.ex           # First-person camera (examples 7.4-7.6, lighting)
+    ├── 1_getting_started/  # Chapters 1-7
+    └── 2_lighting/         # Lighting chapter
 test/
 ├── eagl/                   # Unit tests for EAGL modules
 │   ├── animation_test.exs  # Animation system tests
 │   ├── buffer_test.exs     # Buffer management tests
-│   ├── camera_test.exs     # Camera system tests
 │   ├── error_test.exs      # Error handling tests
 │   ├── math_test.exs       # Math library tests
 │   ├── model_test.exs      # Model loading tests
@@ -722,6 +806,9 @@ test/
 │   ├── orbit_camera_test.exs # Orbit camera tests
 │   ├── shader_test.exs     # Shader compilation tests
 │   └── texture_test.exs    # Texture management tests
+├── examples/
+│   └── learnopengl/
+│       └── camera_test.exs  # LearnOpenGL Camera tests
 ├── gltf/                   # GLTF module tests
 │   ├── accessor_test.exs   # Accessor parsing tests
 │   ├── asset_test.exs      # Asset metadata tests
@@ -744,7 +831,7 @@ priv/
 
 ## Features
 
-- ✅ **Camera System**: First-person camera and orbit camera for model viewing
+- ✅ **Camera System**: Orbit camera for model viewing (LearnOpenGL examples include first-person camera)
 - ✅ **Shader Management**: Automatic compilation, linking, and error reporting
 - ✅ **Texture Management**: Comprehensive texture creation, configuration, and loading
 - ✅ **3D Model Loading**: Wavefront OBJ and glTF 2.0 (GLB) formats with scene graph support
@@ -764,7 +851,7 @@ priv/
 
 The current focus is to:
 
-- [ ] **In Progress**: Complete the "Getting Started" LearnOpenGL examples series
+- **In Progress**: Complete the "Getting Started" LearnOpenGL examples series
   - ✅ Hello Window (1.1-1.2): 2 examples
   - ✅ Hello Triangle (2.1-2.5): 5 examples  
   - ✅ Shaders (3.1-3.6): 6 examples
@@ -772,21 +859,22 @@ The current focus is to:
   - ✅ Transformations (5.1-5.2): 3 examples
   - ✅ Coordinate Systems (6.1-6.4): 4 examples
   - ✅ Camera (7.1-7.6): 6 examples completed
-- [ ] Continue with "Lighting" chapter examples
-- [x] Load glTF 2.0 models via GLTF.EAGL bridge (GLB format, PBR materials, scene graphs)
+- Continue with "Lighting" chapter examples
+- Load glTF 2.0 models via GLTF.EAGL bridge (GLB format, PBR materials, scene graphs)
 
 And in future:
 
-- [ ] Be able to apply post-processing effects
-- [ ] More extensive camera/lighting/material helpers
-- [ ] Access to a physics engine
-- [ ] Built-in GPU profiling tools
+- Be able to apply post-processing effects
+- More extensive camera/lighting/material helpers
+- Access to a physics engine
+- Built-in GPU profiling tools
 
 ## Troubleshooting
 
 ### Common Issues
 
 #### Example Testing Timeouts
+
 Examples use automatic timeouts for testing and will exit cleanly after the specified duration:
 
 ```bash
@@ -801,10 +889,13 @@ mix test test/examples_test.exs
 ```
 
 #### IEx Break Prompt
+
 If you encounter an unexpected error in IEx and see a `BREAK: (a)bort` prompt, this indicates a crash in the BEAM VM. Enter 'a' to abort and return to the shell, then investigate the error that caused the crash.
 
 #### Test Timeouts in CI
+
 Examples now use automatic timeouts and run successfully in continuous integration environments:
+
 - Examples accept a `timeout:` option for automated testing
 - CI environments run examples with 500ms timeouts
 - Examples exit cleanly after timeout with proper resource cleanup
@@ -813,19 +904,49 @@ Examples now use automatic timeouts and run successfully in continuous integrati
 ### Platform-Specific Issues
 
 #### OpenGL Context Creation Failures
+
 If you encounter context creation errors:
+
 - **Linux**: Ensure mesa development packages are installed
 - **macOS**: Update to a supported macOS version (10.9+)
 - **Windows**: Update graphics drivers
 
 #### Missing Dependencies
+
 If optional dependencies are missing, EAGL will show warnings but continue with fallback behaviour:
+
 - Image loading falls back to procedural textures
 - Missing models show error messages but don't crash
+
+#### GLB Loading HTTP Client Issue
+
+On some macOS systems, Erlang's built-in `:httpc` HTTP client has a bug where `http_util.timestamp/0` fails during HTTPS requests, causing GLB web loading to fail with errors like:
+
+```
+"function :http_util.timestamp/0 is undefined (module :http_util is not available)"
+```
+
+**Solution:** Add the `:req` HTTP client as a dependency and configure GLB loading to use it:
+
+```elixir
+# In mix.exs
+defp deps do
+  [
+    {:req, "~> 0.4"}  # Add this for reliable HTTP on macOS
+    # ... other deps
+  ]
+end
+
+# When loading GLB files from URLs
+{:ok, glb} = GLTF.GLBLoader.parse_url(url, http_client: :req)
+```
+
+**Symptoms:** GLB web demos fail with "http_util.timestamp/0 is undefined"; local GLB files work fine; only URL loading fails.
 
 ## Contributing
 
 We welcome contributions. Suggested contributions include:
+
 - **LearnOpenGL tutorial ports**: Help correct the tutorial series (I will do the initial ports)
 - **Documentation improvements**: Examples, API documentation
 - **Platform-specific optimisations**: Performance or compatibility improvements
@@ -845,6 +966,7 @@ Please read through these guidelines before submitting changes.
 ### Code Standards
 
 #### Style Guidelines
+
 - Follow standard Elixir formatting (`mix format`) but...
 - Keep matricies in tabular format and wrap with `# mix format: off|on`
 - Use the `~m`atrix, `~v`ertex and `~i`ndex sigils for compile time constants
@@ -852,13 +974,15 @@ Please read through these guidelines before submitting changes.
 - Include typespecs for public functions
 - Document complex algorithms and OpenGL-specific concepts
 
-#### Testing Requirements  
+#### Testing Requirements
+
 - Add tests for new functionality
 - Ensure existing tests pass: `mix test`
 - Update examples to accept `opts` parameter for timeout testing
 - Mock OpenGL calls in unit tests where possible
 
 #### Documentation Standards
+
 - Update README.md for new features
 - Add docstrings for public functions
 - Include code examples in documentation
@@ -870,6 +994,7 @@ Please read through these guidelines before submitting changes.
 EAGL focuses on **meaningful abstractions** rather than thin wrappers around OpenGL calls:
 
 #### ✅ **Provide Value**
+
 - **Error handling**: `{:ok, result}` tuples and comprehensive error checking
 - **Type safety**: Compile-time validation and clear parameter names (`wrap_s: @gl_repeat`)
 - **Sensible defaults**: Reduce boilerplate with common parameter combinations
@@ -878,11 +1003,13 @@ EAGL focuses on **meaningful abstractions** rather than thin wrappers around Ope
 - **Testing utilities**: Procedural textures and geometry for development
 
 #### ❌ **Avoid Thin Wrappers**
+
 - **Simple OpenGL calls**: Use `:gl.bindTexture()`, `:gl.generateMipmap()` directly
 - **One-line functions**: Don't wrap functions that only add `check()` calls
 - **State management**: Let users manage OpenGL state explicitly when appropriate
 
 #### 🎯 **User Experience Goals**
+
 - **Selective imports**: `import EAGL.Error` for explicit error checking
 - **Direct OpenGL access**: When EAGL doesn't add substantial value
 - **Direct OpenGL integration**: Mix EAGL helpers with direct OpenGL calls
@@ -892,24 +1019,28 @@ EAGL focuses on **meaningful abstractions** rather than thin wrappers around Ope
 EAGL prioritises **desktop OpenGL capabilities** to maximise educational and practical value for graphics programming:
 
 #### **Desktop-First Approach**
+
 - **Full OpenGL Access**: Modern OpenGL 3.3+ features including geometry shaders, tessellation, compute shaders
 - **Educational Completeness**: Learn comprehensive graphics techniques without platform constraints
 - **Professional Preparation**: Develop skills that transfer directly to industry graphics programming
 - **Research Capabilities**: Support advanced techniques needed in graphics research and development
 
 #### **Cross-Platform Asset Compatibility**
+
 - **glTF 2.0 Integration**: Runtime-neutral asset format for broad ecosystem compatibility  
 - **Asset Bridge**: Import glTF models and scenes for use with full desktop OpenGL capabilities
 - **Separation of Concerns**: Asset format (glTF) independent from rendering platform (desktop OpenGL)
 - **Ecosystem Integration**: Assets work across different renderers while maintaining access to advanced features
 
 #### **Educational Mission**
+
 - **Complete Feature Set**: Access to the full spectrum of modern OpenGL techniques
 - **Comprehensive Learning**: Explore the complete range of 3D graphics development approaches
 - **Skill Transfer**: Techniques applicable to game engines, CAD software, scientific visualisation
 - **Different Design Goals**: Desktop and web platforms serve different needs - we focus on desktop's strengths
 
 #### **Multi-Platform Strategy**
+
 - **Asset Compatibility**: Use glTF for models that work across rendering platforms
 - **Complementary Ecosystems**: Desktop development for full capabilities, established tools for web deployment
 - **Platform Strengths**: Leverage desktop OpenGL's comprehensive feature set where appropriate
@@ -925,10 +1056,10 @@ EAGL prioritises **desktop OpenGL capabilities** to maximise educational and pra
 6. **Commit with clear messages**: Use present tense, describe what the commit does
 7. **Push your branch**: `git push origin feature/descriptive-name`
 8. **Open a Pull Request** with:
-   - Clear description of the changes
-   - Reference to any related issues
-   - Screenshots for visual changes
-   - Test results if applicable
+  - Clear description of the changes
+  - Reference to any related issues
+  - Screenshots for visual changes
+  - Test results if applicable
 
 ### Questions and Support
 
@@ -946,173 +1077,5 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - [Wings3D](https://wings3d.com) for inspiration and helper function patterns - the name EAGL(e) is a tip of the hat to this project
 - The Erlang/OTP team and particularly Dan Gudmundsson for the wxWidgets bindings
 - The [local Elixir User Group](https://https://elixir.sydney) for putting up with my occasional random talks
-- [Cursor](https://cursor.com) and Claude Sonnet for giving me the patience to get to running code and porting Joey's Learning OpenGL examples
-
-## GLTF 2.0 Library
-
-EAGL now includes a comprehensive GLTF 2.0 library for representing complex 3D models and scenes. The library provides complete support for all GLTF 2.0 properties and follows the official specification.
-
-### GLTF Features
-
-- **Complete Property Support**: All GLTF 2.0 properties from section 5 of the specification
-- **Type Safety**: Elixir structs with proper type specifications for all properties
-- **Extensions Support**: Built-in extensions mechanism with validation
-- **PBR Materials**: Full physically-based rendering material support
-- **Animations**: Keyframe animations with multiple interpolation modes
-- **Skinning**: Vertex skinning with joint hierarchies
-- **Multiple Cameras**: Perspective and orthographic camera types
-- **Texture Management**: Complete texture pipeline with samplers and filtering
-- **Buffer Views**: Efficient binary data management with accessors
-- **Scene Graphs**: Hierarchical node structures with transformations
-- **Validation**: Built-in validation functions for document integrity
-
-### Basic Usage
-
-```elixir
-# Create a basic GLTF document
-gltf = GLTF.new("2.0", generator: "EAGL", copyright: "2024")
-
-# Create a perspective camera
-camera = GLTF.Camera.perspective(
-  :math.pi() / 4,  # 45 degree field of view
-  0.1,             # near plane
-  aspect_ratio: 16.0 / 9.0,
-  zfar: 100.0
-)
-
-# Create a scene with nodes
-scene = GLTF.Scene.with_nodes([0, 1], name: "Main Scene")
-
-# Create a material with PBR properties
-pbr = GLTF.Material.PbrMetallicRoughness.new(
-  base_color_factor: [0.8, 0.2, 0.2, 1.0],  # Red material
-  metallic_factor: 0.0,
-  roughness_factor: 0.5
-)
-material = GLTF.Material.new(pbr_metallic_roughness: pbr)
-
-# Create nodes with transformations
-camera_node = GLTF.Node.with_trs(
-  [0.0, 2.0, 5.0],           # translation
-  [0.0, 0.0, 0.0, 1.0],      # rotation (quaternion)
-  [1.0, 1.0, 1.0],           # scale
-  camera: 0
-)
-
-mesh_node = GLTF.Node.new(
-  mesh: 0,
-  material: 0
-)
-
-# Assemble the complete document
-gltf = %{gltf | 
-  cameras: [camera],
-  materials: [material],
-  nodes: [camera_node, mesh_node],
-  scenes: [scene],
-  scene: 0
-}
-
-# Validate the document
-case GLTF.validate(gltf) do
-  :ok -> IO.puts("Valid GLTF document!")
-  {:error, reason} -> IO.puts("Validation error: #{inspect(reason)}")
-end
-```
-
-### GLTF Properties Reference
-
-The library implements all GLTF 2.0 properties as Elixir modules:
-
-#### Core Document Structure
-- `GLTF` - Root document with asset arrays and metadata
-- `GLTF.Asset` - Document metadata (version, generator, copyright)
-- `GLTF.Extension` - Extensions mechanism support
-- `GLTF.Extras` - Application-specific data utilities
-
-#### Scene and Hierarchy
-- `GLTF.Scene` - Collection of root nodes to render
-- `GLTF.Node` - Scene graph nodes with transformations and references
-- `GLTF.Camera` - Perspective and orthographic cameras
-- `GLTF.Camera.Perspective` - Perspective projection parameters
-- `GLTF.Camera.Orthographic` - Orthographic projection parameters
-
-#### Geometry and Meshes
-- `GLTF.Mesh` - Collection of mesh primitives
-- `GLTF.Mesh.Primitive` - Drawable geometry with attributes and material
-- `GLTF.Accessor` - Typed views into binary buffer data
-- `GLTF.Accessor.Sparse` - Sparse data representation for efficiency
-- `GLTF.Buffer` - Raw binary data containers
-- `GLTF.BufferView` - Views into buffer subsets
-
-#### Materials and Textures
-- `GLTF.Material` - PBR material definitions
-- `GLTF.Material.PbrMetallicRoughness` - Metallic-roughness material model
-- `GLTF.Material.NormalTextureInfo` - Normal map texture references
-- `GLTF.Material.OcclusionTextureInfo` - Occlusion texture references
-- `GLTF.Texture` - Texture combining image and sampler
-- `GLTF.TextureInfo` - Texture references in materials
-- `GLTF.Image` - Image data (external files, embedded, or buffer views)
-- `GLTF.Sampler` - Texture filtering and wrapping parameters
-
-#### Animation and Skinning
-- `GLTF.Animation` - Keyframe animation definitions
-- `GLTF.Animation.Channel` - Animation target channels
-- `GLTF.Animation.Sampler` - Animation data samplers with interpolation
-- `GLTF.Skin` - Vertex skinning with joint hierarchies
-
-### Design Principles
-
-The GLTF library follows these design principles:
-
-- **Specification Compliance**: Strict adherence to GLTF 2.0 specification
-- **Elixir Idiomatic**: Uses Elixir conventions and patterns
-- **Type Safety**: Comprehensive type specifications and validation
-- **Extensibility**: Support for GLTF extensions mechanism
-- **Performance**: Efficient structures for runtime use
-- **Documentation**: Comprehensive documentation with examples
-
-### Roadmap
-
-- [x] **GLB Support**: Binary GLTF container format loading and parsing
-- [x] **Integration**: GLTF.EAGL bridge module for scene graph and VAO creation
-- [x] **Validation**: Structure validation with index and extension checking
-- [ ] **JSON Serialization**: Import/export to GLTF JSON format (non-binary)
-- [ ] **Extensions**: Built-in support for common GLTF extensions
-- [ ] **Multi-primitive meshes**: Support meshes with more than one primitive
-- [ ] **Buffer view stride**: Support strided buffer views for interleaved data
-
-##### GLB Loading HTTP Client Issue
-
-On some macOS systems, Erlang's built-in `:httpc` HTTP client has a bug where `http_util.timestamp/0` fails during HTTPS requests, causing GLB web loading to fail with errors like:
-
-```
-"function :http_util.timestamp/0 is undefined (module :http_util is not available)"
-```
-
-**Solution:**
-Add the `:req` HTTP client as a dependency and configure GLB loading to use it:
-
-```elixir
-# In mix.exs
-defp deps do
-  [
-    {:req, "~> 0.4"}  # Add this for reliable HTTP on macOS
-    # ... other deps
-  ]
-end
-
-# When loading GLB files from URLs
-{:ok, glb} = GLTF.GLBLoader.parse_url(url, http_client: :req)
-```
-
-**Symptoms of httpc issue:**
-- GLB web demos fail with "http_util.timestamp/0 is undefined"
-- Local GLB files work fine, only URL loading fails
-- Direct `:http_util.timestamp()` calls work but `:httpc.request()` fails
-
-**Alternative HTTP clients:**
-- `:req` (recommended) - Modern, reliable HTTP client
-- `:httpoison` - Popular alternative if you prefer it
-- `:httpc` (default) - Works on most systems but has issues on some macOS configurations
+- [Cursor](https://cursor.com) and Anthropic for giving me the patience to get to running code, making sense of GLTF and porting Joey's Learning OpenGL examples
 

@@ -5,6 +5,7 @@ defmodule EAGL.Examples.GLTF.Duck do
   Tests multi-node scene graph with parent-child transforms and larger geometry.
   """
 
+  # --- COMMON: Same as 01_box and 02_box_textured ---
   use EAGL.Window
   use EAGL.Const
   use EAGL.OrbitCamera
@@ -22,6 +23,10 @@ defmodule EAGL.Examples.GLTF.Duck do
 
   @impl true
   def setup do
+    # --- SAME AS 02_box_textured: PBR + load_textures for textured model ---
+    # The only difference from example 2 is the model file: Duck has a multi-node
+    # scene graph (parent-child hierarchy) and more geometry. load_scene handles
+    # both automatically.
     with {:ok, program} <- GLTF.EAGL.create_pbr_shader(),
          {:ok, scene, gltf, ds} <- GLTF.EAGL.load_scene(@glb_path, program),
          {:ok, textures} <- GLTF.EAGL.load_textures(gltf, ds) do
@@ -32,6 +37,7 @@ defmodule EAGL.Examples.GLTF.Duck do
 
   @impl true
   def render(w, h, %{program: prog, scene: scene, orbit: orbit, textures: tex} = state) do
+    # --- COMMON: Same as 01_box and 02_box_textured ---
     :gl.viewport(0, 0, trunc(w), trunc(h))
     :gl.clearColor(0.15, 0.15, 0.2, 1.0)
     :gl.clear(@gl_color_buffer_bit ||| @gl_depth_buffer_bit)

@@ -175,6 +175,54 @@ defmodule EAGL.BufferTest do
         assert true
       end
     end
+
+    test "can create complex vertex layouts", %{gl_available: gl_available} do
+      if gl_available do
+        vertices = [
+          -0.5,
+          -0.5,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.5,
+          -0.5,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.5,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.5,
+          1.0
+        ]
+
+        # Complex vertex format: position (3) + color (3) + texcoord (2) = 8 floats per vertex
+        attributes = [
+          position_attribute(stride: 32, offset: 0),
+          color_attribute(stride: 32, offset: 12),
+          texture_coordinate_attribute(stride: 32, offset: 24)
+        ]
+
+        {vao, vbo} = create_vertex_array(vertices, attributes)
+
+        assert is_integer(vao)
+        assert is_integer(vbo)
+
+        # Clean up
+        delete_vertex_array(vao, vbo)
+      else
+        assert true
+      end
+    end
   end
 
   describe "type-safe vertex attributes" do
@@ -268,48 +316,6 @@ defmodule EAGL.BufferTest do
       assert attr.location == 3
       assert attr.size == 3
       assert attr.type == :float
-    end
-
-    @tag :skip
-    test "can create complex vertex layouts" do
-      vertices = [
-        -0.5,
-        -0.5,
-        0.0,
-        1.0,
-        0.0,
-        0.0,
-        0.0,
-        0.0,
-        0.5,
-        -0.5,
-        0.0,
-        0.0,
-        1.0,
-        0.0,
-        1.0,
-        0.0,
-        0.0,
-        0.5,
-        0.0,
-        0.0,
-        0.0,
-        1.0,
-        0.5,
-        1.0
-      ]
-
-      # Complex vertex format: position (3) + color (3) + texcoord (2) = 8 floats per vertex
-      attributes = [
-        position_attribute(stride: 32, offset: 0),
-        color_attribute(stride: 32, offset: 12),
-        texture_coordinate_attribute(stride: 32, offset: 24)
-      ]
-
-      {vao, vbo} = create_vertex_array(vertices, attributes)
-
-      assert is_integer(vao)
-      assert is_integer(vbo)
     end
   end
 

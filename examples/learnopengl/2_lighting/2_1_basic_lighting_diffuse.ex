@@ -89,7 +89,7 @@ defmodule EAGL.Examples.LearnOpenGL.Lighting.BasicLightingDiffuse do
   import EAGL.Buffer
   import EAGL.Error
   import EAGL.Math
-  alias EAGL.Camera
+  alias EAGL.Examples.LearnOpenGL.Camera, as: Camera
 
   # 3D cube vertex data with positions and normals (6 floats per vertex)
   # Each face has consistent normal vectors pointing outward from the cube
@@ -256,7 +256,7 @@ defmodule EAGL.Examples.LearnOpenGL.Lighting.BasicLightingDiffuse do
 
       IO.puts("Created VAOs and VBO (cube geometry with positions and normals)")
 
-      # Create camera using EAGL.Camera module
+      # Create camera using LearnOpenGL Camera module
       camera =
         Camera.new(
           position: vec3(0.0, 0.0, 3.0),

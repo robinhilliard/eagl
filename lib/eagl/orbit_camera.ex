@@ -2,7 +2,7 @@ defmodule EAGL.OrbitCamera do
   @moduledoc """
   Orbit camera for inspecting 3D scenes.
 
-  Unlike the first-person `EAGL.Camera` (designed for LearnOpenGL tutorials),
+  Unlike the first-person LearnOpenGL Camera (in `examples/learnopengl/camera.ex`),
   OrbitCamera provides a conventional turntable-style view:
 
   - **Left-drag**: orbit around the target point

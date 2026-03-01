@@ -87,7 +87,7 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.CameraExercise2 do
   import EAGL.Buffer
   import EAGL.Math
   import EAGL.Error
-  alias EAGL.Camera
+  alias EAGL.Examples.LearnOpenGL.Camera, as: Camera
 
   def run_example(opts \\ []) do
     EAGL.Window.run(

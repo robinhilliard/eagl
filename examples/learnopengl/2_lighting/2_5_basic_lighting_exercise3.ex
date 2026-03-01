@@ -119,7 +119,7 @@ defmodule EAGL.Examples.LearnOpenGL.Lighting.BasicLightingExercise3 do
   import EAGL.Buffer
   import EAGL.Error
   import EAGL.Math
-  alias EAGL.Camera
+  alias EAGL.Examples.LearnOpenGL.Camera, as: Camera
 
   # 3D cube vertex data with positions and normals (6 floats per vertex)
   @vertices ~v'''
