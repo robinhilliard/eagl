@@ -700,7 +700,6 @@ defmodule EAGL.Window do
                 _ -> state
               end
             rescue
-              # Handle FunctionClauseError when mouse motion handler is not defined
               _e in [FunctionClauseError] ->
                 state
             catch
@@ -710,9 +709,6 @@ defmodule EAGL.Window do
           else
             state
           end
-
-        # Trigger a repaint after handling the event
-        :wxWindow.refresh(gl_canvas)
 
         main_loop(
           frame,
