@@ -94,7 +94,9 @@ defmodule GLTF.Node do
   @doc """
   Check if node uses matrix transformation (mutually exclusive with TRS).
   """
-  def uses_matrix?(%__MODULE__{matrix: [{_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _}]}), do: true
+  def uses_matrix?(%__MODULE__{matrix: [{_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _}]}),
+    do: true
+
   def uses_matrix?(%__MODULE__{}), do: false
 
   @doc """
