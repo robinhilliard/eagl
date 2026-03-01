@@ -578,6 +578,71 @@ defmodule EAGL.Window do
     :ok
   end
 
+  # Drain all pending wx input events from the mailbox without blocking.
+  # Applies each event to state via the callback module's handle_event.
+  defp drain_pending_events(state, callback_module, frame, gl_canvas, gl_context, enter_to_exit) do
+    receive do
+      {:wx, _, _, _, {:wxKey, :char_hook, _, _, key_code, _, _, _, _, _, _, _}} ->
+        if enter_to_exit and (key_code == 13 or key_code == 370) do
+          cleanup_and_exit(frame, gl_canvas, gl_context, callback_module, state)
+        end
+
+        new_state = dispatch_event(callback_module, {:key, key_code}, state, frame, gl_canvas, gl_context)
+        drain_pending_events(new_state, callback_module, frame, gl_canvas, gl_context, enter_to_exit)
+
+      {:wx, _, _, _, {:wxMouse, :motion, x, y, _, _, _, _, _, _, _, _, _, _}} ->
+        new_state = dispatch_event(callback_module, {:mouse_motion, x, y}, state, frame, gl_canvas, gl_context)
+        drain_pending_events(new_state, callback_module, frame, gl_canvas, gl_context, enter_to_exit)
+
+      {:wx, _, _, _, {:wxMouse, :mousewheel, _x, _y, _, _, _, _, _, _, _, wheel_rotation, _wheel_delta, _}} ->
+        new_state = dispatch_event(callback_module, {:mouse_wheel, 0, 0, wheel_rotation, 0}, state, frame, gl_canvas, gl_context)
+        drain_pending_events(new_state, callback_module, frame, gl_canvas, gl_context, enter_to_exit)
+
+      {:wx, _, _, _, {:wxMouse, button_event, x, y, _, _, _, _, _, _, _, _, _, _}}
+      when button_event in [:left_down, :left_up, :middle_down, :middle_up] ->
+        event_name =
+          case button_event do
+            :left_down -> :mouse_down
+            :left_up -> :mouse_up
+            :middle_down -> :middle_down
+            :middle_up -> :middle_up
+          end
+
+        new_state = dispatch_event(callback_module, {event_name, x, y}, state, frame, gl_canvas, gl_context)
+        drain_pending_events(new_state, callback_module, frame, gl_canvas, gl_context, enter_to_exit)
+
+      {:wx, _, _, _, {:wxClose, :close_window}} ->
+        cleanup_and_close(frame, gl_canvas, gl_context, callback_module, state)
+
+      {:wx, _, _, _, {:wxSize, :size, _, _}} ->
+        :wxWindow.layout(frame)
+        drain_pending_events(state, callback_module, frame, gl_canvas, gl_context, enter_to_exit)
+
+      {:_wxe_error_, _, _, _} ->
+        drain_pending_events(state, callback_module, frame, gl_canvas, gl_context, enter_to_exit)
+    after
+      0 -> state
+    end
+  end
+
+  defp dispatch_event(callback_module, event, state, frame, gl_canvas, gl_context) do
+    if function_exported?(callback_module, :handle_event, 2) do
+      try do
+        case callback_module.handle_event(event, state) do
+          {:ok, updated_state} -> updated_state
+          _ -> state
+        end
+      rescue
+        _e in [FunctionClauseError] -> state
+      catch
+        :close_window ->
+          cleanup_and_exit(frame, gl_canvas, gl_context, callback_module, state)
+      end
+    else
+      state
+    end
+  end
+
   @spec main_loop(
           :wxFrame.wxFrame(),
           :wxGLCanvas.wxGLCanvas(),
@@ -844,37 +909,55 @@ defmodule EAGL.Window do
         tick_time = :erlang.monotonic_time(:millisecond) / 1000.0
         time_delta = if last_tick_time != nil, do: tick_time - last_tick_time, else: 0.0
 
-        new_state =
+        # Drain all pending input events before rendering
+        drained_state =
+          drain_pending_events(state, callback_module, frame, gl_canvas, gl_context, enter_to_exit)
+
+        # Call tick handler
+        ticked_state =
           if function_exported?(callback_module, :handle_event, 2) do
             try do
-              case callback_module.handle_event({:tick, time_delta}, state) do
-                {:ok, updated_state} ->
-                  self() |> send({:wx, :ignore, :ignore, :ignore, {:wxPaint, :paint}})
-                  updated_state
-
-                _ ->
-                  state
+              case callback_module.handle_event({:tick, time_delta}, drained_state) do
+                {:ok, updated_state} -> updated_state
+                _ -> drained_state
               end
             rescue
-              # Handle FunctionClauseError when :tick handler is not defined
-              _e in [FunctionClauseError] ->
-                self() |> send({:wx, :ignore, :ignore, :ignore, {:wxPaint, :paint}})
-                state
+              _e in [FunctionClauseError] -> drained_state
             catch
               :close_window ->
-                cleanup_and_exit(frame, gl_canvas, gl_context, callback_module, state)
+                cleanup_and_exit(frame, gl_canvas, gl_context, callback_module, drained_state)
             end
           else
-            self() |> send({:wx, :ignore, :ignore, :ignore, {:wxPaint, :paint}})
-            state
+            drained_state
           end
+
+        # Render directly instead of sending a paint message
+        render_start = :erlang.monotonic_time(:millisecond)
+
+        :wxGLCanvas.setCurrent(gl_canvas, gl_context)
+        {physical_width, physical_height} = get_framebuffer_size(gl_canvas)
+        safe_w = max(physical_width, 1)
+        safe_h = max(physical_height, 1)
+        :gl.viewport(0, 0, safe_w, safe_h)
+
+        rendered_state =
+          case callback_module.render(safe_w * 1.0, safe_h * 1.0, ticked_state) do
+            {:ok, updated_state} -> updated_state
+            _ -> ticked_state
+          end
+
+        :wxGLCanvas.swapBuffers(gl_canvas)
+
+        # Schedule next tick adaptively
+        render_ms = :erlang.monotonic_time(:millisecond) - render_start
+        Process.send_after(self(), :tick, max(1, trunc(@tick_interval - render_ms)))
 
         main_loop(
           frame,
           gl_canvas,
           gl_context,
           callback_module,
-          new_state,
+          rendered_state,
           enter_to_exit,
           timeout,
           tick_time
