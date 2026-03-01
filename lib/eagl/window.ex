@@ -218,10 +218,14 @@ defmodule EAGL.Window do
       :wxFrame.connect(frame, :mousewheel)
       :wxFrame.connect(frame, :left_down)
       :wxFrame.connect(frame, :left_up)
+      :wxFrame.connect(frame, :middle_down)
+      :wxFrame.connect(frame, :middle_up)
       :wxGLCanvas.connect(gl_canvas, :motion)
       :wxGLCanvas.connect(gl_canvas, :mousewheel)
       :wxGLCanvas.connect(gl_canvas, :left_down)
       :wxGLCanvas.connect(gl_canvas, :left_up)
+      :wxGLCanvas.connect(gl_canvas, :middle_down)
+      :wxGLCanvas.connect(gl_canvas, :middle_up)
 
       # Create a sizer and add the canvas to it
       sizer = :wxBoxSizer.new(@wx_vertical)
@@ -762,8 +766,14 @@ defmodule EAGL.Window do
 
       # Handle mouse button events for click-to-drag camera control
       {:wx, _, _, _, {:wxMouse, button_event, x, y, _, _, _, _, _, _, _, _, _, _}}
-      when button_event in [:left_down, :left_up] ->
-        event_name = if button_event == :left_down, do: :mouse_down, else: :mouse_up
+      when button_event in [:left_down, :left_up, :middle_down, :middle_up] ->
+        event_name =
+          case button_event do
+            :left_down -> :mouse_down
+            :left_up -> :mouse_up
+            :middle_down -> :middle_down
+            :middle_up -> :middle_up
+          end
 
         new_state =
           if function_exported?(callback_module, :handle_event, 2) do

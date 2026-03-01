@@ -65,7 +65,8 @@ defmodule EAGL.OrbitCamera do
             zoom_speed: @default_zoom_speed,
             pan_speed: @default_pan_speed,
             last_mouse: nil,
-            mouse_down: false
+            mouse_down: false,
+            middle_down: false
 
   @type t :: %__MODULE__{
           target: EAGL.Math.vec3(),
@@ -79,7 +80,8 @@ defmodule EAGL.OrbitCamera do
           zoom_speed: float(),
           pan_speed: float(),
           last_mouse: {number(), number()} | nil,
-          mouse_down: boolean()
+          mouse_down: boolean(),
+          middle_down: boolean()
         }
 
   @doc """
@@ -220,9 +222,33 @@ defmodule EAGL.OrbitCamera do
   end
 
   @doc """
-  Process a mouse drag event to handle orbit/zoom interaction.
+  Pan the camera target perpendicular to the view direction.
 
-  Returns updated camera with new mouse tracking state.
+  Shifts the target point right/up relative to the camera's orientation,
+  scaled by distance so pan speed feels consistent at any zoom level.
+  """
+  @spec pan(t(), float(), float()) :: t()
+  def pan(%__MODULE__{} = cam, dx, dy) do
+    [{tx, ty, tz}] = cam.target
+
+    right_x = :math.cos(cam.azimuth)
+    right_z = -:math.sin(cam.azimuth)
+
+    up_x = -:math.sin(cam.elevation) * :math.sin(cam.azimuth)
+    up_y = :math.cos(cam.elevation)
+    up_z = -:math.sin(cam.elevation) * :math.cos(cam.azimuth)
+
+    scale = cam.pan_speed * cam.distance
+
+    new_tx = tx - dx * right_x * scale + dy * up_x * scale
+    new_ty = ty + dy * up_y * scale
+    new_tz = tz - dx * right_z * scale + dy * up_z * scale
+
+    %{cam | target: vec3(new_tx, new_ty, new_tz)}
+  end
+
+  @doc """
+  Process a mouse drag event. Orbits on left-drag, pans on middle-drag.
   """
   @spec handle_mouse_motion(t(), number(), number()) :: t()
   def handle_mouse_motion(%__MODULE__{mouse_down: true, last_mouse: {lx, ly}} = cam, x, y) do
@@ -231,12 +257,18 @@ defmodule EAGL.OrbitCamera do
     |> Map.put(:last_mouse, {x, y})
   end
 
+  def handle_mouse_motion(%__MODULE__{middle_down: true, last_mouse: {lx, ly}} = cam, x, y) do
+    cam
+    |> pan(x - lx, y - ly)
+    |> Map.put(:last_mouse, {x, y})
+  end
+
   def handle_mouse_motion(%__MODULE__{} = cam, x, y) do
     %{cam | last_mouse: {x, y}}
   end
 
   @doc """
-  Process a mouse button press.
+  Process a left mouse button press.
   """
   @spec handle_mouse_down(t()) :: t()
   def handle_mouse_down(%__MODULE__{} = cam) do
@@ -244,11 +276,27 @@ defmodule EAGL.OrbitCamera do
   end
 
   @doc """
-  Process a mouse button release.
+  Process a left mouse button release.
   """
   @spec handle_mouse_up(t()) :: t()
   def handle_mouse_up(%__MODULE__{} = cam) do
     %{cam | mouse_down: false, last_mouse: nil}
+  end
+
+  @doc """
+  Process a middle mouse button press.
+  """
+  @spec handle_middle_down(t()) :: t()
+  def handle_middle_down(%__MODULE__{} = cam) do
+    %{cam | middle_down: true}
+  end
+
+  @doc """
+  Process a middle mouse button release.
+  """
+  @spec handle_middle_up(t()) :: t()
+  def handle_middle_up(%__MODULE__{} = cam) do
+    %{cam | middle_down: false, last_mouse: nil}
   end
 
   @doc """
@@ -277,6 +325,14 @@ defmodule EAGL.OrbitCamera do
 
       def handle_event({:mouse_up, _, _}, %{orbit: orbit} = state) do
         {:ok, %{state | orbit: EAGL.OrbitCamera.handle_mouse_up(orbit)}}
+      end
+
+      def handle_event({:middle_down, _, _}, %{orbit: orbit} = state) do
+        {:ok, %{state | orbit: EAGL.OrbitCamera.handle_middle_down(orbit)}}
+      end
+
+      def handle_event({:middle_up, _, _}, %{orbit: orbit} = state) do
+        {:ok, %{state | orbit: EAGL.OrbitCamera.handle_middle_up(orbit)}}
       end
 
       def handle_event({:mouse_wheel, _, _, wheel_rotation, _wd}, %{orbit: orbit} = state) do

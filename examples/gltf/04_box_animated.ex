@@ -73,6 +73,14 @@ defmodule EAGL.Examples.GLTF.BoxAnimated do
     {:ok, %{state | orbit: OrbitCamera.handle_mouse_up(orbit)}}
   end
 
+  def handle_event({:middle_down, _, _}, %{orbit: orbit} = state) do
+    {:ok, %{state | orbit: OrbitCamera.handle_middle_down(orbit)}}
+  end
+
+  def handle_event({:middle_up, _, _}, %{orbit: orbit} = state) do
+    {:ok, %{state | orbit: OrbitCamera.handle_middle_up(orbit)}}
+  end
+
   def handle_event({:mouse_wheel, _, _, wheel_rotation, _}, %{orbit: orbit} = state) do
     {:ok, %{state | orbit: OrbitCamera.handle_scroll(orbit, wheel_rotation / 120.0)}}
   end
