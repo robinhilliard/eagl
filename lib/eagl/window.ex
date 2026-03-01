@@ -359,8 +359,8 @@ defmodule EAGL.Window do
                   :wxWindow.refresh(gl_canvas)
                   :wxWindow.update(gl_canvas)
 
-                  # Set up tick timer
-                  :timer.send_interval(@tick_interval, self(), :tick)
+                  # Schedule the first tick
+                  Process.send_after(self(), :tick, @tick_interval)
 
                   # Main loop
                   try do
@@ -803,31 +803,38 @@ defmodule EAGL.Window do
         cleanup_and_close(frame, gl_canvas, gl_context, callback_module, state)
 
       {:wx, _, _, _, {:wxPaint, :paint}} ->
-        # Start timeout timer on first render if timeout is set
         if timeout != nil do
           :timer.send_after(timeout, {:timeout_expired, timeout})
         end
 
-        :wxGLCanvas.setCurrent(gl_canvas, gl_context)
-        # Get physical framebuffer size for OpenGL viewport and render callback (retina support)
-        {physical_width, physical_height} = get_framebuffer_size(gl_canvas)
+        render_start = :erlang.monotonic_time(:millisecond)
 
-        # Ensure dimensions are positive
+        :wxGLCanvas.setCurrent(gl_canvas, gl_context)
+        {physical_width, physical_height} = get_framebuffer_size(gl_canvas)
         safe_physical_width = max(physical_width, 1)
         safe_physical_height = max(physical_height, 1)
 
-        # Set OpenGL viewport to physical framebuffer size
         :gl.viewport(0, 0, safe_physical_width, safe_physical_height)
-        # Pass physical framebuffer size to render function for all OpenGL operations
-        callback_module.render(safe_physical_width * 1.0, safe_physical_height * 1.0, state)
+
+        new_state =
+          case callback_module.render(safe_physical_width * 1.0, safe_physical_height * 1.0, state) do
+            {:ok, updated_state} -> updated_state
+            _ -> state
+          end
+
         :wxGLCanvas.swapBuffers(gl_canvas)
-        # Set timeout to nil after first render to prevent multiple timers
+
+        # Adaptive tick: schedule next tick based on how long this render took
+        render_ms = :erlang.monotonic_time(:millisecond) - render_start
+        next_tick = max(1, @tick_interval - render_ms)
+        Process.send_after(self(), :tick, trunc(next_tick))
+
         main_loop(
           frame,
           gl_canvas,
           gl_context,
           callback_module,
-          state,
+          new_state,
           enter_to_exit,
           nil,
           last_tick_time
