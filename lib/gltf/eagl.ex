@@ -56,7 +56,7 @@ defmodule GLTF.EAGL do
   - `lightPos`, `lightColor` - vec3 point light position and colour
   - `viewPos` - vec3 camera position
 
-      {:ok, program} = GLTF.EAGL.create_phong_shader()
+      `{:ok, program}` = GLTF.EAGL.create_phong_shader()
   """
   @spec create_phong_shader() :: {:ok, non_neg_integer()} | {:error, String.t()}
   def create_phong_shader do
@@ -84,7 +84,7 @@ defmodule GLTF.EAGL do
   - `emissiveTexture`, `hasEmissiveTexture` - emissive texture (unit 3)
   - `lightPos`, `lightColor`, `viewPos` - lighting and camera
 
-      {:ok, program} = GLTF.EAGL.create_pbr_shader()
+      `{:ok, program}` = GLTF.EAGL.create_pbr_shader()
   """
   @spec create_pbr_shader() :: {:ok, non_neg_integer()} | {:error, String.t()}
   def create_pbr_shader do
