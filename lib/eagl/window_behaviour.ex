@@ -60,10 +60,14 @@ defmodule EAGL.WindowBehaviour do
   Should return {:ok, new_state} to continue with updated state.
 
   Event types:
+  - `{:tick, time_delta}` - Per-frame update (adaptive rate, up to 60 FPS). `time_delta` is seconds since last tick.
   - `{:key, key_code}` - Keyboard key press
-  - `{:mouse_motion, x, y}` - Mouse movement (for camera look around)
-  - `{:mouse_wheel, x, y, wheel_rotation, wheel_delta}` - Scroll wheel (for zoom)
-  - `:tick` - Animation frame tick (60 FPS)
+  - `{:mouse_motion, x, y}` - Mouse movement
+  - `{:mouse_down, x, y}` - Left mouse button press
+  - `{:mouse_up, x, y}` - Left mouse button release
+  - `{:middle_down, x, y}` - Middle mouse button press
+  - `{:middle_up, x, y}` - Middle mouse button release
+  - `{:mouse_wheel, x, y, wheel_rotation, wheel_delta}` - Scroll wheel
   """
   @callback handle_event(event :: any(), state :: any()) :: {:ok, any()}
 

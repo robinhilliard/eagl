@@ -5,7 +5,54 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.10.0] - 2026-03-01
+
+### Added
+- **glTF 2.0 / GLB Support**: Complete pipeline for loading and rendering glTF models using EAGL
+  - `GLTF.EAGL.load_glb/2` - one-call GLB parsing with DataStore creation
+  - `GLTF.EAGL.load_scene/3` - GLB to renderable EAGL scene graph with shader attachment
+  - `GLTF.EAGL.load_textures/3` - material texture extraction from GLB data
+  - `GLTF.EAGL.to_scene/2` - lower-level scene graph conversion
+  - `GLTF.EAGL.convert_animations/2` - glTF animation to EAGL timeline conversion
+- **Standard GLTF Shaders**: Pre-built shaders matching glTF attribute layout
+  - `GLTF.EAGL.create_phong_shader/0` - Blinn-Phong for untextured models
+  - `GLTF.EAGL.create_pbr_shader/0` - Cook-Torrance PBR metallic-roughness
+  - `GLTF.EAGL.set_phong_uniforms/2` and `set_pbr_uniforms/2` - type-safe uniform helpers
+  - GLSL files in `priv/shaders/gltf/`
+- **EAGL.OrbitCamera**: Turntable-style 3D model viewer camera
+  - Left-drag to orbit, middle-drag to pan, scroll to zoom
+  - `fit_to_bounds/2` and `fit_to_gltf/1` for automatic camera positioning
+  - `use EAGL.OrbitCamera` macro injects all event handlers
+  - Overridable `on_tick/2` callback for per-frame logic (e.g. animation)
+- **EAGL.Scene**: Hierarchical scene graph with transform propagation
+  - `Scene.render/3` sets model/view/projection uniforms per mesh
+  - `EAGL.Node` with TRS and matrix transforms, parent-child hierarchy
+- **EAGL.Animation**: Keyframe animation system
+  - Timeline, Channel, Sampler data structures
+  - `EAGL.Animator` GenServer for playback control
+  - Linear, step, and cubic spline interpolation
+- **Mouse Button Events**: `{:mouse_down, x, y}`, `{:mouse_up, x, y}`, `{:middle_down, x, y}`, `{:middle_up, x, y}`
+- **5 Progressive GLTF Examples**: Box, BoxTextured, Duck, BoxAnimated, DamagedHelmet (PBR)
+- **53 New Tests**: OrbitCamera (24), GLTF bridge (29)
+
+### Fixed
+- Binary data parsing uses little-endian (glTF spec compliance) instead of native endianness
+- Index buffer supports UNSIGNED_BYTE, UNSIGNED_SHORT, and UNSIGNED_INT (was hardcoded to UINT32)
+- Scene tree construction processes children before parents (fixes orphaned meshes)
+- Animation node ID matching between scene graph and animation channels
+- Animation output data uses accessor component count (fixes quaternion rotation corruption)
+- glTF matrix converted to EAGL tuple-in-list format at JSON parse boundary
+
+### Improved
+- Adaptive frame timing replaces fixed 60fps timer (graceful degradation at high resolution)
+- Event loop drains all pending input before rendering (eliminates per-event render overhead)
+- `interleave_vertex_data` uses tuple indexing instead of O(n) list access (was O(n^2))
+- `Animation.Sampler` stores values as tuples with cached duration for O(1) per-frame access
+- Mouse motion no longer forces repaint (tick-driven rendering only)
+
+### Removed
+- Legacy standalone GLTF examples (glb_web_demo.exs, gltf_scene_example.exs, animation_example.exs, glb_loader_example.exs)
+- Duplicate `scripts/examples.exs`, unused debug shader, broken update script
 
 ## [0.9.0] - 2024-12-31
 

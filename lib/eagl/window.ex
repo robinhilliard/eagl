@@ -587,16 +587,58 @@ defmodule EAGL.Window do
           cleanup_and_exit(frame, gl_canvas, gl_context, callback_module, state)
         end
 
-        new_state = dispatch_event(callback_module, {:key, key_code}, state, frame, gl_canvas, gl_context)
-        drain_pending_events(new_state, callback_module, frame, gl_canvas, gl_context, enter_to_exit)
+        new_state =
+          dispatch_event(callback_module, {:key, key_code}, state, frame, gl_canvas, gl_context)
+
+        drain_pending_events(
+          new_state,
+          callback_module,
+          frame,
+          gl_canvas,
+          gl_context,
+          enter_to_exit
+        )
 
       {:wx, _, _, _, {:wxMouse, :motion, x, y, _, _, _, _, _, _, _, _, _, _}} ->
-        new_state = dispatch_event(callback_module, {:mouse_motion, x, y}, state, frame, gl_canvas, gl_context)
-        drain_pending_events(new_state, callback_module, frame, gl_canvas, gl_context, enter_to_exit)
+        new_state =
+          dispatch_event(
+            callback_module,
+            {:mouse_motion, x, y},
+            state,
+            frame,
+            gl_canvas,
+            gl_context
+          )
 
-      {:wx, _, _, _, {:wxMouse, :mousewheel, _x, _y, _, _, _, _, _, _, _, wheel_rotation, _wheel_delta, _}} ->
-        new_state = dispatch_event(callback_module, {:mouse_wheel, 0, 0, wheel_rotation, 0}, state, frame, gl_canvas, gl_context)
-        drain_pending_events(new_state, callback_module, frame, gl_canvas, gl_context, enter_to_exit)
+        drain_pending_events(
+          new_state,
+          callback_module,
+          frame,
+          gl_canvas,
+          gl_context,
+          enter_to_exit
+        )
+
+      {:wx, _, _, _,
+       {:wxMouse, :mousewheel, _x, _y, _, _, _, _, _, _, _, wheel_rotation, _wheel_delta, _}} ->
+        new_state =
+          dispatch_event(
+            callback_module,
+            {:mouse_wheel, 0, 0, wheel_rotation, 0},
+            state,
+            frame,
+            gl_canvas,
+            gl_context
+          )
+
+        drain_pending_events(
+          new_state,
+          callback_module,
+          frame,
+          gl_canvas,
+          gl_context,
+          enter_to_exit
+        )
 
       {:wx, _, _, _, {:wxMouse, button_event, x, y, _, _, _, _, _, _, _, _, _, _}}
       when button_event in [:left_down, :left_up, :middle_down, :middle_up] ->
@@ -608,8 +650,17 @@ defmodule EAGL.Window do
             :middle_up -> :middle_up
           end
 
-        new_state = dispatch_event(callback_module, {event_name, x, y}, state, frame, gl_canvas, gl_context)
-        drain_pending_events(new_state, callback_module, frame, gl_canvas, gl_context, enter_to_exit)
+        new_state =
+          dispatch_event(callback_module, {event_name, x, y}, state, frame, gl_canvas, gl_context)
+
+        drain_pending_events(
+          new_state,
+          callback_module,
+          frame,
+          gl_canvas,
+          gl_context,
+          enter_to_exit
+        )
 
       {:wx, _, _, _, {:wxClose, :close_window}} ->
         cleanup_and_close(frame, gl_canvas, gl_context, callback_module, state)
@@ -882,7 +933,11 @@ defmodule EAGL.Window do
         :gl.viewport(0, 0, safe_physical_width, safe_physical_height)
 
         new_state =
-          case callback_module.render(safe_physical_width * 1.0, safe_physical_height * 1.0, state) do
+          case callback_module.render(
+                 safe_physical_width * 1.0,
+                 safe_physical_height * 1.0,
+                 state
+               ) do
             {:ok, updated_state} -> updated_state
             _ -> state
           end
@@ -911,7 +966,14 @@ defmodule EAGL.Window do
 
         # Drain all pending input events before rendering
         drained_state =
-          drain_pending_events(state, callback_module, frame, gl_canvas, gl_context, enter_to_exit)
+          drain_pending_events(
+            state,
+            callback_module,
+            frame,
+            gl_canvas,
+            gl_context,
+            enter_to_exit
+          )
 
         # Call tick handler
         ticked_state =

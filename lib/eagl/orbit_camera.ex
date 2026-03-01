@@ -124,7 +124,10 @@ defmodule EAGL.OrbitCamera do
 
       orbit = OrbitCamera.fit_to_bounds({-1, -1, -1}, {1, 1, 1})
   """
-  @spec fit_to_bounds({number(), number(), number()} | list(), {number(), number(), number()} | list()) :: t()
+  @spec fit_to_bounds(
+          {number(), number(), number()} | list(),
+          {number(), number(), number()} | list()
+        ) :: t()
   def fit_to_bounds(min_point, max_point) do
     {min_x, min_y, min_z} = to_tuple3(min_point)
     {max_x, max_y, max_z} = to_tuple3(max_point)
@@ -312,8 +315,28 @@ defmodule EAGL.OrbitCamera do
   @doc false
   defmacro __using__(_opts) do
     quote do
+      @doc """
+      Per-frame callback injected by `use EAGL.OrbitCamera`.
+
+      Override this to add per-frame logic (e.g. animation updates) without
+      losing the orbit camera's mouse/scroll event handlers. This callback
+      is specific to the OrbitCamera macro - it is not part of the
+      EAGL.Window behaviour.
+
+      The default implementation is a no-op that returns `{:ok, state}`.
+
+          def on_tick(_time_delta, %{animator: animator, scene: scene} = state) do
+            :ok = Animator.update(animator, time_delta)
+            {:ok, %{state | scene: Animator.apply_to_scene(animator, scene)}}
+          end
+      """
+      @spec on_tick(float(), any()) :: {:ok, any()}
+      def on_tick(_time_delta, state), do: {:ok, state}
+
       @impl true
-      def handle_event({:tick, _dt}, state), do: {:ok, state}
+      def handle_event({:tick, dt}, state) do
+        on_tick(dt, state)
+      end
 
       def handle_event({:mouse_motion, x, y}, %{orbit: orbit} = state) do
         {:ok, %{state | orbit: EAGL.OrbitCamera.handle_mouse_motion(orbit, x, y)}}
@@ -342,7 +365,7 @@ defmodule EAGL.OrbitCamera do
 
       def handle_event(_event, state), do: {:ok, state}
 
-      defoverridable handle_event: 2
+      defoverridable handle_event: 2, on_tick: 2
     end
   end
 
@@ -355,7 +378,13 @@ defmodule EAGL.OrbitCamera do
   defp compute_gltf_bounds(%GLTF{meshes: nil}), do: :no_bounds
   defp compute_gltf_bounds(%GLTF{meshes: []}), do: :no_bounds
 
-  defp compute_gltf_bounds(%GLTF{meshes: meshes, accessors: accessors, nodes: nodes, scenes: scenes, scene: scene_idx}) do
+  defp compute_gltf_bounds(%GLTF{
+         meshes: meshes,
+         accessors: accessors,
+         nodes: nodes,
+         scenes: scenes,
+         scene: scene_idx
+       }) do
     position_accessor_indices =
       meshes
       |> Enum.flat_map(fn mesh ->
@@ -405,7 +434,8 @@ defmodule EAGL.OrbitCamera do
     root = root_idx && Enum.at(nodes, root_idx)
 
     cond do
-      root == nil -> 1.0
+      root == nil ->
+        1.0
 
       root.matrix != nil ->
         [{m0, _, _, _, _, m5, _, _, _, _, m10, _, _, _, _, _}] = root.matrix
@@ -415,7 +445,8 @@ defmodule EAGL.OrbitCamera do
         [sx, sy, sz] = root.scale
         (abs(sx) + abs(sy) + abs(sz)) / 3.0
 
-      true -> 1.0
+      true ->
+        1.0
     end
   end
 

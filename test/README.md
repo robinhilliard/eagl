@@ -207,53 +207,20 @@ This testing framework provides a foundation for comprehensive automated testing
 
 ## Current Test Coverage
 
-The automated test suite currently includes **ALL 23 examples** available from `mix examples`:
+The automated test suite includes **28 examples** available from `mix examples`:
 
-### Non-Learn OpenGL Examples (2)
-1. **Math Example** - Comprehensive EAGL.Math functionality demo
-2. **Teapot Example** - 3D teapot with Phong shading
+- **Non-Learn OpenGL** (2): Math, Teapot
+- **Hello Window** (2): 1.1-1.2
+- **Hello Triangle** (5): 2.1-2.5
+- **Shaders** (6): 3.1-3.6
+- **Textures** (6): 4.1-4.6
+- **Transformations** (3): 5.1-5.2
+- **Coordinate Systems** (4): 6.1-6.4 (not all in automated tests)
+- **Camera** (3): 7.1-7.3 (not all in automated tests)
+- **Lighting** (1): 2.1 Colors
+- **GLTF** (5): Box, BoxTextured, Duck, BoxAnimated, DamagedHelmet
 
-### Learn OpenGL Getting Started Examples (21)
-
-**Hello Window (2):**
-3. **1.1 HelloWindow** - Basic window creation 
-4. **1.2 HelloWindowClear** - Basic window with custom clear color
-
-**Hello Triangle (5):**
-5. **2.1 HelloTriangle** - Simple triangle rendering
-6. **2.2 HelloTriangleIndexed** - Element buffer objects
-7. **2.3 HelloTriangleExercise1** - Two triangles side by side
-8. **2.4 HelloTriangleExercise2** - Rectangle with EBO
-9. **2.5 HelloTriangleExercise3** - Multiple shader programs
-
-**Shaders (6):**
-10. **3.1 ShadersUniform** - Uniform variables and animation
-11. **3.2 ShadersInterpolation** - Vertex color interpolation
-12. **3.3 ShadersClass** - Shader abstraction 
-13. **3.4 ShadersExercise1** - Custom shader positioning
-14. **3.5 ShadersExercise2** - Uniform-controlled transformations
-15. **3.6 ShadersExercise3** - Position-to-color mapping
-
-**Textures (6):**
-16. **4.1 Textures** - Basic texture mapping
-17. **4.2 TexturesCombined** - Multiple texture units
-18. **4.3 TexturesExercise1** - Texture coordinate manipulation  
-19. **4.4 TexturesExercise2** - Texture wrapping modes
-20. **4.5 TexturesExercise3** - Texture flipping
-21. **4.6 TexturesExercise4** - Animated texture mixing
-
-**Transformations (3):**
-22. **5.1 Transformations** - Basic matrix transformations
-23. **5.2 TransformationsExercise1** - Multiple object transformations
-24. **5.2 TransformationsExercise2** - Complex transformation patterns
-
-All examples run in parallel with a 500ms timeout and verify:
-- Clean initialization without errors
-- Proper timeout behavior  
-- Expected timeout message output
-- No GL errors during startup phase
-
-This provides **complete coverage** of all examples available through `mix examples`, ensuring comprehensive automated testing of the entire EAGL example suite.
+All examples run in parallel with a 500ms timeout and verify clean initialisation, proper timeout behaviour, and no GL errors during startup.
 
 # GLTF Module Testing Strategy
 
@@ -283,53 +250,25 @@ These modules handle the core file parsing and data management functionality. Fa
 - Memory management for large assets
 - All buffer types (GLB chunks, external files, data URIs)
 
-### 🟡 High Priority (60-80% Coverage)
-
-**Modules**: Accessor, Mesh, Buffer, Material
-
-Core data structures with complex validation logic and data transformation.
+### High Priority (implemented)
 
 **Test Files**:
-- `test/gltf/accessor_test.exs` - Data type validation and sparse accessors
+- `test/gltf/accessor_test.exs` - Data type validation, component types, sparse accessors
 - `test/gltf/mesh_test.exs` - Primitive validation and attribute handling
-- `test/gltf/buffer_test.exs` - Buffer loading and validation
-- `test/gltf/material_test.exs` - Material properties and PBR validation
+- `test/gltf/eagl_bridge_test.exs` - Binary parsing, vertex interleaving, attribute layout, Box.glb integration
 
-**Focus Areas**:
-- Data type validation (component types, accessor types)
-- Complex nested structures
-- Real-world usage patterns
-- Edge cases and boundary conditions
-
-### 🟢 Medium Priority (40-60% Coverage)
-
-**Modules**: Camera, Animation, Node, Texture, Image
-
-Important modules with some validation logic but less complexity.
-
-**Test Files**:
-- `test/gltf/camera_test.exs` - Camera projection validation
-- `test/gltf/animation_test.exs` - Animation channel validation
-- `test/gltf/node_test.exs` - Node hierarchy and transforms
-- `test/gltf/texture_test.exs` - Texture reference validation
-- `test/gltf/image_test.exs` - Image loading and formats
-
-**Focus Areas**:
-- Basic validation logic
-- Reference integrity
-- Common usage patterns
-- Error scenarios
-
-### 🔵 Low Priority (30-50% Coverage)
-
-**Modules**: Asset, Scene, BufferView, Sampler, Skin
-
-Simple data containers with minimal validation logic.
+### Medium Priority (implemented)
 
 **Test Files**:
 - `test/gltf/asset_test.exs` - Version validation and metadata
 - `test/gltf/scene_test.exs` - Scene node references
-- `test/gltf/buffer_view_test.exs` - Buffer view parameters
+- `test/gltf/binary_test.exs` - GLB binary structure validation
+
+### Future Work
+
+Additional test files for Buffer, Material, Camera, Animation, Node, Texture, Image,
+BufferView, Sampler, and Skin modules would improve coverage. Currently these modules
+are validated indirectly through the bridge and integration tests.
 - `test/gltf/sampler_test.exs` - Texture sampling parameters
 - `test/gltf/skin_test.exs` - Skinning matrix references
 

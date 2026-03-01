@@ -14,12 +14,13 @@ defmodule EAGL.OrbitCameraTest do
     end
 
     test "accepts custom options" do
-      cam = OrbitCamera.new(
-        target: vec3(1.0, 2.0, 3.0),
-        distance: 10.0,
-        azimuth: 0.0,
-        elevation: 0.0
-      )
+      cam =
+        OrbitCamera.new(
+          target: vec3(1.0, 2.0, 3.0),
+          distance: 10.0,
+          azimuth: 0.0,
+          elevation: 0.0
+        )
 
       assert cam.distance == 10.0
       assert cam.target == vec3(1.0, 2.0, 3.0)
@@ -70,12 +71,13 @@ defmodule EAGL.OrbitCameraTest do
     end
 
     test "position offset by target" do
-      cam = OrbitCamera.new(
-        target: vec3(5.0, 0.0, 0.0),
-        distance: 10.0,
-        azimuth: 0.0,
-        elevation: 0.0
-      )
+      cam =
+        OrbitCamera.new(
+          target: vec3(5.0, 0.0, 0.0),
+          distance: 10.0,
+          azimuth: 0.0,
+          elevation: 0.0
+        )
 
       [{x, _y, z}] = OrbitCamera.get_position(cam)
       assert_in_delta x, 5.0, 0.001
@@ -105,7 +107,10 @@ defmodule EAGL.OrbitCameraTest do
   describe "get_projection_matrix/2" do
     test "returns a valid mat4" do
       cam = OrbitCamera.new()
-      [{a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p}] = OrbitCamera.get_projection_matrix(cam, 16.0 / 9.0)
+
+      [{a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p}] =
+        OrbitCamera.get_projection_matrix(cam, 16.0 / 9.0)
+
       values = [a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p]
       assert Enum.all?(values, &is_float/1)
     end

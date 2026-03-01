@@ -66,8 +66,13 @@ mix examples
   Colors:           211) 1.1 Colors
   Basic Lighting:   212) 2.1 Diffuse   213) 2.2 Specular
 
+3. GLTF Examples:
+
+  311) Box              312) Box Textured    313) Duck
+  314) Box Animated     315) Damaged Helmet
+
 ════════════════════════════════════════════════════════════════
-Enter code (01, 02, 111-176, 211-213), 'q' to quit, 'r' to refresh:
+Enter code (01-02, 111-176, 211-218, 311-315), 'q' to quit, 'r' to refresh:
 >
 ```
 
@@ -657,63 +662,89 @@ OpenGL is typically available through graphics drivers. If you encounter issues,
 ```
 lib/
 ├── eagl/                   # Core EAGL modules
-│   ├── buffer.ex           # VAO/VBO helper functions (516 lines)
-│   ├── camera.ex           # First-person camera system (392 lines)
-│   ├── const.ex            # OpenGL constants (842 lines)
-│   ├── error.ex            # Error checking and reporting (110 lines)
-│   ├── math.ex             # GLM-style math library (1494 lines)
-│   ├── model.ex            # 3D model management (191 lines)
-│   ├── obj_loader.ex       # Wavefront OBJ parser (456 lines)
-│   ├── shader.ex           # Shader compilation (322 lines)
-│   ├── texture.ex          # Texture loading and management (451 lines)
-│   ├── window.ex           # Window management (597 lines)
-│   └── window_behaviour.ex # Window callback behavior (66 lines)
-├── gltf/                   # GLTF 2.0 library (NEW!)
-│   ├── accessor.ex         # Typed views into buffers with sparse support
-│   ├── animation.ex        # Keyframe animations with channels and samplers
-│   ├── asset.ex            # Asset metadata and version information
-│   ├── buffer.ex           # Binary data storage (geometry, animations, skins)
-│   ├── buffer_view.ex      # Buffer subsets with stride and target info
-│   ├── camera.ex           # Perspective and orthographic projection cameras
-│   ├── extension.ex        # Extensions mechanism support
-│   ├── extras.ex           # Application-specific data support
-│   ├── gltf.ex             # Root glTF document structure
-│   ├── image.ex            # Image data for textures (external/embedded)
-│   ├── material.ex         # PBR materials with metallic-roughness model
-│   ├── mesh.ex             # Mesh primitives with vertex attributes
-│   ├── node.ex             # Scene graph nodes with transformations
-│   ├── sampler.ex          # Texture sampling (filtering and wrapping)
-│   ├── scene.ex            # Root nodes collection for rendering
-│   ├── skin.ex             # Vertex skinning with joints and matrices
-│   ├── texture.ex          # Texture combining image source and sampler
+│   ├── animation.ex        # Keyframe animation system
+│   ├── animation/          # Animation sub-modules (sampler, channel, timeline)
+│   ├── animator.ex         # Animation playback controller (GenServer)
+│   ├── buffer.ex           # VAO/VBO helper functions
+│   ├── camera.ex           # First-person camera (LearnOpenGL style)
+│   ├── const.ex            # OpenGL constants
+│   ├── error.ex            # Error checking and reporting
+│   ├── math.ex             # GLM-style math library
+│   ├── model.ex            # 3D model management
+│   ├── node.ex             # Scene graph node with TRS transforms
+│   ├── obj_loader.ex       # Wavefront OBJ parser
+│   ├── orbit_camera.ex     # Orbit/zoom/pan camera with use macro
+│   ├── scene.ex            # Scene graph with hierarchical rendering
+│   ├── shader.ex           # Shader compilation
+│   ├── texture.ex          # Texture loading and management
+│   ├── window.ex           # Window management with adaptive frame timing
+│   └── window_behaviour.ex # Window callback behaviour
+├── gltf/                   # GLTF 2.0 library
+│   ├── eagl.ex             # Bridge: GLTF to EAGL (loaders, shaders, uniforms)
+│   ├── glb_loader.ex       # GLB file parser with HTTP caching
+│   ├── accessor.ex         # Typed views into buffers
+│   ├── animation.ex        # GLTF animation channels and samplers
+│   ├── asset.ex            # Asset metadata
+│   ├── binary.ex           # GLB binary structure
+│   ├── buffer.ex           # Binary data containers
+│   ├── buffer_view.ex      # Buffer subsets with stride
+│   ├── camera.ex           # Perspective/orthographic cameras
+│   ├── data_store.ex       # Binary data management
+│   ├── gltf.ex             # Root document structure and loading
+│   ├── image.ex            # Image data (external/embedded)
+│   ├── material.ex         # PBR materials
+│   ├── mesh.ex             # Mesh primitives
+│   ├── node.ex             # Scene graph nodes
+│   ├── sampler.ex          # Texture sampling parameters
+│   ├── scene.ex            # Root nodes collection
+│   ├── skin.ex             # Vertex skinning
+│   ├── texture.ex          # Texture source and sampler
 │   └── texture_info.ex     # Texture references in materials
-├── examples/               # Example applications
-│   ├── math_example.ex     # Math library demonstrations
-│   ├── teapot_example.ex   # 3D teapot rendering
-│   └── learnopengl/        # LearnOpenGL tutorial ports
-└── wx/                     # wxWidgets constants
+examples/
+├── math_example.ex         # Math library demonstrations
+├── teapot_example.ex       # 3D teapot rendering
+├── gltf/                   # Progressive GLTF examples
+│   ├── 01_box.ex           # Simple indexed geometry
+│   ├── 02_box_textured.ex  # Textures and materials
+│   ├── 03_duck.ex          # Multi-node scene graph
+│   ├── 04_box_animated.ex  # GLTF animation playback
+│   └── 05_damaged_helmet.ex # Full PBR rendering
+└── learnopengl/            # LearnOpenGL tutorial ports
 test/
 ├── eagl/                   # Unit tests for EAGL modules
-│   ├── buffer_test.exs     # Buffer management tests (577 lines)
-│   ├── camera_test.exs     # Camera system tests (38 tests)
-│   ├── error_test.exs      # Error handling tests (55 lines)
-│   ├── math_test.exs       # Math library tests (1136 lines)
-│   ├── model_test.exs      # Model loading tests (250 lines)
-│   ├── obj_loader_test.exs # OBJ parser tests (141 lines)
-│   ├── shader_test.exs     # Shader compilation tests (1033 lines)
-│   └── texture_test.exs    # Texture management tests (449 lines)
-└── eagl_test.exs           # Integration tests
+│   ├── animation_test.exs  # Animation system tests
+│   ├── buffer_test.exs     # Buffer management tests
+│   ├── camera_test.exs     # Camera system tests
+│   ├── error_test.exs      # Error handling tests
+│   ├── math_test.exs       # Math library tests
+│   ├── model_test.exs      # Model loading tests
+│   ├── obj_loader_test.exs # OBJ parser tests
+│   ├── orbit_camera_test.exs # Orbit camera tests
+│   ├── shader_test.exs     # Shader compilation tests
+│   └── texture_test.exs    # Texture management tests
+├── gltf/                   # GLTF module tests
+│   ├── accessor_test.exs   # Accessor parsing tests
+│   ├── asset_test.exs      # Asset metadata tests
+│   ├── binary_test.exs     # GLB binary structure tests
+│   ├── data_store_test.exs # Data store tests
+│   ├── eagl_bridge_test.exs # GLTF-EAGL bridge tests
+│   ├── glb_loader_test.exs # GLB loader tests
+│   ├── mesh_test.exs       # Mesh primitive tests
+│   └── scene_test.exs      # Scene tests
+├── examples_test.exs       # Automated example tests
+└── gltf_integration_test.exs # GLB integration tests
 priv/
 ├── models/                 # 3D model files (.obj)
 ├── scripts/                # Convenience scripts
 │   └── examples.exs        # Unified examples runner (mix examples)
 └── shaders/                # GLSL shader files
+    ├── gltf/               # Standard GLTF shaders (Phong, PBR)
     └── learnopengl/        # LearnOpenGL tutorial shaders
 ```
 
 ## Features
 
-- ✅ **Camera System**: First-person camera with WASD movement, mouse look, and scroll zoom
+- ✅ **Camera System**: First-person camera and orbit camera for model viewing
 - ✅ **Shader Management**: Automatic compilation, linking, and error reporting
 - ✅ **Texture Management**: Comprehensive texture creation, configuration, and loading
 - ✅ **3D Model Loading**: Wavefront OBJ and glTF 2.0 (GLB) formats with scene graph support
@@ -721,10 +752,13 @@ priv/
 - ✅ **Buffer Helpers**: Wings3D-inspired VAO/VBO management functions
 - ✅ **Error Handling**: Comprehensive OpenGL error checking and reporting
 - ✅ **Window Management**: Cross-platform window creation with wxWidgets
-- ✅ **Event Handling**: Comprehensive input system with keyboard, mouse, scroll wheel, resize, close, and 60 FPS tick events
+- ✅ **Scene Graph**: Hierarchical rendering with transform propagation
+- ✅ **Animation**: Keyframe animation with timeline playback and glTF integration
+- ✅ **Event Handling**: Keyboard, mouse buttons, scroll wheel, resize, close, and adaptive tick events
 - ✅ **Resource Cleanup**: Automatic cleanup of OpenGL resources
-- ✅ **LearnOpenGL Examples**: Partial "Getting Started" series - direct ports of OpenGL tutorials
-- ✅ **Testing**: Full test suite with OpenGL context mocking
+- ✅ **LearnOpenGL Examples**: Complete "Getting Started" series - direct ports of OpenGL tutorials
+- ✅ **GLTF Examples**: 5 progressive examples from simple box to PBR helmet
+- ✅ **Testing**: Full test suite with OpenGL context mocking (469 tests)
 
 ## Roadmap
 
@@ -1063,7 +1097,7 @@ Add the `:req` HTTP client as a dependency and configure GLB loading to use it:
 # In mix.exs
 defp deps do
   [
-    {:req, "~> 0.5"}  # Add this for reliable HTTP on macOS
+    {:req, "~> 0.4"}  # Add this for reliable HTTP on macOS
     # ... other deps
   ]
 end

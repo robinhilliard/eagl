@@ -24,3 +24,10 @@ shader_test-*.tar
 
 # Temporary files, for example, from tests.
 /tmp/
+
+# Downloaded test fixtures (fetched on demand by integration tests)
+test/fixtures/samples/*.glb
+
+# IDE and editor files
+*.code-workspace
+.elixir_ls/

@@ -153,10 +153,47 @@ defmodule GLTF.EAGL do
     )
 
     textures = Keyword.get(opts, :textures, %{})
-    bind_pbr_texture(program, textures, :base_color, "baseColorTexture", "hasBaseColorTexture", @gl_texture0, 0)
-    bind_pbr_texture(program, textures, :metallic_roughness, "metallicRoughnessTexture", "hasMetallicRoughnessTexture", @gl_texture1, 1)
-    bind_pbr_texture(program, textures, :normal, "normalTexture", "hasNormalTexture", @gl_texture2, 2)
-    bind_pbr_texture(program, textures, :emissive, "emissiveTexture", "hasEmissiveTexture", @gl_texture3, 3)
+
+    bind_pbr_texture(
+      program,
+      textures,
+      :base_color,
+      "baseColorTexture",
+      "hasBaseColorTexture",
+      @gl_texture0,
+      0
+    )
+
+    bind_pbr_texture(
+      program,
+      textures,
+      :metallic_roughness,
+      "metallicRoughnessTexture",
+      "hasMetallicRoughnessTexture",
+      @gl_texture1,
+      1
+    )
+
+    bind_pbr_texture(
+      program,
+      textures,
+      :normal,
+      "normalTexture",
+      "hasNormalTexture",
+      @gl_texture2,
+      2
+    )
+
+    bind_pbr_texture(
+      program,
+      textures,
+      :emissive,
+      "emissiveTexture",
+      "hasEmissiveTexture",
+      @gl_texture3,
+      3
+    )
+
     :gl.activeTexture(@gl_texture0)
 
     set_uniforms(program,

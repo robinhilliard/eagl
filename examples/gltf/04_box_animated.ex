@@ -4,14 +4,16 @@ defmodule EAGL.Examples.GLTF.BoxAnimated do
 
   Tests GLTF animation channel/sampler extraction, EAGL.Animator timeline
   loading and playback, and animated transforms through the scene hierarchy.
+  Uses the on_tick/2 callback from OrbitCamera to update animations.
   """
 
   use EAGL.Window
   use EAGL.Const
+  use EAGL.OrbitCamera
 
   import Bitwise
   import EAGL.Shader
-  alias EAGL.{Scene, Animator, OrbitCamera}
+  alias EAGL.{Scene, Animator}
 
   @glb_path "test/fixtures/samples/BoxAnimated.glb"
 
@@ -54,38 +56,10 @@ defmodule EAGL.Examples.GLTF.BoxAnimated do
     {:ok, state}
   end
 
-  @impl true
-  def handle_event({:tick, _dt}, %{scene: scene, animator: animator} = state) do
+  def on_tick(_dt, %{scene: scene, animator: animator} = state) do
     :ok = Animator.update(animator, 0.016)
-    animated_scene = Animator.apply_to_scene(animator, scene)
-    {:ok, %{state | scene: animated_scene}}
+    {:ok, %{state | scene: Animator.apply_to_scene(animator, scene)}}
   end
-
-  def handle_event({:mouse_motion, x, y}, %{orbit: orbit} = state) do
-    {:ok, %{state | orbit: OrbitCamera.handle_mouse_motion(orbit, x, y)}}
-  end
-
-  def handle_event({:mouse_down, _, _}, %{orbit: orbit} = state) do
-    {:ok, %{state | orbit: OrbitCamera.handle_mouse_down(orbit)}}
-  end
-
-  def handle_event({:mouse_up, _, _}, %{orbit: orbit} = state) do
-    {:ok, %{state | orbit: OrbitCamera.handle_mouse_up(orbit)}}
-  end
-
-  def handle_event({:middle_down, _, _}, %{orbit: orbit} = state) do
-    {:ok, %{state | orbit: OrbitCamera.handle_middle_down(orbit)}}
-  end
-
-  def handle_event({:middle_up, _, _}, %{orbit: orbit} = state) do
-    {:ok, %{state | orbit: OrbitCamera.handle_middle_up(orbit)}}
-  end
-
-  def handle_event({:mouse_wheel, _, _, wheel_rotation, _}, %{orbit: orbit} = state) do
-    {:ok, %{state | orbit: OrbitCamera.handle_scroll(orbit, wheel_rotation / 120.0)}}
-  end
-
-  def handle_event(_event, state), do: {:ok, state}
 
   @impl true
   def cleanup(%{program: p, animator: animator}) do
