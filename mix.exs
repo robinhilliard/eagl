@@ -139,6 +139,10 @@ defmodule EAGL.MixProject do
         Constants: [
           EAGL.Const
         ],
+        Camera: [
+          EAGL.Camera,
+          EAGL.OrbitCamera
+        ],
         Examples: [
           EAGL.Examples.Math,
           EAGL.Examples.Teapot

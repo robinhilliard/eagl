@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+- **Breaking**: `OrbitCamera.fit_to_scene/1` now accepts `EAGL.Scene.t()` instead of `GLTF.t()`. Convert glTF to EAGL first, then call `fit_to_scene(scene)`. Use `GLTF.EAGL.bounds/1` with `fit_to_bounds/2` for direct glTF bounds.
+
+### Added
+- `EAGL.Scene.bounds/1` - computes axis-aligned bounding box from scene graph (reflects animated state)
+- Meshes from glTF conversion now include `:bounds` from POSITION accessor min/max
+
 ## [0.10.0] - 2026-03-01
 
 ### Added
@@ -21,7 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - GLSL files in `priv/shaders/gltf/`
 - **EAGL.OrbitCamera**: Turntable-style 3D model viewer camera
   - Left-drag to orbit, middle-drag to pan, scroll to zoom
-  - `fit_to_bounds/2` and `fit_to_gltf/1` for automatic camera positioning
+  - `fit_to_bounds/2` and `fit_to_scene/1` for automatic camera positioning
   - `use EAGL.OrbitCamera` macro injects all event handlers
   - Overridable `on_tick/2` callback for per-frame logic (e.g. animation)
 - **EAGL.Scene**: Hierarchical scene graph with transform propagation

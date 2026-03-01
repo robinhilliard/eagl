@@ -8,7 +8,7 @@ defmodule EAGL.Examples.GLTF.Box do
   # --- COMMON: Every GLTF example uses these ---
   use EAGL.Window          # Provides setup/render/cleanup callbacks and event loop
   use EAGL.Const           # OpenGL constants (e.g. @gl_color_buffer_bit)
-  use EAGL.OrbitCamera     # Orbit/zoom/pan mouse controls; fit_to_gltf for initial view
+  use EAGL.OrbitCamera     # Orbit/zoom/pan mouse controls; fit_to_scene for initial view
 
   import Bitwise
   import EAGL.Shader
@@ -28,9 +28,9 @@ defmodule EAGL.Examples.GLTF.Box do
     # --- EXAMPLE-SPECIFIC: Box has no textures, so we use Phong (simple diffuse) ---
     with {:ok, program} <- GLTF.EAGL.create_phong_shader(),
          # --- COMMON: load_scene parses GLB, builds VAOs, attaches shader to all meshes ---
-         {:ok, scene, gltf, _ds} <- GLTF.EAGL.load_scene(@glb_path, program) do
+         {:ok, scene, _gltf, _ds} <- GLTF.EAGL.load_scene(@glb_path, program) do
       # --- COMMON: Position camera to frame the model's bounding box ---
-      orbit = EAGL.OrbitCamera.fit_to_gltf(gltf)
+      orbit = EAGL.OrbitCamera.fit_to_scene(scene)
       {:ok, %{program: program, scene: scene, orbit: orbit}}
     end
   end

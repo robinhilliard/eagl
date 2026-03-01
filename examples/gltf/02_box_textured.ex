@@ -29,7 +29,7 @@ defmodule EAGL.Examples.GLTF.BoxTextured do
          {:ok, scene, gltf, ds} <- GLTF.EAGL.load_scene(@glb_path, program),
          # --- EXAMPLE-SPECIFIC: Extract baseColor, metallicRoughness, etc. from GLTF ---
          {:ok, textures} <- GLTF.EAGL.load_textures(gltf, ds) do
-      orbit = EAGL.OrbitCamera.fit_to_gltf(gltf)
+      orbit = EAGL.OrbitCamera.fit_to_scene(scene)
       {:ok, %{program: program, scene: scene, orbit: orbit, textures: textures}}
     end
   end

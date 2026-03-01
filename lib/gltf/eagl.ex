@@ -38,7 +38,7 @@ defmodule GLTF.EAGL do
       :gl.drawElements(@gl_triangles, vao_data.index_count, @gl_unsigned_int, 0)
   """
 
-  alias EAGL.{Scene, Node, Buffer}
+  alias EAGL.{Camera, Scene, Node, Buffer}
   import EAGL.Math
   use EAGL.Const
 
@@ -330,6 +330,99 @@ defmodule GLTF.EAGL do
     end
   end
 
+  # ============================================================================
+  # BOUNDS
+  # ============================================================================
+
+  @doc """
+  Compute the axis-aligned bounding box of a glTF document.
+
+  Scans all POSITION accessors for min/max and merges them. Applies the root
+  node's scale when present so bounds reflect the actual scene extent.
+
+  Returns `{:ok, min_point, max_point}` as `{x, y, z}` tuples, or `:no_bounds`
+  if no position data is available.
+
+  Useful for camera setup (e.g. `OrbitCamera.fit_to_bounds/2`) and culling.
+  """
+  @spec bounds(GLTF.t()) ::
+          {:ok, {float(), float(), float()}, {float(), float(), float()}} | :no_bounds
+  def bounds(%GLTF{meshes: nil}), do: :no_bounds
+  def bounds(%GLTF{meshes: []}), do: :no_bounds
+
+  def bounds(%GLTF{
+        meshes: meshes,
+        accessors: accessors,
+        nodes: nodes,
+        scenes: scenes,
+        scene: scene_idx
+      }) do
+    position_accessor_indices =
+      meshes
+      |> Enum.flat_map(fn mesh ->
+        Enum.map(mesh.primitives, fn prim -> prim.attributes["POSITION"] end)
+      end)
+      |> Enum.filter(& &1)
+      |> Enum.uniq()
+
+    bounds =
+      position_accessor_indices
+      |> Enum.reduce(nil, fn idx, acc ->
+        accessor = Enum.at(accessors || [], idx)
+
+        if accessor && accessor.min && accessor.max do
+          [min_x, min_y, min_z] = accessor.min
+          [max_x, max_y, max_z] = accessor.max
+
+          case acc do
+            nil ->
+              {{min_x, min_y, min_z}, {max_x, max_y, max_z}}
+
+            {{ax, ay, az}, {bx, by, bz}} ->
+              {{min(ax, min_x), min(ay, min_y), min(az, min_z)},
+               {max(bx, max_x), max(by, max_y), max(bz, max_z)}}
+          end
+        else
+          acc
+        end
+      end)
+
+    case bounds do
+      nil ->
+        :no_bounds
+
+      {min_point, max_point} ->
+        scale = estimate_root_scale(nodes, scenes, scene_idx)
+        {sx, sy, sz} = min_point
+        {bx, by, bz} = max_point
+        {:ok, {sx * scale, sy * scale, sz * scale}, {bx * scale, by * scale, bz * scale}}
+    end
+  end
+
+  defp estimate_root_scale(nodes, scenes, scene_idx) when is_list(nodes) and is_list(scenes) do
+    scene = Enum.at(scenes, scene_idx || 0)
+    root_idx = scene && List.first(scene.nodes || [])
+    root = root_idx && Enum.at(nodes, root_idx)
+
+    cond do
+      root == nil ->
+        1.0
+
+      root.matrix != nil ->
+        [{m0, _, _, _, _, m5, _, _, _, _, m10, _, _, _, _, _}] = root.matrix
+        (abs(m0) + abs(m5) + abs(m10)) / 3.0
+
+      root.scale != nil ->
+        [sx, sy, sz] = root.scale
+        (abs(sx) + abs(sy) + abs(sz)) / 3.0
+
+      true ->
+        1.0
+    end
+  end
+
+  defp estimate_root_scale(_, _, _), do: 1.0
+
   defp try_load_material_texture(textures, _key, nil, _gltf, _data_store), do: textures
 
   defp try_load_material_texture(textures, key, tex_info, gltf, data_store) do
@@ -403,7 +496,7 @@ defmodule GLTF.EAGL do
   @doc """
   Convert a glTF material to EAGL shader uniforms.
 
-  Returns a keyword list suitable for `EAGL.Shader.set_uniforms/2` or `EAGL.PBR.set_material/2`:
+  Returns a keyword list suitable for `EAGL.Shader.set_uniforms/2`:
 
       uniforms = GLTF.EAGL.material_to_uniforms(material)
       EAGL.Shader.set_uniforms(program, uniforms)
@@ -414,7 +507,7 @@ defmodule GLTF.EAGL do
   def material_to_uniforms(%GLTF.Material{} = material) do
     base_uniforms = []
 
-    # PBR Metallic-Roughness workflow (compatible with EAGL.PBR)
+    # PBR Metallic-Roughness workflow
     base_uniforms =
       case material.pbr_metallic_roughness do
         nil ->
@@ -463,52 +556,13 @@ defmodule GLTF.EAGL do
   end
 
   @doc """
-  Convert a glTF material to an EAGL.PBR-compatible material map.
-
-  Returns a map suitable for `EAGL.PBR.set_material/2`:
-
-      material_map = GLTF.EAGL.material_to_pbr_material(gltf_material)
-      EAGL.PBR.set_material(program, material_map)
-  """
-  @spec material_to_pbr_material(GLTF.Material.t()) :: map()
-  def material_to_pbr_material(%GLTF.Material{} = material) do
-    base_material = %{}
-
-    # PBR Metallic-Roughness workflow
-    base_material =
-      case material.pbr_metallic_roughness do
-        nil ->
-          base_material
-
-        pbr ->
-          base_color = pbr.base_color_factor || [1.0, 1.0, 1.0, 1.0]
-          metallic = pbr.metallic_factor || 1.0
-          roughness = pbr.roughness_factor || 1.0
-
-          Map.merge(base_material, %{
-            base_color_factor: base_color,
-            metallic_factor: metallic,
-            roughness_factor: roughness
-          })
-      end
-
-    # Emissive properties
-    base_material =
-      case material.emissive_factor do
-        nil -> base_material
-        emissive -> Map.put(base_material, :emissive_factor, emissive)
-      end
-
-    base_material
-  end
-
-  @doc """
   Convert a glTF node to an EAGL.Node.
 
   Handles both matrix and TRS transform representations.
+  When the node references a camera, pass a camera_lookup map (node_index -> EAGL.Camera).
   """
-  @spec node_to_eagl_node(GLTF.Node.t(), map(), non_neg_integer()) :: Node.t()
-  def node_to_eagl_node(%GLTF.Node{} = gltf_node, mesh_lookup \\ %{}, node_index \\ 0) do
+  @spec node_to_eagl_node(GLTF.Node.t(), map(), non_neg_integer(), map()) :: Node.t()
+  def node_to_eagl_node(%GLTF.Node{} = gltf_node, mesh_lookup, node_index, camera_lookup \\ %{}) do
     node_name = gltf_node.name || "node_#{node_index}"
 
     node =
@@ -526,14 +580,122 @@ defmodule GLTF.EAGL do
       end
 
     # Attach mesh if present
-    case gltf_node.mesh do
+    node =
+      case gltf_node.mesh do
+        nil ->
+          node
+
+        mesh_index ->
+          mesh = Map.get(mesh_lookup, mesh_index)
+          Node.set_mesh(node, mesh)
+      end
+
+    # Attach camera if present
+    case gltf_node.camera do
       nil ->
         node
 
-      mesh_index ->
-        mesh = Map.get(mesh_lookup, mesh_index)
-        Node.set_mesh(node, mesh)
+      camera_index ->
+        case camera_lookup do
+          %{^camera_index => eagl_camera} ->
+            Node.set_camera(node, eagl_camera)
+
+          _ ->
+            node
+        end
     end
+  end
+
+  @doc """
+  Convert a glTF camera to EAGL.Camera, using the node's world matrix for position and orientation.
+
+  glTF cameras look down -Z in node local space. The view matrix is the inverse of the
+  node world matrix. We extract position (eye) and target (eye + forward) from the
+  world matrix.
+  """
+  @spec gltf_camera_to_eagl(GLTF.Camera.t(), EAGL.Math.mat4()) :: Camera.t()
+  def gltf_camera_to_eagl(%GLTF.Camera{type: type} = gltf_camera, node_world_matrix) do
+    # Extract position and forward from world matrix
+    # Position = translation (4th column): m12, m13, m14
+    # Forward = -Z axis = negated 3rd column: -m8, -m9, -m10
+    [{_m0, _m1, _m2, _m3, _m4, _m5, _m6, _m7, m8, m9, m10, _m11, m12, m13, m14, _m15}] =
+      node_world_matrix
+
+    position = vec3(m12, m13, m14)
+    forward = vec3(-m8, -m9, -m10)
+    target = vec_add(position, forward)
+
+    base_opts = [
+      position: position,
+      target: target,
+      up: vec3(0.0, 1.0, 0.0)
+    ]
+
+    case type do
+      "perspective" ->
+        perspective_to_eagl(gltf_camera, base_opts)
+
+      "orthographic" ->
+        orthographic_to_eagl(gltf_camera, base_opts)
+
+      :perspective ->
+        perspective_to_eagl(gltf_camera, base_opts)
+
+      :orthographic ->
+        orthographic_to_eagl(gltf_camera, base_opts)
+
+      _ ->
+        # Default to perspective
+        perspective_to_eagl(gltf_camera, base_opts)
+    end
+  end
+
+  defp perspective_to_eagl(%GLTF.Camera{perspective: p}, base_opts) when not is_nil(p) do
+    yfov = p.yfov
+    znear = p.znear
+    zfar = p.zfar
+    zfar = if zfar == nil, do: 1.0e6, else: zfar
+
+    Camera.new(
+      base_opts ++
+        [
+          type: :perspective,
+          yfov: yfov,
+          aspect_ratio: p.aspect_ratio,
+          znear: znear,
+          zfar: zfar
+        ]
+    )
+  end
+
+  defp perspective_to_eagl(_gltf_camera, base_opts) do
+    Camera.new(base_opts ++ [type: :perspective, yfov: :math.pi() / 4, znear: 0.1, zfar: 1000.0])
+  end
+
+  defp orthographic_to_eagl(%GLTF.Camera{orthographic: o}, base_opts) when not is_nil(o) do
+    Camera.new(
+      base_opts ++
+        [
+          type: :orthographic,
+          xmag: o.xmag,
+          ymag: o.ymag,
+          znear: o.znear,
+          zfar: o.zfar
+        ]
+    )
+  end
+
+  defp orthographic_to_eagl(_gltf_camera, base_opts) do
+    Camera.new(
+      base_opts ++
+        [
+          type: :orthographic,
+          xmag: 1.0,
+          ymag: 1.0,
+          znear: 0.1,
+          zfar: 1000.0
+        ]
+    )
   end
 
   @doc """
@@ -643,13 +805,23 @@ defmodule GLTF.EAGL do
     end
   end
 
-  defp build_vertex_data(gltf, data_store, primitive, {_pos_idx, pos_data}) do
+  defp build_vertex_data(gltf, data_store, primitive, {pos_idx, pos_data}) do
     # Start with position data
     vertex_data = %{
       position: pos_data,
       attributes: [Buffer.position_attribute()],
       indices: nil
     }
+
+    # Extract bounds from POSITION accessor for Scene.bounds (used by fit_to_scene)
+    vertex_data =
+      case Enum.at(gltf.accessors || [], pos_idx) do
+        %{min: [min_x, min_y, min_z], max: [max_x, max_y, max_z]} ->
+          Map.put(vertex_data, :bounds, {{min_x, min_y, min_z}, {max_x, max_y, max_z}})
+
+        _ ->
+          vertex_data
+      end
 
     # Add other attributes if present
     vertex_data =
@@ -720,11 +892,14 @@ defmodule GLTF.EAGL do
   defp create_vao_from_vertex_data(vertex_data, _opts) do
     with {:ok, vertices} <- interleave_vertex_data(vertex_data),
          {:ok, attributes} <- get_vertex_attributes(vertex_data) do
+      base_bounds = vertex_data[:bounds]
+
       case vertex_data.indices do
         nil ->
           {vao, vbo} = Buffer.create_vertex_array(vertices, attributes)
           vertex_count = div(length(vertices), total_attribute_size(attributes))
-          {:ok, %{vao: vao, vbo: vbo, vertex_count: vertex_count}}
+          mesh = %{vao: vao, vbo: vbo, vertex_count: vertex_count}
+          {:ok, maybe_add_bounds(mesh, base_bounds)}
 
         indices_data ->
           component_type = Map.get(vertex_data, :index_component_type, @gl_unsigned_int)
@@ -733,14 +908,15 @@ defmodule GLTF.EAGL do
             {:ok, index_list} ->
               {vao, vbo, ebo} = Buffer.create_indexed_array(vertices, index_list, attributes)
 
-              {:ok,
-               %{
-                 vao: vao,
-                 vbo: vbo,
-                 ebo: ebo,
-                 index_count: length(index_list),
-                 index_type: @gl_unsigned_int
-               }}
+              mesh = %{
+                vao: vao,
+                vbo: vbo,
+                ebo: ebo,
+                index_count: length(index_list),
+                index_type: @gl_unsigned_int
+              }
+
+              {:ok, maybe_add_bounds(mesh, base_bounds)}
 
             {:error, reason} ->
               {:error, reason}
@@ -748,6 +924,9 @@ defmodule GLTF.EAGL do
       end
     end
   end
+
+  defp maybe_add_bounds(mesh, nil), do: mesh
+  defp maybe_add_bounds(mesh, bounds), do: Map.put(mesh, :bounds, bounds)
 
   defp create_mesh_lookup(gltf, data_store, opts) do
     case gltf.meshes do
@@ -779,12 +958,15 @@ defmodule GLTF.EAGL do
         {:ok, %{}}
 
       nodes ->
+        world_matrices = compute_gltf_world_matrices(gltf)
+        camera_lookup = build_camera_lookup(gltf, world_matrices)
+
         # First, create all nodes without children
         node_data =
           nodes
           |> Enum.with_index()
           |> Enum.map(fn {node, index} ->
-            eagl_node = node_to_eagl_node(node, mesh_lookup, index)
+            eagl_node = node_to_eagl_node(node, mesh_lookup, index, camera_lookup)
             {index, eagl_node}
           end)
           |> Enum.into(%{})
@@ -817,6 +999,111 @@ defmodule GLTF.EAGL do
 
         {:ok, node_data_with_children}
     end
+  end
+
+  defp compute_gltf_world_matrices(%GLTF{nodes: nil}), do: %{}
+
+  defp compute_gltf_world_matrices(%GLTF{nodes: nodes}) do
+    parent_map = build_parent_map(nodes)
+    local_matrices = Enum.map(nodes, &gltf_node_local_matrix/1)
+    traverse_order = topological_sort(nodes, parent_map)
+
+    Enum.reduce(traverse_order, %{}, fn node_index, acc ->
+      local = Enum.at(local_matrices, node_index)
+
+      world =
+        case Map.get(parent_map, node_index) do
+          nil ->
+            local
+
+          parent_index ->
+            parent_world = Map.get(acc, parent_index)
+            mat4_mul(parent_world, local)
+        end
+
+      Map.put(acc, node_index, world)
+    end)
+  end
+
+  defp build_parent_map(nodes) do
+    nodes
+    |> Enum.with_index()
+    |> Enum.reduce(%{}, fn {gltf_node, parent_index}, acc ->
+      case gltf_node.children do
+        nil ->
+          acc
+
+        children when is_list(children) ->
+          Enum.reduce(children, acc, fn child_index, a ->
+            Map.put(a, child_index, parent_index)
+          end)
+      end
+    end)
+  end
+
+  defp topological_sort(nodes, parent_map) do
+    n = length(nodes)
+
+    children =
+      Enum.reduce(parent_map, %{}, fn {child, parent}, acc ->
+        Map.update(acc, parent, [child], fn existing -> [child | existing] end)
+      end)
+
+    roots = Enum.filter(0..(n - 1), &(!Map.has_key?(parent_map, &1)))
+
+    visit = fn visit, i, acc ->
+      child_list = Map.get(children, i, [])
+      acc_after_children = Enum.reduce(child_list, acc, fn c, a -> visit.(visit, c, a) end)
+      [i | acc_after_children]
+    end
+
+    result =
+      Enum.reduce(roots, [], fn root, acc ->
+        visit.(visit, root, acc)
+      end)
+      |> List.flatten()
+      |> Enum.uniq()
+
+    # Keep parent-before-child order (visit yields [parent | children])
+    # so world matrices are computed correctly
+    result
+  end
+
+  defp gltf_node_local_matrix(%GLTF.Node{matrix: nil} = gltf_node) do
+    # TRS
+    t = list_to_vec3(gltf_node.translation || [0.0, 0.0, 0.0])
+    r = list_to_quat(gltf_node.rotation || [0.0, 0.0, 0.0, 1.0])
+    s = list_to_vec3(gltf_node.scale || [1.0, 1.0, 1.0])
+    mat4_mul(mat4_mul(mat4_translate(t), quat_to_mat4(r)), mat4_scale(s))
+  end
+
+  defp gltf_node_local_matrix(%GLTF.Node{matrix: matrix}) when is_list(matrix) do
+    matrix
+  end
+
+  defp build_camera_lookup(%GLTF{cameras: nil}, _world_matrices), do: %{}
+  defp build_camera_lookup(%GLTF{nodes: nil}, _world_matrices), do: %{}
+
+  defp build_camera_lookup(%GLTF{cameras: cameras, nodes: nodes}, world_matrices) do
+    nodes
+    |> Enum.with_index()
+    |> Enum.reduce(%{}, fn {gltf_node, node_index}, acc ->
+      case gltf_node.camera do
+        nil ->
+          acc
+
+        camera_index ->
+          gltf_camera = Enum.at(cameras, camera_index)
+          world_matrix = Map.get(world_matrices, node_index)
+
+          if gltf_camera && world_matrix do
+            eagl_camera = gltf_camera_to_eagl(gltf_camera, world_matrix)
+            Map.put(acc, node_index, eagl_camera)
+          else
+            acc
+          end
+      end
+    end)
   end
 
   defp build_scene_graph(gltf, node_lookup, opts) do

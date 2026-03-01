@@ -30,7 +30,7 @@ defmodule EAGL.Examples.GLTF.DamagedHelmet do
          {:ok, scene, gltf, ds} <- GLTF.EAGL.load_scene(@glb_path, program),
          {:ok, textures} <- GLTF.EAGL.load_textures(gltf, ds),
          {:ok, material} <- extract_material(gltf) do
-      orbit = EAGL.OrbitCamera.fit_to_gltf(gltf)
+      orbit = EAGL.OrbitCamera.fit_to_scene(scene)
       {:ok, %{program: program, scene: scene, orbit: orbit, textures: textures, material: material}}
     end
   end

@@ -1,13 +1,13 @@
 defmodule EAGL.OrbitCameraTest do
   use ExUnit.Case, async: true
   import EAGL.Math
-  alias EAGL.OrbitCamera
+  alias EAGL.{OrbitCamera, Scene, Node}
 
   describe "new/1" do
     test "creates camera with defaults" do
       cam = OrbitCamera.new()
       assert cam.distance == 5.0
-      assert cam.fov == 45.0
+      assert_in_delta cam.camera.yfov, :math.pi() / 4, 0.001
       assert cam.target == [{0.0, 0.0, 0.0}]
       assert cam.mouse_down == false
       assert cam.last_mouse == nil
@@ -57,8 +57,8 @@ defmodule EAGL.OrbitCameraTest do
 
     test "sets near/far based on distance" do
       cam = OrbitCamera.fit_to_bounds({0.0, 0.0, 0.0}, {10.0, 10.0, 10.0})
-      assert cam.near > 0
-      assert cam.far > cam.distance
+      assert cam.camera.znear > 0
+      assert cam.camera.zfar > cam.distance
     end
   end
 
@@ -195,40 +195,19 @@ defmodule EAGL.OrbitCameraTest do
     end
   end
 
-  describe "fit_to_gltf/1" do
-    test "returns default camera for empty GLTF" do
-      gltf = %GLTF{asset: %GLTF.Asset{version: "2.0"}}
-      cam = OrbitCamera.fit_to_gltf(gltf)
+  describe "fit_to_scene/1" do
+    test "returns default camera for empty scene" do
+      scene = Scene.new()
+      cam = OrbitCamera.fit_to_scene(scene)
       assert cam.distance == 5.0
     end
 
-    test "fits to GLTF with accessor bounds" do
-      gltf = %GLTF{
-        asset: %GLTF.Asset{version: "2.0"},
-        meshes: [
-          %GLTF.Mesh{
-            primitives: [
-              %GLTF.Mesh.Primitive{
-                attributes: %{"POSITION" => 0},
-                mode: :triangles
-              }
-            ]
-          }
-        ],
-        accessors: [
-          %GLTF.Accessor{
-            buffer_view: 0,
-            byte_offset: 0,
-            component_type: 5126,
-            count: 3,
-            type: :vec3,
-            min: [-100.0, 0.0, -100.0],
-            max: [100.0, 200.0, 100.0]
-          }
-        ]
-      }
+    test "fits to scene with mesh bounds" do
+      mesh = %{bounds: {{-100.0, 0.0, -100.0}, {100.0, 200.0, 100.0}}}
+      node = Node.new(mesh: mesh)
+      scene = Scene.add_root_node(Scene.new(), node)
 
-      cam = OrbitCamera.fit_to_gltf(gltf)
+      cam = OrbitCamera.fit_to_scene(scene)
       [{cx, cy, _cz}] = cam.target
       assert_in_delta cx, 0.0, 0.001
       assert_in_delta cy, 100.0, 0.001

@@ -1491,4 +1491,49 @@ defmodule EAGL.Math do
   def perpendicular?(a, b, tolerance \\ 0.001) do
     abs(dot(normalize(a), normalize(b))) < tolerance
   end
+
+  # ============================================================================
+  # COORDINATE CONVERSIONS
+  # ============================================================================
+
+  @doc """
+  Convert spherical coordinates to a 3D Cartesian vector.
+
+  Convention (matches orbit camera and common graphics usage):
+  - `radius`: distance from target (or origin)
+  - `azimuth`: angle in XZ plane (radians), 0 = +Z, π/2 = +X
+  - `elevation`: angle from XZ plane (radians), 0 = horizontal, π/2 = +Y
+  - `target`: optional center point (defaults to origin)
+
+  Returns target + the spherical offset.
+  """
+  @spec spherical_to_vec3(float(), float(), float(), vec3()) :: vec3()
+  def spherical_to_vec3(radius, azimuth, elevation, target \\ vec3_zero()) do
+    x = radius * :math.cos(elevation) * :math.sin(azimuth)
+    y = radius * :math.sin(elevation)
+    z = radius * :math.cos(elevation) * :math.cos(azimuth)
+    vec_add(target, vec3(x, y, z))
+  end
+
+  @doc """
+  Convert a 3D Cartesian vector to spherical coordinates.
+
+  Returns `{radius, azimuth, elevation}` in radians relative to `target`.
+  For the zero offset (point equals target), returns `{0.0, 0.0, 0.0}`.
+  `target` defaults to the origin.
+  """
+  @spec vec3_to_spherical(vec3(), vec3()) :: {float(), float(), float()}
+  def vec3_to_spherical(point, target \\ vec3_zero()) do
+    offset = vec_sub(point, target)
+    [{x, y, z}] = offset
+    radius = vec_length(offset)
+
+    if radius < 1.0e-10 do
+      {0.0, 0.0, 0.0}
+    else
+      elevation = :math.asin(clamp(y / radius, -1.0, 1.0))
+      azimuth = :math.atan2(x, z)
+      {radius, azimuth, elevation}
+    end
+  end
 end

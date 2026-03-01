@@ -1133,4 +1133,63 @@ defmodule EAGL.MathTest do
       end
     end
   end
+
+  describe "coordinate conversions" do
+    test "spherical_to_vec3 and vec3_to_spherical round-trip (default origin)" do
+      radius = 5.0
+      azimuth = 0.5
+      elevation = 0.3
+
+      v = spherical_to_vec3(radius, azimuth, elevation)
+      {r, a, e} = vec3_to_spherical(v)
+
+      assert_float_equal(r, radius)
+      assert_float_equal(a, azimuth)
+      assert_float_equal(e, elevation)
+    end
+
+    test "spherical_to_vec3 and vec3_to_spherical round-trip with target" do
+      target = vec3(1.0, 2.0, 3.0)
+      radius = 5.0
+      azimuth = 0.5
+      elevation = 0.3
+
+      v = spherical_to_vec3(radius, azimuth, elevation, target)
+      {r, a, e} = vec3_to_spherical(v, target)
+
+      assert_float_equal(r, radius)
+      assert_float_equal(a, azimuth)
+      assert_float_equal(e, elevation)
+    end
+
+    test "spherical_to_vec3 azimuth=0 elevation=0 gives +Z (default origin)" do
+      v = spherical_to_vec3(1.0, 0.0, 0.0)
+      assert_vec3_equal(v, vec3(0.0, 0.0, 1.0))
+    end
+
+    test "spherical_to_vec3 azimuth=π/2 elevation=0 gives +X" do
+      v = spherical_to_vec3(1.0, :math.pi() / 2, 0.0)
+      assert_vec3_equal(v, vec3(1.0, 0.0, 0.0))
+    end
+
+    test "spherical_to_vec3 elevation=π/2 gives +Y" do
+      v = spherical_to_vec3(1.0, 0.0, :math.pi() / 2)
+      assert_vec3_equal(v, vec3(0.0, 1.0, 0.0))
+    end
+
+    test "spherical_to_vec3 with target offsets from target" do
+      target = vec3(10.0, 0.0, 0.0)
+      v = spherical_to_vec3(1.0, 0.0, 0.0, target)
+      assert_vec3_equal(v, vec3(10.0, 0.0, 1.0))
+    end
+
+    test "vec3_to_spherical zero vector" do
+      assert vec3_to_spherical(vec3_zero()) == {0.0, 0.0, 0.0}
+    end
+
+    test "vec3_to_spherical point equals target returns zero" do
+      target = vec3(1.0, 2.0, 3.0)
+      assert vec3_to_spherical(target, target) == {0.0, 0.0, 0.0}
+    end
+  end
 end

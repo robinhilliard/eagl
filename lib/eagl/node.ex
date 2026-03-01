@@ -73,7 +73,7 @@ defmodule EAGL.Node do
           children: [t()],
           parent: t() | nil,
           mesh: map() | nil,
-          camera: map() | nil,
+          camera: EAGL.Camera.t() | nil,
           name: String.t() | nil,
           animations: map() | nil
         }
@@ -222,6 +222,20 @@ defmodule EAGL.Node do
   @spec set_mesh(t(), map()) :: t()
   def set_mesh(%__MODULE__{} = node, mesh) do
     %{node | mesh: mesh}
+  end
+
+  @doc """
+  Get the camera attached to this node.
+  """
+  @spec get_camera(t()) :: EAGL.Camera.t() | nil
+  def get_camera(%__MODULE__{camera: camera}), do: camera
+
+  @doc """
+  Set the camera for this node.
+  """
+  @spec set_camera(t(), EAGL.Camera.t() | nil) :: t()
+  def set_camera(%__MODULE__{} = node, camera) do
+    %{node | camera: camera}
   end
 
   @doc """

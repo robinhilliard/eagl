@@ -104,6 +104,83 @@ defmodule EAGL.Scene do
   end
 
   @doc """
+  Compute the axis-aligned bounding box of the scene in world space.
+
+  Traverses the scene graph and merges bounds from all nodes with meshes that
+  have `:bounds` (e.g. from glTF conversion). Transforms local bounds by each
+  node's world matrix, so the result reflects current animated state.
+
+  Returns `{:ok, min_point, max_point}` as `{x, y, z}` tuples, or `:no_bounds`
+  when no nodes contribute bounds.
+  """
+  @spec bounds(t()) ::
+          {:ok, {float(), float(), float()}, {float(), float(), float()}} | :no_bounds
+  def bounds(%__MODULE__{root_nodes: roots}) do
+    identity = mat4_identity()
+    acc = Enum.reduce(roots, nil, fn root, acc -> merge_bounds_recursive(root, identity, acc) end)
+
+    case acc do
+      nil -> :no_bounds
+      {min_pt, max_pt} -> {:ok, min_pt, max_pt}
+    end
+  end
+
+  defp merge_bounds_recursive(%Node{} = node, parent_transform, acc) do
+    local = Node.get_local_transform_matrix(node)
+    world = mat4_mul(parent_transform, local)
+
+    acc =
+      case Node.get_mesh(node) do
+        %{bounds: {{min_x, min_y, min_z}, {max_x, max_y, max_z}}} ->
+          corners = [
+            [{min_x, min_y, min_z}],
+            [{max_x, min_y, min_z}],
+            [{min_x, max_y, min_z}],
+            [{max_x, max_y, min_z}],
+            [{min_x, min_y, max_z}],
+            [{max_x, min_y, max_z}],
+            [{min_x, max_y, max_z}],
+            [{max_x, max_y, max_z}]
+          ]
+
+          transformed =
+            Enum.map(corners, fn v -> mat4_transform_point(world, v) end)
+            |> Enum.flat_map(fn [{x, y, z}] -> [{x, y, z}] end)
+
+          [{fx, fy, fz} | rest] = transformed
+
+          {t_min_x, t_min_y, t_min_z} =
+            Enum.reduce(rest, {fx, fy, fz}, fn {x, y, z}, {ax, ay, az} ->
+              {min(ax, x), min(ay, y), min(az, z)}
+            end)
+
+          {t_max_x, t_max_y, t_max_z} =
+            Enum.reduce(rest, {fx, fy, fz}, fn {x, y, z}, {ax, ay, az} ->
+              {max(ax, x), max(ay, y), max(az, z)}
+            end)
+
+          merge_aabb(acc, {{t_min_x, t_min_y, t_min_z}, {t_max_x, t_max_y, t_max_z}})
+
+        _ ->
+          acc
+      end
+
+    Enum.reduce(Node.get_children(node), acc, fn child, child_acc ->
+      merge_bounds_recursive(child, world, child_acc)
+    end)
+  end
+
+  defp merge_aabb(nil, b), do: b
+
+  defp merge_aabb(
+         {{a_min_x, a_min_y, a_min_z}, {a_max_x, a_max_y, a_max_z}},
+         {{b_min_x, b_min_y, b_min_z}, {b_max_x, b_max_y, b_max_z}}
+       ) do
+    {{min(a_min_x, b_min_x), min(a_min_y, b_min_y), min(a_min_z, b_min_z)},
+     {max(a_max_x, b_max_x), max(a_max_y, b_max_y), max(a_max_z, b_max_z)}}
+  end
+
+  @doc """
   Update all animations in the scene.
   """
   @spec update(t(), float()) :: t()

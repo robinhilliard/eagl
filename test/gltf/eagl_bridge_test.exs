@@ -529,6 +529,146 @@ defmodule GLTF.EAGLBridgeTest do
   end
 
   # ============================================================================
+  # Bounds Tests
+  # ============================================================================
+
+  describe "bounds/1" do
+    test "returns :no_bounds for empty GLTF" do
+      gltf = %GLTF{asset: %GLTF.Asset{version: "2.0"}}
+      assert GLTF.EAGL.bounds(gltf) == :no_bounds
+    end
+
+    test "returns :no_bounds for GLTF with no meshes" do
+      gltf = %GLTF{asset: %GLTF.Asset{version: "2.0"}, meshes: []}
+      assert GLTF.EAGL.bounds(gltf) == :no_bounds
+    end
+
+    test "returns merged bounds from position accessors" do
+      gltf = %GLTF{
+        asset: %GLTF.Asset{version: "2.0"},
+        meshes: [
+          %GLTF.Mesh{
+            primitives: [
+              %GLTF.Mesh.Primitive{attributes: %{"POSITION" => 0}, mode: :triangles}
+            ]
+          }
+        ],
+        accessors: [
+          %GLTF.Accessor{
+            buffer_view: 0,
+            byte_offset: 0,
+            component_type: 5126,
+            count: 3,
+            type: :vec3,
+            min: [-1.0, -1.0, -1.0],
+            max: [1.0, 1.0, 1.0]
+          }
+        ]
+      }
+
+      assert {:ok, {-1.0, -1.0, -1.0}, {1.0, 1.0, 1.0}} = GLTF.EAGL.bounds(gltf)
+    end
+
+    test "applies root node scale to bounds" do
+      gltf = %GLTF{
+        asset: %GLTF.Asset{version: "2.0"},
+        meshes: [
+          %GLTF.Mesh{
+            primitives: [
+              %GLTF.Mesh.Primitive{attributes: %{"POSITION" => 0}, mode: :triangles}
+            ]
+          }
+        ],
+        accessors: [
+          %GLTF.Accessor{
+            buffer_view: 0,
+            byte_offset: 0,
+            component_type: 5126,
+            count: 3,
+            type: :vec3,
+            min: [-1.0, -1.0, -1.0],
+            max: [1.0, 1.0, 1.0]
+          }
+        ],
+        nodes: [%GLTF.Node{scale: [2.0, 2.0, 2.0]}],
+        scenes: [%GLTF.Scene{nodes: [0]}],
+        scene: 0
+      }
+
+      assert {:ok, {-2.0, -2.0, -2.0}, {2.0, 2.0, 2.0}} = GLTF.EAGL.bounds(gltf)
+    end
+  end
+
+  # ============================================================================
+  # glTF Camera Loading Tests
+  # ============================================================================
+
+  describe "glTF camera loading" do
+    test "loads camera node and attaches EAGL.Camera with correct projection params" do
+      # Minimal glTF with a perspective camera on a node
+      camera = GLTF.Camera.perspective(:math.pi() / 4, 0.1, zfar: 100.0)
+
+      camera_node =
+        GLTF.Node.with_trs([0.0, 2.0, 5.0], [0.0, 0.0, 0.0, 1.0], [1.0, 1.0, 1.0], camera: 0)
+
+      gltf = %GLTF{
+        asset: %GLTF.Asset{version: "2.0"},
+        cameras: [camera],
+        nodes: [camera_node],
+        scenes: [%GLTF.Scene{nodes: [0]}],
+        scene: 0
+      }
+
+      data_store = GLTF.DataStore.new()
+
+      assert {:ok, {scene, _all_nodes}} = GLTF.EAGL.to_scene(gltf, data_store)
+
+      # Find the camera node
+      [camera_node_eagl] = scene.root_nodes
+      assert %EAGL.Camera{} = eagl_camera = EAGL.Node.get_camera(camera_node_eagl)
+
+      assert eagl_camera.type == :perspective
+      assert_in_delta eagl_camera.yfov, :math.pi() / 4, 0.001
+      assert eagl_camera.znear == 0.1
+      assert eagl_camera.zfar == 100.0
+
+      # Position from node transform (0, 2, 5)
+      [{px, py, pz}] = eagl_camera.position
+      assert_in_delta px, 0.0, 0.001
+      assert_in_delta py, 2.0, 0.001
+      assert_in_delta pz, 5.0, 0.001
+    end
+
+    test "orthographic camera loads with xmag, ymag, znear, zfar" do
+      camera = GLTF.Camera.orthographic(2.0, 1.5, 100.0, 0.1)
+
+      camera_node =
+        GLTF.Node.with_trs([0.0, 0.0, 10.0], [0.0, 0.0, 0.0, 1.0], [1.0, 1.0, 1.0], camera: 0)
+
+      gltf = %GLTF{
+        asset: %GLTF.Asset{version: "2.0"},
+        cameras: [camera],
+        nodes: [camera_node],
+        scenes: [%GLTF.Scene{nodes: [0]}],
+        scene: 0
+      }
+
+      data_store = GLTF.DataStore.new()
+
+      assert {:ok, {scene, _}} = GLTF.EAGL.to_scene(gltf, data_store)
+
+      [camera_node_eagl] = scene.root_nodes
+      assert %EAGL.Camera{} = eagl_camera = EAGL.Node.get_camera(camera_node_eagl)
+
+      assert eagl_camera.type == :orthographic
+      assert eagl_camera.xmag == 2.0
+      assert eagl_camera.ymag == 1.5
+      assert eagl_camera.znear == 0.1
+      assert eagl_camera.zfar == 100.0
+    end
+  end
+
+  # ============================================================================
   # Integration test with real GLB file (Box.glb)
   # ============================================================================
 

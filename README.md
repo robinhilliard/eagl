@@ -1,7 +1,11 @@
-# EAGL
-
-Make it EAsier to work  
-with OpenGL in Elixir.
+<div align="center">
+  <h1>EAGL</h1>
+  <img src="assets/eagl_logo_grey_on_transparent.png" alt="EAGL Logo" title="EAGL Logo" width="200">
+  <p>
+    Make it EAsier to work<br>
+    with OpenGL in Elixir.
+  </p>
+</div>
 
 ## Overview
 
@@ -149,18 +153,18 @@ projection = mat4_perspective(radians(45.0), 16.0/9.0, 0.1, 100.0)
 
 ### Camera System
 
-EAGL provides `EAGL.OrbitCamera` for inspecting 3D models and scenes:
+EAGL provides `EAGL.Camera` (geometric view/projection) and `EAGL.OrbitCamera` (orbit/zoom/pan controls built on it) for inspecting 3D models and scenes. glTF camera nodes load as `EAGL.Camera` via `Node.get_camera/1`:
 
 - **Orbit**: Left-drag to rotate around the target
 - **Zoom**: Scroll to move closer or further
 - **Pan**: Middle-drag to shift the target point
-- **Fit to bounds**: `fit_to_gltf/1` or `fit_to_bounds/2` for automatic framing
+- **Fit to bounds**: `fit_to_scene/1` or `fit_to_bounds/2` for automatic framing
 
 ```elixir
 use EAGL.OrbitCamera
 
-# In setup - frame a GLTF model
-orbit = EAGL.OrbitCamera.fit_to_gltf(gltf)
+# In setup - frame a scene (e.g. from glTF)
+orbit = EAGL.OrbitCamera.fit_to_scene(scene)
 
 # Or frame a bounding box
 orbit = EAGL.OrbitCamera.fit_to_bounds({-1, -1, -1}, {1, 1, 1})
@@ -752,6 +756,7 @@ lib/
 │   ├── const.ex            # OpenGL constants
 │   ├── error.ex            # Error checking and reporting
 │   ├── math.ex             # GLM-style math library
+│   ├── camera.ex           # Geometric camera (view/projection)
 │   ├── model.ex            # 3D model management
 │   ├── node.ex             # Scene graph node with TRS transforms
 │   ├── obj_loader.ex       # Wavefront OBJ parser
@@ -803,6 +808,7 @@ test/
 │   ├── math_test.exs       # Math library tests
 │   ├── model_test.exs      # Model loading tests
 │   ├── obj_loader_test.exs # OBJ parser tests
+│   ├── camera_test.exs     # EAGL.Camera tests
 │   ├── orbit_camera_test.exs # Orbit camera tests
 │   ├── shader_test.exs     # Shader compilation tests
 │   └── texture_test.exs    # Texture management tests
@@ -1031,6 +1037,7 @@ EAGL prioritises **desktop OpenGL capabilities** to maximise educational and pra
 - **Asset Bridge**: Import glTF models and scenes for use with full desktop OpenGL capabilities
 - **Separation of Concerns**: Asset format (glTF) independent from rendering platform (desktop OpenGL)
 - **Ecosystem Integration**: Assets work across different renderers while maintaining access to advanced features
+- **Format-Agnostic Runtime**: EAGL uses glTF as its reference format but keeps parallel concepts—`GLTF.*` modules represent the glTF schema, `EAGL.*` modules provide format-agnostic runtime structures (Scene, Node, Camera, etc.). The bridge converts glTF into EAGL; other formats (OBJ, FBX) would use their own bridges into the same EAGL types, keeping EAGL decoupled from any single format.
 
 #### **Educational Mission**
 

@@ -30,7 +30,7 @@ defmodule EAGL.Examples.GLTF.Duck do
     with {:ok, program} <- GLTF.EAGL.create_pbr_shader(),
          {:ok, scene, gltf, ds} <- GLTF.EAGL.load_scene(@glb_path, program),
          {:ok, textures} <- GLTF.EAGL.load_textures(gltf, ds) do
-      orbit = EAGL.OrbitCamera.fit_to_gltf(gltf)
+      orbit = EAGL.OrbitCamera.fit_to_scene(scene)
       {:ok, %{program: program, scene: scene, orbit: orbit, textures: textures}}
     end
   end

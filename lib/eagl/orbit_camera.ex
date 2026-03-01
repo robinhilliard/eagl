@@ -18,9 +18,9 @@ defmodule EAGL.OrbitCamera do
 
       orbit = EAGL.OrbitCamera.fit_to_bounds({-1, -1, -1}, {1, 1, 1})
 
-  Or from a GLTF document:
+  Or from an EAGL scene (e.g. loaded from glTF):
 
-      orbit = EAGL.OrbitCamera.fit_to_gltf(gltf)
+      orbit = EAGL.OrbitCamera.fit_to_scene(scene)
 
   ## Automatic Event Handling
 
@@ -46,6 +46,7 @@ defmodule EAGL.OrbitCamera do
   """
 
   import EAGL.Math
+  alias EAGL.Camera
 
   @default_azimuth :math.pi() / 6.0
   @default_elevation :math.pi() / 9.0
@@ -58,9 +59,7 @@ defmodule EAGL.OrbitCamera do
             distance: 5.0,
             azimuth: @default_azimuth,
             elevation: @default_elevation,
-            fov: @default_fov,
-            near: 0.1,
-            far: 1000.0,
+            camera: nil,
             sensitivity: @default_sensitivity,
             zoom_speed: @default_zoom_speed,
             pan_speed: @default_pan_speed,
@@ -73,9 +72,7 @@ defmodule EAGL.OrbitCamera do
           distance: float(),
           azimuth: float(),
           elevation: float(),
-          fov: float(),
-          near: float(),
-          far: float(),
+          camera: Camera.t(),
           sensitivity: float(),
           zoom_speed: float(),
           pan_speed: float(),
@@ -102,14 +99,29 @@ defmodule EAGL.OrbitCamera do
   """
   @spec new(keyword()) :: t()
   def new(opts \\ []) do
+    target = Keyword.get(opts, :target, [{0.0, 0.0, 0.0}])
+    distance = Keyword.get(opts, :distance, 5.0)
+    azimuth = Keyword.get(opts, :azimuth, @default_azimuth)
+    elevation = Keyword.get(opts, :elevation, @default_elevation)
+    near = Keyword.get(opts, :near, 0.1)
+    far = Keyword.get(opts, :far, 1000.0)
+
+    camera =
+      Camera.new(
+        type: :perspective,
+        yfov: radians(Keyword.get(opts, :fov, @default_fov)),
+        znear: near,
+        zfar: far,
+        position: spherical_to_vec3(distance, azimuth, elevation, target),
+        target: target
+      )
+
     %__MODULE__{
-      target: Keyword.get(opts, :target, [{0.0, 0.0, 0.0}]),
-      distance: Keyword.get(opts, :distance, 5.0),
-      azimuth: Keyword.get(opts, :azimuth, @default_azimuth),
-      elevation: Keyword.get(opts, :elevation, @default_elevation),
-      fov: Keyword.get(opts, :fov, @default_fov),
-      near: Keyword.get(opts, :near, 0.1),
-      far: Keyword.get(opts, :far, 1000.0),
+      target: target,
+      distance: distance,
+      azimuth: azimuth,
+      elevation: elevation,
+      camera: camera,
       sensitivity: Keyword.get(opts, :sensitivity, @default_sensitivity),
       zoom_speed: Keyword.get(opts, :zoom_speed, @default_zoom_speed),
       pan_speed: Keyword.get(opts, :pan_speed, @default_pan_speed)
@@ -154,15 +166,17 @@ defmodule EAGL.OrbitCamera do
   end
 
   @doc """
-  Create an orbit camera automatically sized to fit a GLTF document.
+  Create an orbit camera automatically sized to fit a scene.
 
-  Scans all POSITION accessors to find the overall bounding box.
+  Delegates to `EAGL.Scene.bounds/1` for bounding box extraction. Falls back
+  to default camera when bounds cannot be computed. Bounds reflect current
+  animated state when the scene has been updated.
 
-      orbit = OrbitCamera.fit_to_gltf(gltf)
+      orbit = OrbitCamera.fit_to_scene(scene)
   """
-  @spec fit_to_gltf(GLTF.t()) :: t()
-  def fit_to_gltf(%GLTF{} = gltf) do
-    case compute_gltf_bounds(gltf) do
+  @spec fit_to_scene(EAGL.Scene.t()) :: t()
+  def fit_to_scene(%EAGL.Scene{} = scene) do
+    case EAGL.Scene.bounds(scene) do
       {:ok, min_point, max_point} -> fit_to_bounds(min_point, max_point)
       :no_bounds -> new()
     end
@@ -173,13 +187,7 @@ defmodule EAGL.OrbitCamera do
   """
   @spec get_position(t()) :: EAGL.Math.vec3()
   def get_position(%__MODULE__{} = cam) do
-    [{tx, ty, tz}] = cam.target
-
-    x = tx + cam.distance * :math.cos(cam.elevation) * :math.sin(cam.azimuth)
-    y = ty + cam.distance * :math.sin(cam.elevation)
-    z = tz + cam.distance * :math.cos(cam.elevation) * :math.cos(cam.azimuth)
-
-    vec3(x, y, z)
+    spherical_to_vec3(cam.distance, cam.azimuth, cam.elevation, cam.target)
   end
 
   @doc """
@@ -187,8 +195,9 @@ defmodule EAGL.OrbitCamera do
   """
   @spec get_view_matrix(t()) :: EAGL.Math.mat4()
   def get_view_matrix(%__MODULE__{} = cam) do
-    eye = get_position(cam)
-    mat4_look_at(eye, cam.target, vec3(0.0, 1.0, 0.0))
+    pos = get_position(cam)
+    cam_with_pos = Camera.set_position(cam.camera, pos) |> Camera.set_target(cam.target)
+    Camera.get_view_matrix(cam_with_pos)
   end
 
   @doc """
@@ -196,8 +205,7 @@ defmodule EAGL.OrbitCamera do
   """
   @spec get_projection_matrix(t(), float()) :: EAGL.Math.mat4()
   def get_projection_matrix(%__MODULE__{} = cam, aspect_ratio) do
-    aspect = if aspect_ratio > 0, do: aspect_ratio, else: 1.0
-    mat4_perspective(radians(cam.fov), aspect, cam.near, cam.far)
+    Camera.get_projection_matrix(cam.camera, aspect_ratio)
   end
 
   @doc """
@@ -220,7 +228,8 @@ defmodule EAGL.OrbitCamera do
   @spec zoom(t(), float()) :: t()
   def zoom(%__MODULE__{} = cam, scroll_delta) do
     factor = 1.0 - scroll_delta * cam.zoom_speed
-    new_distance = max(cam.near * 2, cam.distance * factor)
+    min_dist = cam.camera.znear * 2
+    new_distance = max(min_dist, cam.distance * factor)
     %{cam | distance: new_distance}
   end
 
@@ -374,81 +383,4 @@ defmodule EAGL.OrbitCamera do
   defp to_tuple3([{x, y, z}]), do: {x, y, z}
   defp to_tuple3({x, y, z}), do: {x, y, z}
   defp to_tuple3([x, y, z]), do: {x, y, z}
-
-  defp compute_gltf_bounds(%GLTF{meshes: nil}), do: :no_bounds
-  defp compute_gltf_bounds(%GLTF{meshes: []}), do: :no_bounds
-
-  defp compute_gltf_bounds(%GLTF{
-         meshes: meshes,
-         accessors: accessors,
-         nodes: nodes,
-         scenes: scenes,
-         scene: scene_idx
-       }) do
-    position_accessor_indices =
-      meshes
-      |> Enum.flat_map(fn mesh ->
-        Enum.map(mesh.primitives, fn prim -> prim.attributes["POSITION"] end)
-      end)
-      |> Enum.filter(& &1)
-      |> Enum.uniq()
-
-    bounds =
-      position_accessor_indices
-      |> Enum.reduce(nil, fn idx, acc ->
-        accessor = Enum.at(accessors || [], idx)
-
-        if accessor && accessor.min && accessor.max do
-          [min_x, min_y, min_z] = accessor.min
-          [max_x, max_y, max_z] = accessor.max
-
-          case acc do
-            nil ->
-              {{min_x, min_y, min_z}, {max_x, max_y, max_z}}
-
-            {{ax, ay, az}, {bx, by, bz}} ->
-              {{min(ax, min_x), min(ay, min_y), min(az, min_z)},
-               {max(bx, max_x), max(by, max_y), max(bz, max_z)}}
-          end
-        else
-          acc
-        end
-      end)
-
-    case bounds do
-      nil ->
-        :no_bounds
-
-      {min_point, max_point} ->
-        scale = estimate_root_scale(nodes, scenes, scene_idx)
-        {sx, sy, sz} = min_point
-        {bx, by, bz} = max_point
-        {:ok, {sx * scale, sy * scale, sz * scale}, {bx * scale, by * scale, bz * scale}}
-    end
-  end
-
-  # Extract an approximate uniform scale from the scene's root node transform
-  defp estimate_root_scale(nodes, scenes, scene_idx) when is_list(nodes) and is_list(scenes) do
-    scene = Enum.at(scenes, scene_idx || 0)
-    root_idx = scene && List.first(scene.nodes || [])
-    root = root_idx && Enum.at(nodes, root_idx)
-
-    cond do
-      root == nil ->
-        1.0
-
-      root.matrix != nil ->
-        [{m0, _, _, _, _, m5, _, _, _, _, m10, _, _, _, _, _}] = root.matrix
-        (abs(m0) + abs(m5) + abs(m10)) / 3.0
-
-      root.scale != nil ->
-        [sx, sy, sz] = root.scale
-        (abs(sx) + abs(sy) + abs(sz)) / 3.0
-
-      true ->
-        1.0
-    end
-  end
-
-  defp estimate_root_scale(_, _, _), do: 1.0
 end

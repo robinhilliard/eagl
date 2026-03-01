@@ -36,7 +36,7 @@ defmodule EAGL.Examples.GLTF.BoxAnimated do
       # --- EXAMPLE-SPECIFIC: Manually attach shader to all nodes (since we didn't use load_scene) ---
       updated_roots = Enum.map(scene.root_nodes, &attach_program(&1, program))
       scene = %{scene | root_nodes: updated_roots}
-      orbit = EAGL.OrbitCamera.fit_to_gltf(gltf)
+      orbit = EAGL.OrbitCamera.fit_to_scene(scene)
       {:ok, %{program: program, scene: scene, orbit: orbit, animator: animator}}
     end
   end
