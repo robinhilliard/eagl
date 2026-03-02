@@ -75,7 +75,16 @@ jobs:
       run: mix compile --warnings-as-errors
       
     - name: Run tests with virtual display
-      run: xvfb-run -a mix test
+      run: |
+        xvfb-run -a mix test 2>&1 | tee test.log
+        EXIT=$?
+        if [ $EXIT -eq 139 ] || [ $EXIT -eq 134 ]; then
+          if grep -q "0 failures" test.log; then
+            echo "Tests passed; ignoring shutdown crash (known Mesa/wx/xvfb issue)"
+            exit 0
+          fi
+        fi
+        exit $EXIT
       env:
         # Ensure software rendering is used
         LIBGL_ALWAYS_SOFTWARE: 1

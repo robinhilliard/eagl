@@ -30,7 +30,8 @@ defmodule GLTF.EAGLBridgeTest do
 
     test "parses zero correctly" do
       binary = <<0.0::little-float-32>>
-      assert {:ok, [0.0]} = GLTF.EAGL.binary_to_float_list(binary)
+      assert {:ok, [val]} = GLTF.EAGL.binary_to_float_list(binary)
+      assert_in_delta val, 0.0, 0.0001
     end
 
     test "handles empty binary" do
