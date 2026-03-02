@@ -3,45 +3,19 @@ defmodule GLTFIntegrationTest do
 
   @moduletag :integration
 
-  # Test with a variety of Khronos sample GLB files to ensure broad compatibility
+  # Test with Khronos sample GLB files - includes all samples needed for GLTF examples
+  # Note: Cube and Triangle only have glTF (split) format in Khronos, not glTF-Binary
+  @base_url "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/main/Models"
   @sample_files [
-    %{
-      name: "Box",
-      url:
-        "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/main/Models/Box/glTF-Binary/Box.glb",
-      expected: %{
-        version: "2.0",
-        buffers: 1,
-        meshes: 1,
-        materials: 1,
-        scenes: 1,
-        generator: "COLLADA2GLTF"
-      }
-    },
-    %{
-      name: "Cube",
-      url:
-        "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/main/Models/Cube/glTF-Binary/Cube.glb",
-      expected: %{
-        version: "2.0",
-        buffers: 1,
-        meshes: 1
-      }
-    },
-    %{
-      name: "Triangle",
-      url:
-        "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/main/Models/Triangle/glTF-Binary/Triangle.glb",
-      expected: %{
-        version: "2.0",
-        buffers: 1,
-        meshes: 1
-      }
-    }
+    %{name: "Box", path: "Box", expected: %{version: "2.0", buffers: 1, meshes: 1, materials: 1, scenes: 1, generator: "COLLADA2GLTF"}},
+    %{name: "BoxTextured", path: "BoxTextured", expected: %{version: "2.0", buffers: 1, meshes: 1}},
+    %{name: "Duck", path: "Duck", expected: %{version: "2.0", buffers: 1, meshes: 1}},
+    %{name: "BoxAnimated", path: "BoxAnimated", expected: %{version: "2.0", buffers: 1, meshes: 2}},
+    %{name: "DamagedHelmet", path: "DamagedHelmet", expected: %{version: "2.0", buffers: 1, meshes: 1}}
   ]
 
   setup_all do
-    # Download sample files for testing
+    # Download sample files for testing (same set used by GLTF examples)
     sample_dir = "test/fixtures/samples"
     File.mkdir_p!(sample_dir)
 
@@ -49,9 +23,10 @@ defmodule GLTFIntegrationTest do
       @sample_files
       |> Enum.map(fn sample ->
         local_path = Path.join(sample_dir, "#{sample.name}.glb")
+        url = "#{@base_url}/#{sample.path}/glTF-Binary/#{sample.name}.glb"
 
         unless File.exists?(local_path) do
-          case download_file(sample.url, local_path) do
+          case download_file(url, local_path) do
             :ok ->
               {sample.name, local_path, sample.expected}
 

@@ -546,10 +546,16 @@ defmodule EAGLExamplesRunner do
 
     try do
       Code.require_file(example.file)
-      apply(module, :run_example, [])
+      result = apply(module, :run_example, [])
 
-      IO.puts("")
-      IO.puts(colorize("Example finished.", :green))
+      case result do
+        {:error, reason} ->
+          IO.puts(colorize("Example failed (setup or load error): #{inspect(reason)}", :red))
+
+        _ ->
+          IO.puts("")
+          IO.puts(colorize("Example finished.", :green))
+      end
     rescue
       error ->
         IO.puts(colorize("Error running example: #{inspect(error)}", :red))
@@ -562,10 +568,16 @@ defmodule EAGLExamplesRunner do
 
     try do
       Code.require_file(example.file)
-      apply(module, :run_example, [])
+      result = apply(module, :run_example, [])
 
-      IO.puts("")
-      IO.puts(colorize("Example finished.", :green))
+      case result do
+        {:error, reason} ->
+          IO.puts(colorize("Example failed (setup or load error): #{inspect(reason)}", :red))
+
+        _ ->
+          IO.puts("")
+          IO.puts(colorize("Example finished.", :green))
+      end
     rescue
       error ->
         IO.puts(colorize("Error running example: #{inspect(error)}", :red))

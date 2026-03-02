@@ -261,7 +261,18 @@ defmodule EAGL.Window do
       # Critical timing from wings_gl: let wxWidgets realize the window
       # "otherwise the setCurrent fails" - especially important on GTK
       # Always sleep regardless of whether we got the show event
-      :timer.sleep(200)
+      # macOS needs longer: wxGLCanvas on Cocoa can have delayed layout/display
+      sleep_ms = case :os.type() do
+        {:unix, :darwin} -> 400
+        _ -> 200
+      end
+      :timer.sleep(sleep_ms)
+
+      # macOS: Force size event so GLCanvas gets proper layout (wxMac may not show until resize)
+      if :os.type() == {:unix, :darwin} do
+        :wxFrame.sendSizeEvent(frame)
+        :timer.sleep(50)
+      end
 
       # Create OpenGL context AFTER window is shown and realized
       # This follows Wings3D pattern more closely

@@ -949,6 +949,24 @@ end
 
 **Symptoms:** GLB web demos fail with "http_util.timestamp/0 is undefined"; local GLB files work fine; only URL loading fails.
 
+#### GLTF Examples: Missing GLB Files
+
+The GLTF examples (Box Textured, Duck, Box Animated, Damaged Helmet) require sample GLB files that are not in the repo. Download them first:
+
+```bash
+mix glb.samples
+```
+
+This fetches Box, BoxTextured, Duck, BoxAnimated, and DamagedHelmet from Khronos glTF-Sample-Assets into `test/fixtures/samples/`. The integration tests (`mix test --include integration`) also download these on demand.
+
+#### GLTF Examples Exit Immediately on macOS
+
+If GLTF examples close immediately on macOS while the basic Box example works:
+
+1. **Check for setup errors**: The examples runner reports setup/load failures. If you see "Example failed (setup or load error): ...", the issue is likely a missing GLB file (run `mix glb.samples`) or texture/shader loading.
+
+2. **macOS wxGLCanvas timing**: EAGL uses longer initialization delays on macOS. If the window still closes immediately, try clicking the window as soon as it appears to ensure it receives focus.
+
 ## Contributing
 
 We welcome contributions. Suggested contributions include:
@@ -967,7 +985,8 @@ Please read through these guidelines before submitting changes.
 1. Fork and clone the repository
 2. Install dependencies: `mix deps.get`
 3. Run tests to ensure everything works: `mix test`
-4. Try the examples: `mix examples`
+4. Download GLB samples for GLTF examples: `mix glb.samples`
+5. Try the examples: `mix examples`
 
 ### Code Standards
 

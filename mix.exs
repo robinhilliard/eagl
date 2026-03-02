@@ -46,7 +46,7 @@ defmodule EAGL.MixProject do
   # Run "mix help compile.app" to learn about applications.
   def application do
     [
-      extra_applications: [:logger, :wx, :observer]
+      extra_applications: [:logger, :wx, :observer, :inets]
     ]
   end
 
@@ -72,7 +72,8 @@ defmodule EAGL.MixProject do
   # Mix aliases for development convenience
   defp aliases do
     [
-      examples: ["run priv/scripts/examples.exs"]
+      examples: ["run priv/scripts/examples.exs"],
+      "glb.samples": ["run priv/scripts/download_glb_samples.exs"]
     ]
   end
 
