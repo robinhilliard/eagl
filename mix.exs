@@ -1,7 +1,7 @@
 defmodule EAGL.MixProject do
   use Mix.Project
 
-  @version "0.11.0"
+  @version "0.12.0"
   @source_url "https://github.com/robinhilliard/eagl"
 
   def project do
@@ -46,8 +46,12 @@ defmodule EAGL.MixProject do
   # Run "mix help compile.app" to learn about applications.
   def application do
     [
-      extra_applications: [:logger, :wx, :observer, :inets]
+      extra_applications: [:logger, :wx, :inets] ++ extra_applications()
     ]
+  end
+
+  defp extra_applications do
+    if Mix.env() == :test, do: [], else: [:observer]
   end
 
   # Run "mix help deps" to learn about dependencies.

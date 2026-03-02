@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.12.0] - 2026-03-02
+
+### Fixed
+- **CI**: Work around Mesa/llvmpipe segfault (exit 139) during wx/GL teardown in xvfb headless environment. Test helper now calls `System.halt(0)` when `CI=true` to exit before problematic shutdown.
+
+### Changed
+- Exclude `:observer` from applications in test environment to reduce GUI overhead and shutdown complexity in CI.
+
 ## [0.11.0] - 2026-03-02
 
 ### Changed
