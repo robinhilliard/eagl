@@ -86,8 +86,9 @@ defmodule ExamplesTest do
   ]
 
   describe "example timeout tests" do
-    # Allow time for all examples to complete with their built-in timeouts
-    @describetag timeout: 30_000
+    # Allow time for all examples to complete with their built-in timeouts.
+    # CI (xvfb) is slower: 30 examples × ~2s each at concurrency 4 ≈ 60s+
+    @describetag timeout: 90_000
     test "examples run and timeout correctly" do
       # Run interactive examples with limited concurrency (8 at a time)
       # Each example uses its own timeout system that starts after first render
