@@ -27,7 +27,7 @@ The following are non-goals:
 
 ```elixir
 # Add to mix.exs
-{:eagl, "~> 0.12.0"}
+{:eagl, "~> 0.13.0"}
 ```
 
 EAGL includes several examples to demonstrate its capabilities. Use the unified examples runner:

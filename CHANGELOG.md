@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.13.0] - 2026-03-02
+
+### Fixed
+- **CI**: Workflow fallback treats exit 134 (SIGABRT) and 139 (SIGSEGV) as success when tests pass, covering Mesa/wx shutdown crashes across all matrix jobs.
+- OTP 27+ compatibility: "parses zero correctly" test avoids pattern matching on `0.0` (use `assert_in_delta` instead).
+
 ## [0.12.0] - 2026-03-02
 
 ### Fixed
