@@ -262,10 +262,12 @@ defmodule EAGL.Window do
       # "otherwise the setCurrent fails" - especially important on GTK
       # Always sleep regardless of whether we got the show event
       # macOS needs longer: wxGLCanvas on Cocoa can have delayed layout/display
-      sleep_ms = case :os.type() do
-        {:unix, :darwin} -> 400
-        _ -> 200
-      end
+      sleep_ms =
+        case :os.type() do
+          {:unix, :darwin} -> 400
+          _ -> 200
+        end
+
       :timer.sleep(sleep_ms)
 
       # macOS: Force size event so GLCanvas gets proper layout (wxMac may not show until resize)

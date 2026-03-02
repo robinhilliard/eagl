@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.11.0] - 2026-03-02
+
 ### Changed
 - **Breaking**: `OrbitCamera.fit_to_scene/1` now accepts `EAGL.Scene.t()` instead of `GLTF.t()`. Convert glTF to EAGL first, then call `fit_to_scene(scene)`. Use `GLTF.EAGL.bounds/1` with `fit_to_bounds/2` for direct glTF bounds.
 

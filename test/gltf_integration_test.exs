@@ -7,11 +7,34 @@ defmodule GLTFIntegrationTest do
   # Note: Cube and Triangle only have glTF (split) format in Khronos, not glTF-Binary
   @base_url "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/main/Models"
   @sample_files [
-    %{name: "Box", path: "Box", expected: %{version: "2.0", buffers: 1, meshes: 1, materials: 1, scenes: 1, generator: "COLLADA2GLTF"}},
-    %{name: "BoxTextured", path: "BoxTextured", expected: %{version: "2.0", buffers: 1, meshes: 1}},
+    %{
+      name: "Box",
+      path: "Box",
+      expected: %{
+        version: "2.0",
+        buffers: 1,
+        meshes: 1,
+        materials: 1,
+        scenes: 1,
+        generator: "COLLADA2GLTF"
+      }
+    },
+    %{
+      name: "BoxTextured",
+      path: "BoxTextured",
+      expected: %{version: "2.0", buffers: 1, meshes: 1}
+    },
     %{name: "Duck", path: "Duck", expected: %{version: "2.0", buffers: 1, meshes: 1}},
-    %{name: "BoxAnimated", path: "BoxAnimated", expected: %{version: "2.0", buffers: 1, meshes: 2}},
-    %{name: "DamagedHelmet", path: "DamagedHelmet", expected: %{version: "2.0", buffers: 1, meshes: 1}}
+    %{
+      name: "BoxAnimated",
+      path: "BoxAnimated",
+      expected: %{version: "2.0", buffers: 1, meshes: 2}
+    },
+    %{
+      name: "DamagedHelmet",
+      path: "DamagedHelmet",
+      expected: %{version: "2.0", buffers: 1, meshes: 1}
+    }
   ]
 
   setup_all do
