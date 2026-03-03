@@ -69,9 +69,9 @@ defmodule EAGL.Node do
   ]
 
   @type t :: %__MODULE__{
-          position: list(float()) | nil,
-          rotation: list(float()) | nil,
-          scale: list(float()) | nil,
+          position: EAGL.Math.vec3() | nil,
+          rotation: EAGL.Math.quat() | nil,
+          scale: EAGL.Math.vec3() | nil,
           matrix: list(float()) | nil,
           children: [t()],
           parent: t() | nil,
@@ -175,7 +175,7 @@ defmodule EAGL.Node do
   @doc """
   Set the position of this node.
   """
-  @spec set_position(t(), list(float())) :: t()
+  @spec set_position(t(), EAGL.Math.vec3()) :: t()
   def set_position(%__MODULE__{} = node, position) do
     %{node | position: position, matrix: nil}
   end
@@ -183,7 +183,7 @@ defmodule EAGL.Node do
   @doc """
   Set the rotation of this node.
   """
-  @spec set_rotation(t(), list(float())) :: t()
+  @spec set_rotation(t(), EAGL.Math.quat()) :: t()
   def set_rotation(%__MODULE__{} = node, rotation) do
     %{node | rotation: rotation, matrix: nil}
   end
@@ -191,7 +191,7 @@ defmodule EAGL.Node do
   @doc """
   Set the scale of this node.
   """
-  @spec set_scale(t(), list(float())) :: t()
+  @spec set_scale(t(), EAGL.Math.vec3()) :: t()
   def set_scale(%__MODULE__{} = node, scale) do
     %{node | scale: scale, matrix: nil}
   end
