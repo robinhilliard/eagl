@@ -226,7 +226,6 @@ defmodule GLTF.GLBLoader do
   defp format_error(:eisdir), do: "Is a directory"
   defp format_error(reason) when is_atom(reason), do: "File error: #{reason}"
   defp format_error(reason) when is_binary(reason), do: reason
-  defp format_error(reason), do: "Error: #{inspect(reason)}"
 
   # Fetch binary data from URL using different HTTP clients
   defp fetch_url(url, timeout, :httpc) do

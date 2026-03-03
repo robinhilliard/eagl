@@ -84,9 +84,9 @@ defmodule EAGL.Node do
   @spec new(keyword()) :: t()
   def new(opts \\ []) do
     %__MODULE__{
-      position: Keyword.get(opts, :position, vec3(0, 0, 0)),
+      position: Keyword.get(opts, :position, vec3(0.0, 0.0, 0.0)),
       rotation: Keyword.get(opts, :rotation, quat_identity()),
-      scale: Keyword.get(opts, :scale, vec3(1, 1, 1)),
+      scale: Keyword.get(opts, :scale, vec3(1.0, 1.0, 1.0)),
       matrix: nil,
       children: [],
       parent: nil,
@@ -137,7 +137,7 @@ defmodule EAGL.Node do
   @doc """
   Get the local transformation matrix for this node.
   """
-  @spec get_local_transform_matrix(t()) :: [{tuple()}] | list()
+  @spec get_local_transform_matrix(t()) :: EAGL.Math.mat4()
   def get_local_transform_matrix(%__MODULE__{matrix: matrix}) when is_list(matrix) do
     matrix
   end
@@ -145,9 +145,9 @@ defmodule EAGL.Node do
   # Performance note: recomputes T * R * S every call (per-node per-frame).
   # For large scenes, consider caching with a dirty flag on transform changes.
   def get_local_transform_matrix(%__MODULE__{position: pos, rotation: rot, scale: scale}) do
-    translation_matrix = mat4_translate(pos || vec3(0, 0, 0))
+    translation_matrix = mat4_translate(pos || vec3(0.0, 0.0, 0.0))
     rotation_matrix = quat_to_mat4(rot || quat_identity())
-    scale_matrix = mat4_scale(scale || vec3(1, 1, 1))
+    scale_matrix = mat4_scale(scale || vec3(1.0, 1.0, 1.0))
 
     mat4_mul(mat4_mul(translation_matrix, rotation_matrix), scale_matrix)
   end
@@ -155,7 +155,7 @@ defmodule EAGL.Node do
   @doc """
   Get the world transformation matrix for this node.
   """
-  @spec get_world_transform_matrix(t()) :: list(float())
+  @spec get_world_transform_matrix(t()) :: EAGL.Math.mat4()
   def get_world_transform_matrix(%__MODULE__{parent: nil} = node) do
     get_local_transform_matrix(node)
   end

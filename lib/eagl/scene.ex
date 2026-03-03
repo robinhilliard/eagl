@@ -92,7 +92,7 @@ defmodule EAGL.Scene do
   This function traverses the scene graph and renders each mesh with its
   accumulated transform matrix.
   """
-  @spec render(t(), list(float()), list(float())) :: :ok
+  @spec render(t(), EAGL.Math.mat4(), EAGL.Math.mat4()) :: :ok
   def render(%__MODULE__{root_nodes: roots}, view_matrix, projection_matrix) do
     identity_matrix = mat4_identity()
 

@@ -45,8 +45,9 @@ defmodule EAGL.WindowBehaviour do
   @doc """
   Called when the window needs to be rendered.
   The OpenGL context is already current and the viewport is set.
+  May return `:ok` or `{:ok, new_state}` to pass updated state to the next frame.
   """
-  @callback render(width :: float(), height :: float(), state :: any()) :: :ok
+  @callback render(width :: float(), height :: float(), state :: any()) :: :ok | {:ok, any()}
 
   @doc """
   Called when the window is being closed.
