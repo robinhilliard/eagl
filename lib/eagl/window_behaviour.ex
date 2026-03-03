@@ -50,6 +50,14 @@ defmodule EAGL.WindowBehaviour do
   @callback render(width :: float(), height :: float(), state :: any()) :: :ok | {:ok, any()}
 
   @doc """
+  Optional. Called when the window needs to be rendered, with frame timing.
+  If implemented, this is called instead of `render/3` when timing is available (tick loop).
+  `timing` contains `delta_time` (seconds since last frame) and `elapsed_time` (seconds since start).
+  """
+  @callback render(width :: float(), height :: float(), state :: any(), timing :: map()) ::
+              :ok | {:ok, any()}
+
+  @doc """
   Called when the window is being closed.
   Should clean up resources in state.
   """
@@ -72,5 +80,5 @@ defmodule EAGL.WindowBehaviour do
   """
   @callback handle_event(event :: any(), state :: any()) :: {:ok, any()}
 
-  @optional_callbacks handle_event: 2
+  @optional_callbacks [handle_event: 2, render: 4]
 end

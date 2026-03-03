@@ -1536,4 +1536,59 @@ defmodule EAGL.Math do
       {radius, azimuth, elevation}
     end
   end
+
+  # ============================================================================
+  # RAY AND AABB
+  # ============================================================================
+
+  @type ray :: {vec3(), vec3()}
+
+  @doc """
+  Create a ray from origin and direction.
+
+  Direction should be normalized for correct distance semantics in ray-AABB tests.
+  """
+  @spec ray_new(vec3(), vec3()) :: ray()
+  def ray_new(origin, direction), do: {origin, direction}
+
+  @doc """
+  Test if a ray intersects an AABB.
+
+  Ray format: `{origin, direction}` (both vec3). Direction should be normalized.
+  AABB format: `{{min_x, min_y, min_z}, {max_x, max_y, max_z}}`.
+
+  Returns `{:hit, t}` where t is the distance along the ray to the entry point,
+  or `:miss` if the ray does not intersect.
+  """
+  @spec ray_intersects_aabb?(ray(), {{float(), float(), float()}, {float(), float(), float()}}) ::
+          {:hit, float()} | :miss
+  def ray_intersects_aabb?({[{ox, oy, oz}], [{dx, dy, dz}]}, {{min_x, min_y, min_z}, {max_x, max_y, max_z}}) do
+    inv_dx = if abs(dx) < 1.0e-8, do: 1.0e32, else: 1.0 / dx
+    inv_dy = if abs(dy) < 1.0e-8, do: 1.0e32, else: 1.0 / dy
+    inv_dz = if abs(dz) < 1.0e-8, do: 1.0e32, else: 1.0 / dz
+
+    t1 = (min_x - ox) * inv_dx
+    t2 = (max_x - ox) * inv_dx
+    t3 = (min_y - oy) * inv_dy
+    t4 = (max_y - oy) * inv_dy
+    t5 = (min_z - oz) * inv_dz
+    t6 = (max_z - oz) * inv_dz
+
+    t_min_x = min(t1, t2)
+    t_max_x = max(t1, t2)
+    t_min_y = min(t3, t4)
+    t_max_y = max(t3, t4)
+    t_min_z = min(t5, t6)
+    t_max_z = max(t5, t6)
+
+    t_enter = max(max(t_min_x, t_min_y), t_min_z)
+    t_exit = min(min(t_max_x, t_max_y), t_max_z)
+
+    if t_enter <= t_exit and t_exit >= 0.0 do
+      t = if t_enter >= 0.0, do: t_enter, else: t_exit
+      {:hit, t}
+    else
+      :miss
+    end
+  end
 end

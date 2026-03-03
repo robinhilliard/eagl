@@ -139,4 +139,38 @@ defmodule EAGL.Camera do
   """
   @spec set_target(t(), EAGL.Math.vec3()) :: t()
   def set_target(%__MODULE__{} = cam, target), do: %{cam | target: target}
+
+  @doc """
+  Unproject screen coordinates to a world-space ray.
+
+  Converts (screen_x, screen_y) to a ray from the camera through that screen point.
+  Screen coordinates are in pixels; origin is bottom-left (OpenGL convention).
+  Viewport is `{x, y, width, height}` in pixels.
+
+  Returns `{origin, direction}` as a ray (both vec3). Direction is normalized.
+  """
+  @spec unproject(
+          float(),
+          float(),
+          EAGL.Math.mat4(),
+          EAGL.Math.mat4(),
+          {float(), float(), float(), float()}
+        ) :: {EAGL.Math.vec3(), EAGL.Math.vec3()}
+  def unproject(screen_x, screen_y, view_matrix, proj_matrix, {vp_x, vp_y, vp_w, vp_h}) do
+    # NDC: x,y in [-1,1], screen origin bottom-left
+    x_ndc = (screen_x - vp_x) / max(vp_w, 1) * 2.0 - 1.0
+    y_ndc = (screen_y - vp_y) / max(vp_h, 1) * 2.0 - 1.0
+
+    # Near and far clip plane points in NDC
+    near_ndc = vec3(x_ndc, y_ndc, -1.0)
+    far_ndc = vec3(x_ndc, y_ndc, 1.0)
+
+    inv_vp = mat4_inverse(mat4_mul(proj_matrix, view_matrix))
+
+    near_world = mat4_transform_point(inv_vp, near_ndc)
+    far_world = mat4_transform_point(inv_vp, far_ndc)
+
+    direction = normalize(vec_sub(far_world, near_world))
+    {near_world, direction}
+  end
 end

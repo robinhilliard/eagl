@@ -375,7 +375,8 @@ defmodule EAGL.Window do
                   # Schedule the first tick
                   Process.send_after(self(), :tick, @tick_interval)
 
-                  # Main loop
+                  # Main loop (start_time = first tick time for elapsed_time)
+                  start_time = :erlang.monotonic_time(:millisecond) / 1000.0
                   try do
                     main_loop(
                       frame,
@@ -385,7 +386,8 @@ defmodule EAGL.Window do
                       state,
                       enter_to_exit,
                       timeout,
-                      :erlang.monotonic_time(:millisecond) / 1000.0
+                      start_time,
+                      start_time
                     )
                   catch
                     :exit_main_loop -> :ok
@@ -715,6 +717,7 @@ defmodule EAGL.Window do
           any(),
           boolean(),
           integer() | nil,
+          float() | nil,
           float() | nil
         ) :: :ok
   defp main_loop(
@@ -725,7 +728,8 @@ defmodule EAGL.Window do
          state,
          enter_to_exit,
          timeout,
-         last_tick_time
+         last_tick_time,
+         start_time
        ) do
     receive do
       # Handle timeout for automated testing
@@ -775,7 +779,8 @@ defmodule EAGL.Window do
           state,
           enter_to_exit,
           timeout,
-          last_tick_time
+          last_tick_time,
+          start_time
         )
 
       {:wx, _, _, _, {:wxKey, :char_hook, _, _, key_code, _, _, _, _, _, _, _}} ->
@@ -816,7 +821,8 @@ defmodule EAGL.Window do
           new_state,
           enter_to_exit,
           timeout,
-          last_tick_time
+          last_tick_time,
+          start_time
         )
 
       # Handle mouse motion events for camera look around
@@ -847,7 +853,8 @@ defmodule EAGL.Window do
           new_state,
           enter_to_exit,
           timeout,
-          last_tick_time
+          last_tick_time,
+          start_time
         )
 
       # Handle scroll wheel events for camera zoom
@@ -886,7 +893,8 @@ defmodule EAGL.Window do
           new_state,
           enter_to_exit,
           timeout,
-          last_tick_time
+          last_tick_time,
+          start_time
         )
 
       # Handle mouse button events for click-to-drag camera control
@@ -925,7 +933,8 @@ defmodule EAGL.Window do
           new_state,
           enter_to_exit,
           timeout,
-          last_tick_time
+          last_tick_time,
+          start_time
         )
 
       {:wx, _, _, _, {:wxClose, :close_window}} ->
@@ -970,7 +979,8 @@ defmodule EAGL.Window do
           new_state,
           enter_to_exit,
           nil,
-          last_tick_time
+          last_tick_time,
+          start_time
         )
 
       :tick ->
@@ -1015,10 +1025,19 @@ defmodule EAGL.Window do
         safe_h = max(physical_height, 1)
         :gl.viewport(0, 0, safe_w, safe_h)
 
+        timing = %{delta_time: time_delta, elapsed_time: tick_time - start_time}
+
         rendered_state =
-          case callback_module.render(safe_w * 1.0, safe_h * 1.0, ticked_state) do
-            {:ok, updated_state} -> updated_state
-            _ -> ticked_state
+          if function_exported?(callback_module, :render, 4) do
+            case callback_module.render(safe_w * 1.0, safe_h * 1.0, ticked_state, timing) do
+              {:ok, updated_state} -> updated_state
+              _ -> ticked_state
+            end
+          else
+            case callback_module.render(safe_w * 1.0, safe_h * 1.0, ticked_state) do
+              {:ok, updated_state} -> updated_state
+              _ -> ticked_state
+            end
           end
 
         :wxGLCanvas.swapBuffers(gl_canvas)
@@ -1035,7 +1054,8 @@ defmodule EAGL.Window do
           rendered_state,
           enter_to_exit,
           timeout,
-          tick_time
+          tick_time,
+          start_time
         )
 
       other ->
@@ -1055,7 +1075,8 @@ defmodule EAGL.Window do
           state,
           enter_to_exit,
           timeout,
-          last_tick_time
+          last_tick_time,
+          start_time
         )
     end
   end
