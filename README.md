@@ -32,6 +32,13 @@ The following are non-goals:
 
 EAGL includes several examples to demonstrate its capabilities. Use the unified examples runner:
 
+<p align="center">
+  <img src="assets/coordinate_system_example.png" width="100%" alt="Coordinate System"/> &nbsp;
+  <img src="assets/lighting_materials_example.png" width="100%" alt="Lighting Materials"/> &nbsp;
+  <img src="assets/gtlf_example_3.png" width="100%" alt="Duck Model"/> &nbsp;
+  <img src="assets/gtlf_example_5.png" width="100%" alt="Damaged Helmet"/>
+</p>
+
 ```
 mix examples
 ════════════════════════════════════════════════════════════════
@@ -77,6 +84,9 @@ mix examples
 Enter code (01-02, 111-176, 211-218, 311-315), 'q' to quit, 'r' to refresh:
 >
 ```
+
+
+
 
 ## Usage
 
