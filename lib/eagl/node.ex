@@ -61,6 +61,9 @@ defmodule EAGL.Node do
     :camera,
     :name,
 
+    # Custom data (from glTF extras → Blender custom properties)
+    :properties,
+
     # Animation
     :animations
   ]
@@ -75,6 +78,7 @@ defmodule EAGL.Node do
           mesh: map() | nil,
           camera: EAGL.Camera.t() | nil,
           name: String.t() | nil,
+          properties: map() | nil,
           animations: map() | nil
         }
 
@@ -93,6 +97,7 @@ defmodule EAGL.Node do
       mesh: Keyword.get(opts, :mesh),
       camera: Keyword.get(opts, :camera),
       name: Keyword.get(opts, :name),
+      properties: Keyword.get(opts, :properties),
       animations: %{}
     }
   end
@@ -112,6 +117,7 @@ defmodule EAGL.Node do
       mesh: Keyword.get(opts, :mesh),
       camera: Keyword.get(opts, :camera),
       name: Keyword.get(opts, :name),
+      properties: Keyword.get(opts, :properties),
       animations: %{}
     }
   end

@@ -669,6 +669,27 @@ defmodule GLTF.EAGLBridgeTest do
     end
   end
 
+  describe "node extras preservation" do
+    test "node_to_eagl_node passes through glTF node extras" do
+      gltf_node =
+        GLTF.Node.with_trs([0, 0, 0], [0, 0, 0, 1], [1, 1, 1],
+          name: "Door",
+          extras: %{"behaviour" => "MyGame.Behaviours.Door", "open_angle" => 90}
+        )
+
+      eagl_node = GLTF.EAGL.node_to_eagl_node(gltf_node, %{}, 0, %{})
+
+      assert eagl_node.properties == %{"behaviour" => "MyGame.Behaviours.Door", "open_angle" => 90}
+    end
+
+    test "node_to_eagl_node passes nil when glTF node has no extras" do
+      gltf_node = GLTF.Node.with_trs([0, 0, 0], [0, 0, 0, 1], [1, 1, 1], name: "Box")
+      eagl_node = GLTF.EAGL.node_to_eagl_node(gltf_node, %{}, 0, %{})
+
+      assert eagl_node.properties == nil
+    end
+  end
+
   # ============================================================================
   # Integration test with real GLB file (Box.glb)
   # ============================================================================
