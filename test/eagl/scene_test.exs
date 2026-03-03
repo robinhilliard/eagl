@@ -1,7 +1,7 @@
 defmodule EAGL.SceneTest do
   use ExUnit.Case, async: true
   import EAGL.Math
-  alias EAGL.{Scene, Node}
+  alias EAGL.{Scene, Node, Camera}
 
   describe "bounds/1" do
     test "returns :no_bounds for empty scene" do
@@ -39,6 +39,35 @@ defmodule EAGL.SceneTest do
       scene = Scene.add_root_node(Scene.new(), node)
 
       assert {:ok, {9.0, -1.0, -1.0}, {11.0, 1.0, 1.0}} = Scene.bounds(scene)
+    end
+  end
+
+  describe "pick/5" do
+    test "returns nil for empty scene" do
+      scene = Scene.new()
+      camera = Camera.new(position: vec3(0, 0, 5), target: vec3(0, 0, 0))
+      viewport = {0, 0, 100, 100}
+
+      assert Scene.pick(scene, camera, viewport, 50, 50) == nil
+    end
+
+    test "returns nil for scene with nodes but no meshes" do
+      node = Node.new(position: vec3(0, 0, 0))
+      scene = Scene.add_root_node(Scene.new(), node)
+      camera = Camera.new(position: vec3(0, 0, 5), target: vec3(0, 0, 0))
+      viewport = {0, 0, 100, 100}
+
+      assert Scene.pick(scene, camera, viewport, 50, 50) == nil
+    end
+
+    test "returns nil for zero-size viewport" do
+      mesh = %{vao: 0, vertex_count: 0}
+      node = Node.new(mesh: mesh)
+      scene = Scene.add_root_node(Scene.new(), node)
+      camera = Camera.new(position: vec3(0, 0, 5), target: vec3(0, 0, 0))
+      viewport = {0, 0, 0, 0}
+
+      assert Scene.pick(scene, camera, viewport, 0, 0) == nil
     end
   end
 end

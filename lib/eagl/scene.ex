@@ -54,6 +54,9 @@ defmodule EAGL.Scene do
   """
 
   alias EAGL.Node
+  alias EAGL.Camera
+  alias EAGL.OrbitCamera
+  import Bitwise
   import EAGL.Math
   use EAGL.Const
 
@@ -226,6 +229,361 @@ defmodule EAGL.Scene do
       end)
 
     %{scene | root_nodes: new_root_nodes}
+  end
+
+  @doc """
+  Render the pick buffer to the current framebuffer for debugging.
+
+  Performs the same pick pass as `pick/5` but displays the result as a fullscreen
+  image instead of reading a pixel. Node IDs are amplified so they're visible
+  (background=black, node 1=red, node 2=green-ish, etc.). Press 'p' in examples
+  to toggle this view.
+
+  Call after setting up the viewport. Uses the current framebuffer.
+  """
+  @spec visualize_pick_buffer(
+          t(),
+          Camera.t() | OrbitCamera.t(),
+          {number(), number(), number(), number()}
+        ) ::
+          :ok
+  def visualize_pick_buffer(%__MODULE__{root_nodes: roots}, camera, viewport) do
+    {_vp_x, _vp_y, vp_w, vp_h} = viewport
+
+    if vp_w >= 1 and vp_h >= 1 do
+      view_matrix = get_view_matrix(camera)
+      aspect = vp_w / max(vp_h, 1)
+      proj_matrix = get_projection_matrix(camera, aspect)
+      nodes_with_meshes = collect_nodes_with_meshes(roots, mat4_identity())
+
+      if nodes_with_meshes != [] do
+        do_visualize_pick_buffer(nodes_with_meshes, view_matrix, proj_matrix, viewport)
+      end
+    end
+
+    :ok
+  end
+
+  @doc """
+  Pick a node at screen coordinates using GPU object-ID rendering.
+
+  Renders the scene to an offscreen framebuffer with each mesh outputting its
+  node index as a color. Reads the pixel at (screen_x, screen_y) and returns
+  the corresponding node.
+
+  ## Parameters
+
+  - `scene` - The scene to pick from
+  - `camera` - EAGL.Camera or EAGL.OrbitCamera for view/projection
+  - `viewport` - `{x, y, width, height}` in pixels
+  - `screen_x`, `screen_y` - Screen coordinates (top-left origin, e.g. from mouse)
+
+  ## Returns
+
+  - `{:ok, node}` when a node with a mesh is picked
+  - `nil` when picking empty space or no nodes have meshes
+
+  ## Example
+
+      case Scene.pick(scene, orbit, {0, 0, 1024, 768}, mouse_x, mouse_y) do
+        {:ok, node} -> IO.puts("Picked: \#{Node.get_id(node)}")
+        nil -> :ok
+      end
+  """
+  @spec pick(
+          t(),
+          Camera.t() | OrbitCamera.t(),
+          {number(), number(), number(), number()},
+          number(),
+          number()
+        ) ::
+          {:ok, Node.t()} | nil
+  def pick(%__MODULE__{root_nodes: roots}, camera, viewport, screen_x, screen_y) do
+    {_vp_x, _vp_y, vp_w, vp_h} = viewport
+
+    if vp_w < 1 or vp_h < 1 do
+      nil
+    else
+      view_matrix = get_view_matrix(camera)
+      aspect = vp_w / max(vp_h, 1)
+      proj_matrix = get_projection_matrix(camera, aspect)
+
+      nodes_with_meshes = collect_nodes_with_meshes(roots, mat4_identity())
+
+      if nodes_with_meshes == [] do
+        nil
+      else
+        case do_pick_pass(
+               nodes_with_meshes,
+               view_matrix,
+               proj_matrix,
+               viewport,
+               screen_x,
+               screen_y
+             ) do
+          nil ->
+            nil
+
+          idx when is_integer(idx) and idx >= 0 ->
+            case Enum.at(nodes_with_meshes, idx) do
+              {node, _world} -> {:ok, node}
+              _ -> nil
+            end
+        end
+      end
+    end
+  end
+
+  defp get_view_matrix(%Camera{} = cam), do: Camera.get_view_matrix(cam)
+  defp get_view_matrix(%OrbitCamera{} = orbit), do: OrbitCamera.get_view_matrix(orbit)
+
+  defp get_projection_matrix(%Camera{} = cam, aspect),
+    do: Camera.get_projection_matrix(cam, aspect)
+
+  defp get_projection_matrix(%OrbitCamera{} = orbit, aspect),
+    do: OrbitCamera.get_projection_matrix(orbit, aspect)
+
+  defp collect_nodes_with_meshes(nodes, parent_transform) do
+    Enum.flat_map(nodes, fn node ->
+      local = Node.get_local_transform_matrix(node)
+      world = mat4_mul(parent_transform, local)
+
+      acc =
+        case Node.get_mesh(node) do
+          nil -> []
+          _mesh -> [{node, world}]
+        end
+
+      child_acc = collect_nodes_with_meshes(Node.get_children(node), world)
+      acc ++ child_acc
+    end)
+  end
+
+  defp do_visualize_pick_buffer(nodes, view_matrix, proj_matrix, {_vp_x, _vp_y, vp_w, vp_h}) do
+    program = get_pick_program()
+    prev_fbo = :gl.getIntegerv(@gl_framebuffer_binding) |> List.first()
+    prev_viewport = :gl.getIntegerv(@gl_viewport)
+
+    {fbo, tex, rbo} = create_pick_fbo(trunc(vp_w), trunc(vp_h))
+
+    try do
+      :gl.bindFramebuffer(@gl_framebuffer, fbo)
+      :gl.viewport(0, 0, trunc(vp_w), trunc(vp_h))
+      :gl.clearColor(0.0, 0.0, 0.0, 0.0)
+      :gl.clear(@gl_color_buffer_bit ||| @gl_depth_buffer_bit)
+      :gl.enable(@gl_depth_test)
+
+      :gl.useProgram(program)
+
+      Enum.each(Enum.with_index(nodes), fn {{node, world}, idx} ->
+        mesh = Node.get_mesh(node)
+        render_mesh_pick(mesh, world, view_matrix, proj_matrix, program, idx)
+      end)
+
+      :gl.finish()
+    after
+      :gl.bindFramebuffer(@gl_framebuffer, prev_fbo)
+      [vx, vy, vw, vh] = Enum.take(prev_viewport, 4)
+      :gl.viewport(vx, vy, vw, vh)
+    end
+
+    # Display pick texture as fullscreen quad
+    {display_prog, quad_vao} = get_pick_display_resources()
+    :gl.disable(@gl_depth_test)
+    :gl.useProgram(display_prog)
+    :gl.activeTexture(@gl_texture0)
+    :gl.bindTexture(@gl_texture_2d, tex)
+    EAGL.Shader.set_uniform(display_prog, "pickTexture", 0)
+    :gl.bindVertexArray(quad_vao)
+    :gl.drawArrays(@gl_triangle_strip, 0, 4)
+    :gl.bindTexture(@gl_texture_2d, 0)
+    :gl.bindVertexArray(0)
+
+    delete_pick_fbo(fbo, tex, rbo)
+  end
+
+  defp get_pick_display_resources do
+    case Process.get(:eagl_pick_display) do
+      nil ->
+        {:ok, vs} = EAGL.Shader.create_shader(@gl_vertex_shader, "pick_debug_vertex.glsl")
+        {:ok, fs} = EAGL.Shader.create_shader(@gl_fragment_shader, "pick_debug_fragment.glsl")
+        {:ok, prog} = EAGL.Shader.create_attach_link([vs, fs])
+
+        # Fullscreen quad: pos (x,y) + texcoord (u,v)
+        # (-1,-1),(1,-1),(-1,1),(1,1) with texcoords (0,0),(1,0),(0,1),(1,1)
+        vertices = [
+          -1.0,
+          -1.0,
+          0.0,
+          0.0,
+          1.0,
+          -1.0,
+          1.0,
+          0.0,
+          -1.0,
+          1.0,
+          0.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ]
+
+        attrs = [
+          EAGL.Buffer.vertex_attribute(location: 0, size: 2, type: :float, stride: 16, offset: 0),
+          EAGL.Buffer.vertex_attribute(location: 1, size: 2, type: :float, stride: 16, offset: 8)
+        ]
+
+        {vao, _vbo} = EAGL.Buffer.create_vertex_array(vertices, attrs)
+        Process.put(:eagl_pick_display, {prog, vao})
+        {prog, vao}
+
+      {prog, vao} ->
+        {prog, vao}
+    end
+  end
+
+  defp do_pick_pass(nodes, view_matrix, proj_matrix, {vp_x, vp_y, vp_w, vp_h}, screen_x, screen_y) do
+    program = get_pick_program()
+    prev_fbo = :gl.getIntegerv(@gl_framebuffer_binding) |> List.first()
+    prev_viewport = :gl.getIntegerv(@gl_viewport)
+
+    {fbo, tex, rbo} = create_pick_fbo(trunc(vp_w), trunc(vp_h))
+
+    try do
+      :gl.bindFramebuffer(@gl_framebuffer, fbo)
+      :gl.viewport(0, 0, trunc(vp_w), trunc(vp_h))
+      :gl.clearColor(0.0, 0.0, 0.0, 0.0)
+      :gl.clear(@gl_color_buffer_bit ||| @gl_depth_buffer_bit)
+      :gl.enable(@gl_depth_test)
+
+      :gl.useProgram(program)
+
+      Enum.each(Enum.with_index(nodes), fn {{node, world}, idx} ->
+        mesh = Node.get_mesh(node)
+        render_mesh_pick(mesh, world, view_matrix, proj_matrix, program, idx)
+      end)
+
+      gl_x = trunc(screen_x - vp_x)
+      gl_y = trunc(vp_h - 1 - (screen_y - vp_y))
+
+      result =
+        if gl_x < 0 or gl_x >= vp_w or gl_y < 0 or gl_y >= vp_h do
+          nil
+        else
+          :gl.finish()
+          :gl.pixelStorei(@gl_pack_alignment, 1)
+          width = trunc(vp_w)
+          height = trunc(vp_h)
+          size = width * height * 4
+          pixel_data = <<0::size(size)-unit(8)>>
+          :gl.bindTexture(@gl_texture_2d, tex)
+          :gl.getTexImage(@gl_texture_2d, 0, @gl_rgba, @gl_unsigned_byte, pixel_data)
+          :gl.bindTexture(@gl_texture_2d, 0)
+          offset = (gl_y * width + gl_x) * 4
+          <<_::binary-size(offset), r, g, b, _a, _::binary>> = pixel_data
+          decode_pick_color(<<r, g, b, 255>>)
+        end
+
+      result
+    after
+      :gl.bindFramebuffer(@gl_framebuffer, prev_fbo)
+      [vx, vy, vw, vh] = Enum.take(prev_viewport, 4)
+      :gl.viewport(vx, vy, vw, vh)
+      delete_pick_fbo(fbo, tex, rbo)
+    end
+  end
+
+  defp get_pick_program do
+    case Process.get(:eagl_pick_program) do
+      nil ->
+        {:ok, vs} = EAGL.Shader.create_shader(@gl_vertex_shader, "pick_vertex.glsl")
+        {:ok, fs} = EAGL.Shader.create_shader(@gl_fragment_shader, "pick_fragment.glsl")
+        {:ok, program} = EAGL.Shader.create_attach_link([vs, fs])
+        Process.put(:eagl_pick_program, program)
+        program
+
+      program ->
+        program
+    end
+  end
+
+  defp create_pick_fbo(width, height) do
+    [tex] = :gl.genTextures(1)
+    :gl.bindTexture(@gl_texture_2d, tex)
+    :gl.texParameteri(@gl_texture_2d, @gl_texture_min_filter, @gl_linear)
+    :gl.texParameteri(@gl_texture_2d, @gl_texture_mag_filter, @gl_linear)
+    pixel_data = <<0::size(width * height * 4)-unit(8)>>
+
+    :gl.texImage2D(
+      @gl_texture_2d,
+      0,
+      @gl_rgba8,
+      width,
+      height,
+      0,
+      @gl_rgba,
+      @gl_unsigned_byte,
+      pixel_data
+    )
+
+    [rbo] = :gl.genRenderbuffers(1)
+    :gl.bindRenderbuffer(@gl_renderbuffer, rbo)
+    :gl.renderbufferStorage(@gl_renderbuffer, @gl_depth_component24, width, height)
+
+    [fbo] = :gl.genFramebuffers(1)
+    :gl.bindFramebuffer(@gl_framebuffer, fbo)
+    :gl.framebufferTexture2D(@gl_framebuffer, @gl_color_attachment0, @gl_texture_2d, tex, 0)
+    :gl.framebufferRenderbuffer(@gl_framebuffer, @gl_depth_attachment, @gl_renderbuffer, rbo)
+
+    status = :gl.checkFramebufferStatus(@gl_framebuffer)
+
+    if status != @gl_framebuffer_complete do
+      raise "Pick FBO incomplete: #{status}"
+    end
+
+    :gl.bindTexture(@gl_texture_2d, 0)
+    :gl.bindRenderbuffer(@gl_renderbuffer, 0)
+
+    {fbo, tex, rbo}
+  end
+
+  defp delete_pick_fbo(fbo, tex, rbo) do
+    :gl.deleteFramebuffers([fbo])
+    :gl.deleteTextures([tex])
+    :gl.deleteRenderbuffers([rbo])
+  end
+
+  defp render_mesh_pick(mesh, model_matrix, view_matrix, projection_matrix, program, node_id) do
+    case mesh do
+      %{vao: vao, vertex_count: count} ->
+        :gl.useProgram(program)
+        EAGL.Shader.set_uniform(program, "model", model_matrix)
+        EAGL.Shader.set_uniform(program, "view", view_matrix)
+        EAGL.Shader.set_uniform(program, "projection", projection_matrix)
+        EAGL.Shader.set_uniform(program, "nodeId", node_id + 1.0)
+        :gl.bindVertexArray(vao)
+        :gl.drawArrays(@gl_triangles, 0, count)
+
+      %{vao: vao, index_count: count} ->
+        index_type = Map.get(mesh, :index_type, @gl_unsigned_int)
+        :gl.useProgram(program)
+        EAGL.Shader.set_uniform(program, "model", model_matrix)
+        EAGL.Shader.set_uniform(program, "view", view_matrix)
+        EAGL.Shader.set_uniform(program, "projection", projection_matrix)
+        EAGL.Shader.set_uniform(program, "nodeId", node_id + 1.0)
+        :gl.bindVertexArray(vao)
+        :gl.drawElements(@gl_triangles, count, index_type, 0)
+
+      _ ->
+        :ok
+    end
+  end
+
+  defp decode_pick_color(<<r, g, b, _a>>) do
+    id = r + g * 256 + b * 65536
+    if id == 0, do: nil, else: id - 1
   end
 
   # Private functions

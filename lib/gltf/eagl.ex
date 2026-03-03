@@ -70,6 +70,21 @@ defmodule GLTF.EAGL do
   end
 
   @doc """
+  Create a flat (unlit) shader for GLTF models. Same vertex layout as Phong.
+  Outputs uniform objectColor with no lighting - useful for pick testing.
+  """
+  @spec create_flat_shader() :: {:ok, non_neg_integer()} | {:error, String.t()}
+  def create_flat_shader do
+    import EAGL.Shader
+
+    with {:ok, vs} <- create_shader(@gl_vertex_shader, "gltf/phong_vertex.glsl"),
+         {:ok, fs} <- create_shader(@gl_fragment_shader, "gltf/flat_fragment.glsl"),
+         {:ok, prog} <- create_attach_link([vs, fs]) do
+      {:ok, prog}
+    end
+  end
+
+  @doc """
   Create a standard PBR metallic-roughness shader for GLTF models.
 
   The shader matches the GLTF attribute layout (position=0, normal=1, texcoord=2)

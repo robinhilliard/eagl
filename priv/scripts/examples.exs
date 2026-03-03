@@ -405,6 +405,13 @@ defmodule EAGLExamplesRunner do
       module: EAGL.Examples.GLTF.DamagedHelmet,
       name: "Damaged Helmet",
       description: "Complex PBR model with multiple textures"
+    },
+    "316" => %{
+      type: :top_level,
+      file: "examples/gltf/06_two_boxes.ex",
+      module: EAGL.Examples.GLTF.TwoBoxes,
+      name: "Two Boxes",
+      description: "Two adjacent boxes (blue left, green right) for pick testing"
     }
   }
 
@@ -426,7 +433,7 @@ defmodule EAGLExamplesRunner do
     loop = fn loop_fn ->
       clear_screen()
       show_menu()
-      choice = get_user_input("Enter code (01-02, 111-176, 211-218, 311-315), 'q' to quit, 'r' to refresh: ")
+      choice = get_user_input("Enter code (01-02, 111-176, 211-218, 311-316), 'q' to quit, 'r' to refresh: ")
 
       case String.trim(choice) do
         choice when choice in ["q", "Q", "quit", "exit"] ->
@@ -499,7 +506,7 @@ defmodule EAGLExamplesRunner do
 
     # GLTF Support
     IO.puts(colorize("3. GLTF Examples:", :blue))
-    show_example_group(["311", "312", "313", "314", "315"])
+    show_example_group(["311", "312", "313", "314", "315", "316"])
     IO.puts("")
 
     IO.puts(colorize("════════════════════════════════════════════════════════════════════════════════════════════════════════════════════", :purple))

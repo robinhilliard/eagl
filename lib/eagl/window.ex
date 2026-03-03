@@ -95,6 +95,20 @@ defmodule EAGL.Window do
     {physical_width, physical_height}
   end
 
+  # Drain mailbox until we get a size event (first test ok; subsequent tests can have paint/etc queued)
+  defp drain_until_size_event(frame, gl_canvas) do
+    receive do
+      {:wx, _, obj, _, {:wxSize, :size, {_w, _h}, _}} when obj == frame or obj == gl_canvas ->
+        :wxWindow.layout(frame)
+        :wxWindow.update(frame)
+
+      _ ->
+        drain_until_size_event(frame, gl_canvas)
+    after
+      300 -> :ok
+    end
+  end
+
   # OpenGL context attributes for wxGLCanvas.
   # Based on Wings3D's wings_gl.erl attributes/0 function.
   # Ensures proper OpenGL context with optional depth buffer, double buffering, and RGBA mode.
@@ -212,6 +226,7 @@ defmodule EAGL.Window do
       :wxFrame.connect(frame, :close_window)
       :wxGLCanvas.connect(gl_canvas, :paint)
       :wxFrame.connect(frame, :char_hook)
+      :wxGLCanvas.connect(gl_canvas, :char_hook)
 
       # Mouse event handlers for camera control
       :wxFrame.connect(frame, :motion)
@@ -231,6 +246,11 @@ defmodule EAGL.Window do
       sizer = :wxBoxSizer.new(@wx_vertical)
       :wxSizer.add(sizer, gl_canvas, proportion: 1, flag: @wx_expand)
       :wxFrame.setSizer(frame, sizer)
+
+      # Ensure exact client size when explicitly requested (e.g. for tests)
+      if size != @default_window_size do
+        :wxWindow.setClientSize(frame, size)
+      end
 
       # Set minimum size for the canvas
       :wxWindow.setMinSize(gl_canvas, {100, 100})
@@ -262,19 +282,21 @@ defmodule EAGL.Window do
       # "otherwise the setCurrent fails" - especially important on GTK
       # Always sleep regardless of whether we got the show event
       # macOS needs longer: wxGLCanvas on Cocoa can have delayed layout/display
+      # Use longer delay for automated tests (timeout set) to let WSL2/GTK layout settle
       sleep_ms =
-        case :os.type() do
-          {:unix, :darwin} -> 400
-          _ -> 200
+        cond do
+          timeout != nil -> 400
+          :os.type() == {:unix, :darwin} -> 400
+          true -> 200
         end
 
       :timer.sleep(sleep_ms)
 
-      # macOS: Force size event so GLCanvas gets proper layout (wxMac may not show until resize)
-      if :os.type() == {:unix, :darwin} do
-        :wxFrame.sendSizeEvent(frame)
-        :timer.sleep(50)
-      end
+      # Force size event so GLCanvas gets proper layout before first paint
+      :wxFrame.sendSizeEvent(frame)
+
+      # Drain until we get size event (first test ok; subsequent tests can have paint/etc in mailbox)
+      drain_until_size_event(frame, gl_canvas)
 
       # Create OpenGL context AFTER window is shown and realized
       # This follows Wings3D pattern more closely
@@ -285,8 +307,9 @@ defmodule EAGL.Window do
       :wxWindow.setFocus(frame)
       :wxFrame.raise(frame)
 
-      # Enable keyboard events
+      # Enable keyboard events (frame and canvas; canvas gets focus when clicked)
       :wxEvtHandler.connect(frame, :char_hook, [])
+      :wxEvtHandler.connect(gl_canvas, :char_hook, [])
 
       # Make context current after proper timing and context creation
       # Add error handling for setCurrent following Wings3D pattern
@@ -377,6 +400,7 @@ defmodule EAGL.Window do
 
                   # Main loop (start_time = first tick time for elapsed_time)
                   start_time = :erlang.monotonic_time(:millisecond) / 1000.0
+
                   try do
                     main_loop(
                       frame,
@@ -740,35 +764,26 @@ defmodule EAGL.Window do
       # Handle both frame and canvas size events
       {:wx, _, obj, _, {:wxSize, :size, {_width, _height}, _}} ->
         if obj == frame or obj == gl_canvas do
-          # IO.puts("Resizing window #{width} x #{height}")
           :wxGLCanvas.setCurrent(gl_canvas, gl_context)
 
-          # Get the actual canvas size after layout
-          # Re-layout the frame to update sizer
-          :wxWindow.layout(frame)
-          # Force update after layout
-          :wxWindow.update(frame)
-
-          # Get both frame and canvas sizes for debugging
-          {frame_width, frame_height} = :wxWindow.getSize(frame)
-          {canvas_width, canvas_height} = :wxWindow.getSize(gl_canvas)
-
-          # Ensure canvas fills the frame (only if sizes are valid)
-          if canvas_width > 0 and canvas_height > 0 and frame_width > 0 and frame_height > 0 do
-            if canvas_width != frame_width or canvas_height != frame_height do
-              :wxWindow.setSize(gl_canvas, {frame_width, frame_height})
-            end
-          end
-
-          # Get physical framebuffer size for retina display support
+          # Get physical framebuffer size before layout (to detect no-op)
+          {prev_w, prev_h} = Process.get(:eagl_last_viewport, {0, 0})
           {physical_width, physical_height} = get_framebuffer_size(gl_canvas)
-          safe_width = max(physical_width, 1)
-          safe_height = max(physical_height, 1)
 
-          :gl.viewport(0, 0, safe_width, safe_height)
-          # Pass physical framebuffer size to render function (for OpenGL operations)
-          callback_module.render(physical_width * 1.0, physical_height * 1.0, state)
-          :wxGLCanvas.swapBuffers(gl_canvas)
+          # Skip layout/render if dimensions unchanged (prevents visible shift on 2nd/3rd test)
+          if trunc(physical_width) != prev_w or trunc(physical_height) != prev_h do
+            :wxWindow.layout(frame)
+            :wxWindow.update(frame)
+
+            {physical_width, physical_height} = get_framebuffer_size(gl_canvas)
+            safe_width = max(physical_width, 1)
+            safe_height = max(physical_height, 1)
+            Process.put(:eagl_last_viewport, {trunc(safe_width), trunc(safe_height)})
+
+            :gl.viewport(0, 0, safe_width, safe_height)
+            callback_module.render(physical_width * 1.0, physical_height * 1.0, state)
+            :wxGLCanvas.swapBuffers(gl_canvas)
+          end
         end
 
         main_loop(
@@ -954,6 +969,11 @@ defmodule EAGL.Window do
 
         :gl.viewport(0, 0, safe_physical_width, safe_physical_height)
 
+        Process.put(
+          :eagl_last_viewport,
+          {trunc(safe_physical_width), trunc(safe_physical_height)}
+        )
+
         new_state =
           case callback_module.render(
                  safe_physical_width * 1.0,
@@ -1024,6 +1044,7 @@ defmodule EAGL.Window do
         safe_w = max(physical_width, 1)
         safe_h = max(physical_height, 1)
         :gl.viewport(0, 0, safe_w, safe_h)
+        Process.put(:eagl_last_viewport, {trunc(safe_w), trunc(safe_h)})
 
         timing = %{delta_time: time_delta, elapsed_time: tick_time - start_time}
 

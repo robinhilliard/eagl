@@ -790,6 +790,8 @@ defmodule EAGL.Const do
 
       # GL_FRAMEBUFFER
       @gl_framebuffer 36160
+      # GL_RENDERBUFFER
+      @gl_renderbuffer 36161
       # GL_READ_FRAMEBUFFER
       @gl_read_framebuffer 36008
       # GL_DRAW_FRAMEBUFFER
@@ -800,6 +802,10 @@ defmodule EAGL.Const do
       @gl_depth_attachment 36096
       # GL_FRAMEBUFFER_COMPLETE
       @gl_framebuffer_complete 36053
+      # GL_FRAMEBUFFER_BINDING
+      @gl_framebuffer_binding 36006
+      # GL_VIEWPORT
+      @gl_viewport 2978
       # GL_DEPTH_COMPONENT24
       @gl_depth_component24 33190
 
