@@ -205,6 +205,92 @@ defmodule EAGL.Scene do
   end
 
   @doc """
+  Cast a ray against the scene and return hits in order.
+
+  Uses `EAGL.Spatial` for ray–AABB traversal. Returns `[{node, distance}, ...]`
+  sorted by distance (closest first). Distance is along the ray from origin.
+  Direction should be normalized.
+
+  For multiple raycasts, build `EAGL.Spatial.new(scene)` once and call
+  `EAGL.Spatial.raycast/2` directly.
+
+  ## Parameters
+
+  - `scene` - The scene to raycast against
+  - `ray` - `{origin, direction}` in `EAGL.Math.ray_new/2` format
+
+  ## Returns
+
+  - `[]` when no hits or no nodes have bounds
+  - `[{node, distance}, ...]` sorted by distance
+  """
+  @spec raycast(t(), {EAGL.Math.vec3(), EAGL.Math.vec3()}) :: [{Node.t(), float()}]
+  def raycast(%__MODULE__{} = scene, ray) do
+    spatial = EAGL.Spatial.new(scene)
+    EAGL.Spatial.raycast(spatial, ray)
+  end
+
+  @doc """
+  Get all nodes with meshes that have bounds, paired with their world-space AABB.
+
+  Returns `[{node, aabb}, ...]` where aabb is `{{min_x, min_y, min_z}, {max_x, max_y, max_z}}`.
+  Used by `EAGL.Spatial` for ray-based queries.
+  """
+  @spec get_nodes_with_bounds(t()) ::
+          [{Node.t(), {{float(), float(), float()}, {float(), float(), float()}}}]
+  def get_nodes_with_bounds(%__MODULE__{root_nodes: roots}) do
+    identity = mat4_identity()
+    collect_nodes_with_bounds(roots, identity)
+  end
+
+  defp collect_nodes_with_bounds(nodes, parent_transform) do
+    Enum.flat_map(nodes, fn node ->
+      local = Node.get_local_transform_matrix(node)
+      world = mat4_mul(parent_transform, local)
+
+      acc =
+        case Node.get_mesh(node) do
+          %{bounds: {{min_x, min_y, min_z}, {max_x, max_y, max_z}}} ->
+            corners = [
+              [{min_x, min_y, min_z}],
+              [{max_x, min_y, min_z}],
+              [{min_x, max_y, min_z}],
+              [{max_x, max_y, min_z}],
+              [{min_x, min_y, max_z}],
+              [{max_x, min_y, max_z}],
+              [{min_x, max_y, max_z}],
+              [{max_x, max_y, max_z}]
+            ]
+
+            transformed =
+              Enum.map(corners, fn v -> mat4_transform_point(world, v) end)
+              |> Enum.flat_map(fn [{x, y, z}] -> [{x, y, z}] end)
+
+            [{fx, fy, fz} | rest] = transformed
+
+            {t_min_x, t_min_y, t_min_z} =
+              Enum.reduce(rest, {fx, fy, fz}, fn {x, y, z}, {ax, ay, az} ->
+                {min(ax, x), min(ay, y), min(az, z)}
+              end)
+
+            {t_max_x, t_max_y, t_max_z} =
+              Enum.reduce(rest, {fx, fy, fz}, fn {x, y, z}, {ax, ay, az} ->
+                {max(ax, x), max(ay, y), max(az, z)}
+              end)
+
+            world_aabb = {{t_min_x, t_min_y, t_min_z}, {t_max_x, t_max_y, t_max_z}}
+            [{node, world_aabb}]
+
+          _ ->
+            []
+        end
+
+      child_acc = collect_nodes_with_bounds(Node.get_children(node), world)
+      acc ++ child_acc
+    end)
+  end
+
+  @doc """
   Find a node in the scene by ID.
 
   Searches recursively through the scene graph to find a node with the given ID.

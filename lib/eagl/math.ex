@@ -36,6 +36,8 @@ defmodule EAGL.Math do
 
   # NOTE: This file is excluded from mix format to protect matrix readability
 
+  import Bitwise
+
   # ============================================================================
   # TYPE DEFINITIONS
   # ============================================================================
@@ -1550,6 +1552,65 @@ defmodule EAGL.Math do
   """
   @spec ray_new(vec3(), vec3()) :: ray()
   def ray_new(origin, direction), do: {origin, direction}
+
+  # ============================================================================
+  # MORTON CODE (3D)
+  # ============================================================================
+
+  @doc """
+  Encode 3D integer cell coordinates into a 1D Morton code (Z-order curve).
+
+  Bit-interleaves x, y, z so that spatially close cells have similar codes.
+  Each coordinate is clamped to 21 bits (0..2_097_151). Useful for spatial
+  indexing, octrees, and linear BVH construction.
+
+  ## Examples
+
+      iex> EAGL.Math.morton_encode(0, 0, 0)
+      0
+      iex> EAGL.Math.morton_encode(1, 0, 0)
+      1
+  """
+  @spec morton_encode(non_neg_integer(), non_neg_integer(), non_neg_integer()) :: non_neg_integer()
+  def morton_encode(x, y, z) do
+    # Clamp to 21 bits per component (63 bits total)
+    x = x &&& 0x1FFFFF
+    y = y &&& 0x1FFFFF
+    z = z &&& 0x1FFFFF
+    spread(x) ||| (spread(y) <<< 1) ||| (spread(z) <<< 2)
+  end
+
+  @doc """
+  Decode a Morton code back to 3D integer cell coordinates.
+
+  ## Examples
+
+      iex> EAGL.Math.morton_decode(0)
+      {0, 0, 0}
+  """
+  @spec morton_decode(non_neg_integer()) :: {non_neg_integer(), non_neg_integer(), non_neg_integer()}
+  def morton_decode(code) do
+    {compact(code), compact(code >>> 1), compact(code >>> 2)}
+  end
+
+  # Spread 21 bits to positions 0, 3, 6, 9, ... (every 3rd bit)
+  defp spread(x) when x >= 0 and x < 0x200000 do
+    x = (x ||| (x <<< 32)) &&& 0x1F00000000FFFF
+    x = (x ||| (x <<< 16)) &&& 0x1F0000FF0000FF
+    x = (x ||| (x <<< 8)) &&& 0x100F00F00F00F00F
+    x = (x ||| (x <<< 4)) &&& 0x10C30C30C30C30C3
+    (x ||| (x <<< 2)) &&& 0x1249249249249249
+  end
+
+  # Compact every 3rd bit back to consecutive bits
+  defp compact(x) when x >= 0 do
+    x = x &&& 0x1249249249249249
+    x = (x ||| (x >>> 2)) &&& 0x10C30C30C30C30C3
+    x = (x ||| (x >>> 4)) &&& 0x100F00F00F00F00F
+    x = (x ||| (x >>> 8)) &&& 0x1F0000FF0000FF
+    x = (x ||| (x >>> 16)) &&& 0x1F00000000FFFF
+    (x ||| (x >>> 32)) &&& 0x1FFFFF
+  end
 
   @doc """
   Test if a ray intersects an AABB.

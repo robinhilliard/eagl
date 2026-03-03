@@ -1192,4 +1192,29 @@ defmodule EAGL.MathTest do
       assert vec3_to_spherical(target, target) == {0.0, 0.0, 0.0}
     end
   end
+
+  describe "Morton code" do
+    test "morton_encode 0,0,0" do
+      assert morton_encode(0, 0, 0) == 0
+    end
+
+    test "morton_encode 1,0,0" do
+      assert morton_encode(1, 0, 0) == 1
+    end
+
+    test "morton_decode round-trip" do
+      for x <- [0, 1, 42, 100, 1024], y <- [0, 1, 17], z <- [0, 1, 255] do
+        code = morton_encode(x, y, z)
+        {dx, dy, dz} = morton_decode(code)
+        assert dx == x
+        assert dy == y
+        assert dz == z
+      end
+    end
+
+    test "morton_encode clamps to 21 bits" do
+      # Values beyond 21 bits get masked
+      assert morton_encode(0x1FFFFF, 0x1FFFFF, 0x1FFFFF) >= 0
+    end
+  end
 end

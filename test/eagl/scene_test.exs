@@ -70,4 +70,42 @@ defmodule EAGL.SceneTest do
       assert Scene.pick(scene, camera, viewport, 0, 0) == nil
     end
   end
+
+  describe "raycast/2" do
+    test "returns empty for empty scene" do
+      scene = Scene.new()
+      ray = ray_new(vec3(0.0, 0.0, 0.0), vec3(1.0, 0.0, 0.0))
+      assert Scene.raycast(scene, ray) == []
+    end
+
+    test "returns empty for scene with nodes but no mesh bounds" do
+      node = Node.new(position: vec3(0, 0, 0))
+      scene = Scene.add_root_node(Scene.new(), node)
+      ray = ray_new(vec3(0.0, 0.0, 0.0), vec3(1.0, 0.0, 0.0))
+      assert Scene.raycast(scene, ray) == []
+    end
+
+    test "returns hits for scene with bounded mesh" do
+      mesh = %{bounds: {{1.0, -0.5, -0.5}, {2.0, 0.5, 0.5}}}
+      node = Node.new(mesh: mesh)
+      scene = Scene.add_root_node(Scene.new(), node)
+      ray = ray_new(vec3(0.0, 0.0, 0.0), vec3(1.0, 0.0, 0.0))
+      hits = Scene.raycast(scene, ray)
+      assert length(hits) == 1
+      [{hit_node, t}] = hits
+      assert hit_node == node
+      assert t >= 1.0 and t <= 2.0
+    end
+
+    test "transforms bounds by node position for raycast" do
+      mesh = %{bounds: {{-0.5, -0.5, -0.5}, {0.5, 0.5, 0.5}}}
+      node = Node.new(mesh: mesh, position: vec3(5.0, 0.0, 0.0))
+      scene = Scene.add_root_node(Scene.new(), node)
+      ray = ray_new(vec3(0.0, 0.0, 0.0), vec3(1.0, 0.0, 0.0))
+      hits = Scene.raycast(scene, ray)
+      assert length(hits) == 1
+      [{_, t}] = hits
+      assert t >= 4.5 and t <= 5.5
+    end
+  end
 end
