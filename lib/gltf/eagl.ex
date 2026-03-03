@@ -587,11 +587,12 @@ defmodule GLTF.EAGL do
             position: list_to_vec3(gltf_node.translation || [0.0, 0.0, 0.0]),
             rotation: list_to_quat(gltf_node.rotation || [0.0, 0.0, 0.0, 1.0]),
             scale: list_to_vec3(gltf_node.scale || [1.0, 1.0, 1.0]),
-            name: node_name
+            name: node_name,
+            properties: gltf_node.extras
           )
 
         matrix when is_list(matrix) ->
-          Node.with_matrix(matrix, name: node_name)
+          Node.with_matrix(matrix, name: node_name, properties: gltf_node.extras)
       end
 
     # Attach mesh if present
