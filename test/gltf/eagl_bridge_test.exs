@@ -679,7 +679,10 @@ defmodule GLTF.EAGLBridgeTest do
 
       eagl_node = GLTF.EAGL.node_to_eagl_node(gltf_node, %{}, 0, %{})
 
-      assert eagl_node.properties == %{"behaviour" => "MyGame.Behaviours.Door", "open_angle" => 90}
+      assert eagl_node.properties == %{
+               "behaviour" => "MyGame.Behaviours.Door",
+               "open_angle" => 90
+             }
     end
 
     test "node_to_eagl_node passes nil when glTF node has no extras" do
@@ -700,7 +703,7 @@ defmodule GLTF.EAGLBridgeTest do
 
       if File.exists?(box_path) do
         {:ok, glb} = GLTF.GLBLoader.parse_file(box_path)
-        {:ok, gltf} = GLTF.GLBLoader.load_gltf(box_path, json_library: :poison)
+        {:ok, gltf} = GLTF.GLBLoader.load_gltf(box_path)
 
         data_store = DataStore.new()
         binary_data = GLTF.Binary.get_binary(glb)

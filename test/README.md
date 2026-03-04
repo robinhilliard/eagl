@@ -328,7 +328,7 @@ mix test --only integration
 - **Key Features**:
   - Downloads sample GLB files from Khronos repository
   - Tests multiple file formats and complexity levels
-  - Validates both JSON library support (Poison/Jason)
+  - Validates JSON loading (Jason)
   - Comprehensive error handling scenarios
 
 ### Critical Module Tests

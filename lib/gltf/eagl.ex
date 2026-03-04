@@ -247,7 +247,7 @@ defmodule GLTF.EAGL do
   """
   @spec load_glb(String.t(), keyword()) :: {:ok, GLTF.t(), GLTF.DataStore.t()} | {:error, term()}
   def load_glb(path_or_url, opts \\ []) do
-    json_library = Keyword.get(opts, :json_library, :poison)
+    json_library = Keyword.get(opts, :json_library, :jason)
 
     with {:ok, glb} <- GLTF.GLBLoader.parse(path_or_url, opts),
          {:ok, gltf} <- GLTF.GLBLoader.load_gltf_from_glb(glb, json_library) do

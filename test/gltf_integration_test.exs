@@ -70,7 +70,7 @@ defmodule GLTFIntegrationTest do
     test "loads simple GLB files successfully", %{samples: samples} do
       for {name, path, expected} <- samples do
         # Test complete loading pipeline
-        assert {:ok, gltf} = GLTF.GLBLoader.load_gltf(path, json_library: :poison)
+        assert {:ok, gltf} = GLTF.GLBLoader.load_gltf(path)
 
         # Verify basic structure
         assert gltf.asset.version == expected.version
@@ -106,34 +106,20 @@ defmodule GLTFIntegrationTest do
 
         # Verify JSON is parseable
         json_string = GLTF.Binary.get_json(glb_binary)
-        assert {:ok, json_data} = Poison.decode(json_string)
+        assert {:ok, json_data} = Jason.decode(json_string)
         assert json_data["asset"]["version"] == "2.0"
 
         IO.puts("✓ #{name}: GLB structure valid")
       end
     end
 
-    test "handles both JSON libraries", %{samples: samples} do
+    test "loads GLB with Jason", %{samples: samples} do
       [sample | _] = samples
-      {_name, path, _expected} = sample
+      {_name, path, expected} = sample
 
-      # Test with Poison
-      assert {:ok, gltf_poison} = GLTF.GLBLoader.load_gltf(path, json_library: :poison)
-
-      # Test with Jason (if available)
-      case GLTF.GLBLoader.load_gltf(path, json_library: :jason) do
-        {:ok, gltf_jason} ->
-          # Both should produce equivalent results
-          assert gltf_poison.asset.version == gltf_jason.asset.version
-          assert length(gltf_poison.buffers || []) == length(gltf_jason.buffers || [])
-
-        {:error, :jason_not_available} ->
-          # Jason not installed, that's fine
-          :ok
-
-        {:error, reason} ->
-          flunk("Jason loading failed unexpectedly: #{inspect(reason)}")
-      end
+      assert {:ok, gltf} = GLTF.GLBLoader.load_gltf(path)
+      assert gltf.asset.version == expected.version
+      assert length(gltf.buffers || []) == expected.buffers
     end
   end
 

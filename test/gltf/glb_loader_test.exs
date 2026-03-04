@@ -454,7 +454,7 @@ defmodule GLTF.GLBLoaderTest do
     end
 
     test "load_gltf/2 completes full pipeline", %{temp_file: temp_file} do
-      assert {:ok, gltf} = GLBLoader.load_gltf(temp_file, json_library: :poison)
+      assert {:ok, gltf} = GLBLoader.load_gltf(temp_file)
       assert gltf.asset.version == "2.0"
     end
   end
@@ -472,7 +472,7 @@ defmodule GLTF.GLBLoaderTest do
   end
 
   describe "JSON parsing integration" do
-    test "handles both Poison and Jason for GLB loading" do
+    test "loads GLB with Jason" do
       # Create GLB with valid JSON
       json_data = ~s({"asset":{"version":"2.0","generator":"Test"},"buffers":[{"byteLength":8}]})
       json_padded = json_data <> String.duplicate(" ", 4 - rem(byte_size(json_data), 4))
@@ -488,21 +488,9 @@ defmodule GLTF.GLBLoaderTest do
       temp_file = "test/fixtures/json_test.glb"
       File.write!(temp_file, glb_data)
 
-      # Test Poison
-      assert {:ok, gltf_poison} = GLBLoader.load_gltf(temp_file, json_library: :poison)
-      assert gltf_poison.asset.version == "2.0"
-      assert gltf_poison.asset.generator == "Test"
-
-      # Test Jason (if available)
-      case GLBLoader.load_gltf(temp_file, json_library: :jason) do
-        {:ok, gltf_jason} ->
-          assert gltf_jason.asset.version == "2.0"
-          assert gltf_jason.asset.generator == "Test"
-
-        {:error, :jason_not_available} ->
-          # Expected if Jason not installed
-          :ok
-      end
+      assert {:ok, gltf} = GLBLoader.load_gltf(temp_file)
+      assert gltf.asset.version == "2.0"
+      assert gltf.asset.generator == "Test"
 
       File.rm!(temp_file)
     end

@@ -63,9 +63,8 @@ defmodule EAGL.MixProject do
       # Optional dependencies for enhanced functionality
       {:stb_image, "~> 0.6", optional: true},
 
-      # Optional JSON libraries for glTF loading (choose one)
-      {:poison, "~> 5.0", optional: true},
-      {:jason, "~> 1.4", optional: true},
+      # JSON library for glTF loading
+      {:jason, "~> 1.4"},
 
       # Development and documentation
       {:ex_doc, "~> 0.31", only: :dev, runtime: false},
@@ -82,7 +81,7 @@ defmodule EAGL.MixProject do
   end
 
   defp description do
-    "EAGL (Easier OpenGL) - Idiomatic Elixir interface for OpenGL with GLM-inspired math, LearnOpenGL port support, and glTF/GLB model loading. Optional: stb_image, poison/jason."
+    "EAGL (Easier OpenGL) - Idiomatic Elixir interface for OpenGL with GLM-inspired math, LearnOpenGL port support, and glTF/GLB model loading. Optional: stb_image."
   end
 
   defp package do

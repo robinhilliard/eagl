@@ -771,7 +771,7 @@ defmodule GLTF.GLBLoader do
   Options:
     - :validate - boolean, set to true to validate the parsed GLB structure (default: true)
     - :strict - boolean, set to true for strict validation that rejects any warnings (default: false)
-    - :json_library - atom, JSON library to use (:poison, :jason) (default: :poison)
+    - :json_library - atom, JSON library to use (default: :jason, kept for backward compatibility)
 
   ## Examples
 
@@ -782,7 +782,7 @@ defmodule GLTF.GLBLoader do
   """
   @spec load_gltf(String.t(), keyword()) :: {:ok, GLTF.t()} | {:error, String.t()}
   def load_gltf(path_or_url, opts \\ []) do
-    json_library = Keyword.get(opts, :json_library, :poison)
+    json_library = Keyword.get(opts, :json_library, :jason)
 
     with {:ok, glb_binary} <- parse(path_or_url, opts),
          {:ok, gltf} <- load_gltf_from_glb(glb_binary, json_library) do
@@ -800,44 +800,8 @@ defmodule GLTF.GLBLoader do
 
   """
   @spec load_gltf_from_glb(Binary.t(), atom()) :: {:ok, GLTF.t()} | {:error, String.t()}
-  def load_gltf_from_glb(%Binary{} = glb_binary, json_library \\ :poison) do
-    case json_library do
-      :poison -> GLTF.load_from_glb(glb_binary)
-      :jason -> load_gltf_from_glb_jason(glb_binary)
-      _ -> {:error, "Unsupported JSON library: #{json_library}. Use :poison or :jason"}
-    end
-  end
-
-  # Load GLTF using Jason library instead of Poison
-  defp load_gltf_from_glb_jason(%Binary{} = glb_binary) do
-    json_string = Binary.get_json(glb_binary)
-
-    if Code.ensure_loaded?(Jason) do
-      try do
-        case apply(Jason, :decode, [json_string]) do
-          {:ok, json_data} ->
-            binary_data = Binary.get_binary(glb_binary)
-            data_store = GLTF.DataStore.new()
-
-            # GLB buffer (index 0) points to the binary chunk
-            data_store =
-              case binary_data do
-                nil -> data_store
-                data -> GLTF.DataStore.store_glb_buffer(data_store, 0, data)
-              end
-
-            GLTF.load(json_data, data_store)
-
-          {:error, reason} ->
-            {:error, "JSON decode error: #{inspect(reason)}"}
-        end
-      rescue
-        UndefinedFunctionError ->
-          {:error, "Jason library not available for JSON parsing"}
-      end
-    else
-      {:error, "Jason library not available for JSON parsing"}
-    end
+  def load_gltf_from_glb(%Binary{} = glb_binary, _json_library \\ :jason) do
+    GLTF.load_from_glb(glb_binary)
   end
 
   @doc """
@@ -856,18 +820,9 @@ defmodule GLTF.GLBLoader do
   def get_json_map(%Binary{} = glb_binary) do
     json_string = Binary.get_json(glb_binary)
 
-    if Code.ensure_loaded?(Jason) do
-      try do
-        case apply(Jason, :decode, [json_string]) do
-          {:ok, json_map} -> {:ok, json_map}
-          {:error, reason} -> {:error, "JSON decode error: #{inspect(reason)}"}
-        end
-      rescue
-        UndefinedFunctionError ->
-          {:error, "Jason library not available for JSON parsing"}
-      end
-    else
-      {:error, "Jason library not available for JSON parsing"}
+    case Jason.decode(json_string) do
+      {:ok, json_map} -> {:ok, json_map}
+      {:error, reason} -> {:error, "JSON decode error: #{inspect(reason)}"}
     end
   end
 

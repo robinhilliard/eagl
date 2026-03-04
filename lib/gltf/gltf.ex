@@ -256,13 +256,13 @@ defmodule GLTF do
   defp parse_json_from_glb(glb_binary) do
     json_string = GLTF.Binary.get_json(glb_binary)
 
-    case Poison.decode(json_string) do
+    case Jason.decode(json_string) do
       {:ok, json_data} -> {:ok, json_data}
       {:error, reason} -> {:error, {:json_parse_error, reason}}
     end
   rescue
     UndefinedFunctionError ->
-      {:error, :poison_not_available}
+      {:error, :jason_not_available}
   end
 
   defp create_data_store_from_glb(glb_binary) do
