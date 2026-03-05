@@ -722,10 +722,11 @@ defmodule GLTF.EAGL do
   @spec to_scene(GLTF.t(), GLTF.DataStore.t(), keyword()) ::
           {:ok, {Scene.t(), [Node.t()]}} | {:error, String.t()}
   def to_scene(%GLTF{} = gltf, data_store, opts \\ []) do
+    material_lookup = build_material_lookup(gltf)
+
     with {:ok, mesh_lookup} <- create_mesh_lookup(gltf, data_store, opts),
-         {:ok, node_lookup} <- create_node_lookup(gltf, mesh_lookup),
+         {:ok, node_lookup} <- create_node_lookup(gltf, mesh_lookup, material_lookup),
          {:ok, scene} <- build_scene_graph(gltf, node_lookup, opts) do
-      # Also return all converted nodes for shader assignment
       all_nodes = Map.values(node_lookup)
       {:ok, {scene, all_nodes}}
     end
@@ -968,7 +969,7 @@ defmodule GLTF.EAGL do
     end
   end
 
-  defp create_node_lookup(gltf, mesh_lookup) do
+  defp create_node_lookup(gltf, mesh_lookup, material_lookup) do
     case gltf.nodes do
       nil ->
         {:ok, %{}}
@@ -977,12 +978,18 @@ defmodule GLTF.EAGL do
         world_matrices = compute_gltf_world_matrices(gltf)
         camera_lookup = build_camera_lookup(gltf, world_matrices)
 
-        # First, create all nodes without children
         node_data =
           nodes
           |> Enum.with_index()
           |> Enum.map(fn {node, index} ->
             eagl_node = node_to_eagl_node(node, mesh_lookup, index, camera_lookup)
+
+            eagl_node =
+              case node.mesh do
+                nil -> eagl_node
+                mesh_idx -> apply_mesh_material(eagl_node, gltf, mesh_idx, material_lookup)
+              end
+
             {index, eagl_node}
           end)
           |> Enum.into(%{})
@@ -1014,6 +1021,57 @@ defmodule GLTF.EAGL do
           end)
 
         {:ok, node_data_with_children}
+    end
+  end
+
+  defp build_material_lookup(%GLTF{materials: nil}), do: %{}
+
+  defp build_material_lookup(%GLTF{materials: materials}) do
+    materials
+    |> Enum.with_index()
+    |> Enum.map(fn {mat, index} -> {index, gltf_material_to_pbr_uniforms(mat)} end)
+    |> Enum.into(%{})
+  end
+
+  defp gltf_material_to_pbr_uniforms(%GLTF.Material{} = mat) do
+    pbr = mat.pbr_metallic_roughness
+
+    base_color =
+      case pbr && pbr.base_color_factor do
+        [r, g, b | _] -> [{r * 1.0, g * 1.0, b * 1.0}]
+        _ -> [{1.0, 1.0, 1.0}]
+      end
+
+    emissive =
+      case mat.emissive_factor do
+        [er, eg, eb | _] -> [{er * 1.0, eg * 1.0, eb * 1.0}]
+        _ -> [{0.0, 0.0, 0.0}]
+      end
+
+    [
+      "material.baseColor": base_color,
+      "material.metallic": ((pbr && pbr.metallic_factor) || 1.0) * 1.0,
+      "material.roughness": ((pbr && pbr.roughness_factor) || 1.0) * 1.0,
+      "material.emissive": emissive
+    ]
+  end
+
+  defp apply_mesh_material(eagl_node, gltf, mesh_idx, material_lookup) do
+    case Enum.at(gltf.meshes || [], mesh_idx) do
+      nil ->
+        eagl_node
+
+      mesh ->
+        case List.first(mesh.primitives || []) do
+          nil ->
+            eagl_node
+
+          prim ->
+            case Map.get(material_lookup, prim.material) do
+              nil -> eagl_node
+              uniforms -> %{eagl_node | material_uniforms: uniforms}
+            end
+        end
     end
   end
 

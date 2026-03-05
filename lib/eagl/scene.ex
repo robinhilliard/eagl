@@ -708,8 +708,11 @@ defmodule EAGL.Scene do
     world_transform = mat4_mul(parent_transform, local_transform)
 
     case Node.get_mesh(node) do
-      nil -> :ok
-      mesh -> render_mesh(mesh, world_transform, view_matrix, projection_matrix)
+      nil ->
+        :ok
+
+      mesh ->
+        render_mesh(mesh, node.material_uniforms, world_transform, view_matrix, projection_matrix)
     end
 
     Enum.each(Node.get_children(node), fn child ->
@@ -717,10 +720,11 @@ defmodule EAGL.Scene do
     end)
   end
 
-  defp render_mesh(mesh, model_matrix, view_matrix, projection_matrix) do
+  defp render_mesh(mesh, material_uniforms, model_matrix, view_matrix, projection_matrix) do
     case mesh do
       %{vao: vao, vertex_count: count, program: program} ->
         :gl.useProgram(program)
+        apply_material_uniforms(program, material_uniforms)
         EAGL.Shader.set_uniform(program, "model", model_matrix)
         EAGL.Shader.set_uniform(program, "view", view_matrix)
         EAGL.Shader.set_uniform(program, "projection", projection_matrix)
@@ -730,6 +734,7 @@ defmodule EAGL.Scene do
       %{vao: vao, index_count: count, program: program} ->
         index_type = Map.get(mesh, :index_type, @gl_unsigned_int)
         :gl.useProgram(program)
+        apply_material_uniforms(program, material_uniforms)
         EAGL.Shader.set_uniform(program, "model", model_matrix)
         EAGL.Shader.set_uniform(program, "view", view_matrix)
         EAGL.Shader.set_uniform(program, "projection", projection_matrix)
@@ -739,5 +744,13 @@ defmodule EAGL.Scene do
       _ ->
         :ok
     end
+  end
+
+  defp apply_material_uniforms(_program, nil), do: :ok
+
+  defp apply_material_uniforms(program, uniforms) when is_list(uniforms) do
+    Enum.each(uniforms, fn {name, value} ->
+      EAGL.Shader.set_uniform(program, to_string(name), value)
+    end)
   end
 end

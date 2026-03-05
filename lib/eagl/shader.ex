@@ -298,7 +298,7 @@ defmodule EAGL.Shader do
   @spec set_uniform_at_location(integer(), vec3()) :: :ok
   def set_uniform_at_location(location, [{x, y, z}])
       when is_number(x) and is_number(y) and is_number(z) do
-    :gl.uniform3f(location, x, y, z)
+    :gl.uniform3f(location, x * 1.0, y * 1.0, z * 1.0)
   end
 
   # vec2 uniform

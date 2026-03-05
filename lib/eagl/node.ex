@@ -64,6 +64,9 @@ defmodule EAGL.Node do
     # Custom data (from glTF extras → Blender custom properties)
     :properties,
 
+    # Per-node material uniforms (keyword list of {uniform_name, value} pairs)
+    :material_uniforms,
+
     # Animation
     :animations
   ]
@@ -79,6 +82,7 @@ defmodule EAGL.Node do
           camera: EAGL.Camera.t() | nil,
           name: String.t() | nil,
           properties: map() | nil,
+          material_uniforms: keyword() | nil,
           animations: map() | nil
         }
 
