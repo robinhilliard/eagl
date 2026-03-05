@@ -67,9 +67,21 @@ defmodule EAGL.Node do
     # Per-node material uniforms (keyword list of {uniform_name, value} pairs)
     :material_uniforms,
 
+    # Light data (map with type, color, intensity, range, inner_cone_angle, outer_cone_angle)
+    :light,
+
     # Animation
     :animations
   ]
+
+  @type light_data :: %{
+          type: :directional | :point | :spot,
+          color: {float(), float(), float()},
+          intensity: float(),
+          range: float() | nil,
+          inner_cone_angle: float(),
+          outer_cone_angle: float()
+        }
 
   @type t :: %__MODULE__{
           position: EAGL.Math.vec3() | nil,
@@ -83,6 +95,7 @@ defmodule EAGL.Node do
           name: String.t() | nil,
           properties: map() | nil,
           material_uniforms: keyword() | nil,
+          light: light_data() | nil,
           animations: map() | nil
         }
 

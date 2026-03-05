@@ -149,12 +149,15 @@ defmodule GLTF.EAGL do
         textures: textures,           # map from load_textures/3
         light_pos: vec3(5.0, 5.0, 5.0),
         light_color: vec3(1.0, 1.0, 1.0),
-        view_pos: camera.position
+        view_pos: camera.position,
+        ambient_color: vec3(0.03, 0.03, 0.03),
+        skip_lights: false            # true when Scene.render manages lights
       )
 
   All options have defaults. Pass `:textures` from `load_textures/3` to
   automatically bind base_color, metallic_roughness, normal, and emissive
-  textures to the correct units.
+  textures to the correct units. Pass `skip_lights: true` when lights are
+  managed by `EAGL.Scene.render` (which collects light nodes from the scene graph).
   """
   @spec set_pbr_uniforms(non_neg_integer(), keyword()) :: :ok
   def set_pbr_uniforms(program, opts \\ []) do
@@ -211,11 +214,28 @@ defmodule GLTF.EAGL do
 
     :gl.activeTexture(@gl_texture0)
 
-    set_uniforms(program,
-      lightPos: Keyword.get(opts, :light_pos, vec3(5.0, 5.0, 5.0)),
-      lightColor: Keyword.get(opts, :light_color, vec3(1.0, 1.0, 1.0)),
-      viewPos: Keyword.get(opts, :view_pos, vec3(0.0, 0.0, 0.0))
+    set_uniform(program, "viewPos", Keyword.get(opts, :view_pos, vec3(0.0, 0.0, 0.0)))
+
+    set_uniform(
+      program,
+      "ambientColor",
+      Keyword.get(opts, :ambient_color, vec3(0.03, 0.03, 0.03))
     )
+
+    unless Keyword.get(opts, :skip_lights, false) do
+      light_pos = Keyword.get(opts, :light_pos, vec3(5.0, 5.0, 5.0))
+      light_color = Keyword.get(opts, :light_color, vec3(1.0, 1.0, 1.0))
+
+      set_uniform(program, "numLights", 1)
+      set_uniform(program, "lights[0].type", 1)
+      set_uniform(program, "lights[0].position", light_pos)
+      set_uniform(program, "lights[0].direction", vec3(0.0, -1.0, 0.0))
+      set_uniform(program, "lights[0].color", light_color)
+      set_uniform(program, "lights[0].intensity", 1.0)
+      set_uniform(program, "lights[0].range", 0.0)
+      set_uniform(program, "lights[0].innerConeAngle", 0.0)
+      set_uniform(program, "lights[0].outerConeAngle", 0.7854)
+    end
   end
 
   defp bind_pbr_texture(program, textures, key, sampler_name, has_name, tex_unit, unit_idx) do
@@ -723,9 +743,11 @@ defmodule GLTF.EAGL do
           {:ok, {Scene.t(), [Node.t()]}} | {:error, String.t()}
   def to_scene(%GLTF{} = gltf, data_store, opts \\ []) do
     material_lookup = build_material_lookup(gltf)
+    light_lookup = build_light_lookup(gltf)
 
     with {:ok, mesh_lookup} <- create_mesh_lookup(gltf, data_store, opts),
-         {:ok, node_lookup} <- create_node_lookup(gltf, mesh_lookup, material_lookup),
+         {:ok, node_lookup} <-
+           create_node_lookup(gltf, mesh_lookup, material_lookup, light_lookup),
          {:ok, scene} <- build_scene_graph(gltf, node_lookup, opts) do
       all_nodes = Map.values(node_lookup)
       {:ok, {scene, all_nodes}}
@@ -969,7 +991,7 @@ defmodule GLTF.EAGL do
     end
   end
 
-  defp create_node_lookup(gltf, mesh_lookup, material_lookup) do
+  defp create_node_lookup(gltf, mesh_lookup, material_lookup, light_lookup) do
     case gltf.nodes do
       nil ->
         {:ok, %{}}
@@ -989,6 +1011,8 @@ defmodule GLTF.EAGL do
                 nil -> eagl_node
                 mesh_idx -> apply_mesh_material(eagl_node, gltf, mesh_idx, material_lookup)
               end
+
+            eagl_node = maybe_apply_gltf_light(eagl_node, node, light_lookup)
 
             {index, eagl_node}
           end)
@@ -1072,6 +1096,67 @@ defmodule GLTF.EAGL do
               uniforms -> %{eagl_node | material_uniforms: uniforms}
             end
         end
+    end
+  end
+
+  defp build_light_lookup(%GLTF{extensions: nil}), do: %{}
+
+  defp build_light_lookup(%GLTF{extensions: extensions}) do
+    case get_in(extensions, ["KHR_lights_punctual", "lights"]) do
+      nil ->
+        %{}
+
+      lights when is_list(lights) ->
+        lights
+        |> Enum.with_index()
+        |> Enum.map(fn {light, index} ->
+          type =
+            case light["type"] do
+              "directional" -> :directional
+              "point" -> :point
+              "spot" -> :spot
+              _ -> :point
+            end
+
+          color =
+            case light["color"] do
+              [r, g, b | _] -> {r * 1.0, g * 1.0, b * 1.0}
+              _ -> {1.0, 1.0, 1.0}
+            end
+
+          spot = light["spot"] || %{}
+
+          data = %{
+            type: type,
+            color: color,
+            intensity: (light["intensity"] || 1.0) * 1.0,
+            range: (light["range"] || 0.0) * 1.0,
+            inner_cone_angle: (spot["innerConeAngle"] || 0.0) * 1.0,
+            outer_cone_angle: (spot["outerConeAngle"] || 0.7854) * 1.0
+          }
+
+          {index, data}
+        end)
+        |> Enum.into(%{})
+
+      _ ->
+        %{}
+    end
+  end
+
+  defp maybe_apply_gltf_light(eagl_node, gltf_node, light_lookup) do
+    case get_in(gltf_node.extensions || %{}, ["KHR_lights_punctual", "light"]) do
+      nil ->
+        eagl_node
+
+      light_index when is_integer(light_index) ->
+        case Map.get(light_lookup, light_index) do
+          nil -> eagl_node
+          light_data -> %{eagl_node | light: light_data}
+        end
+
+      _ ->
+        eagl_node
     end
   end
 

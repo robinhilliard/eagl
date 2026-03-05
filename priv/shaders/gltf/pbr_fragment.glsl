@@ -6,8 +6,22 @@ in vec3 FragPos;
 in vec3 Normal;
 in vec2 TexCoord;
 
-uniform vec3 lightPos;
-uniform vec3 lightColor;
+#define MAX_LIGHTS 8
+
+struct Light {
+    int type;            // 0=directional, 1=point, 2=spot
+    vec3 position;
+    vec3 direction;
+    vec3 color;
+    float intensity;
+    float range;         // 0 = infinite
+    float innerConeAngle;
+    float outerConeAngle;
+};
+
+uniform Light lights[MAX_LIGHTS];
+uniform int numLights;
+uniform vec3 ambientColor;
 uniform vec3 viewPos;
 
 struct Material {
@@ -30,7 +44,7 @@ uniform bool hasEmissiveTexture;
 const float PI = 3.14159265359;
 
 vec3 fresnelSchlick(float cosTheta, vec3 F0) {
-    return F0 + (1.0 - F0) * pow(1.0 - cosTheta, 5.0);
+    return F0 + (1.0 - F0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
 }
 
 float distributionGGX(vec3 N, vec3 H, float roughness) {
@@ -52,11 +66,23 @@ float geometrySmith(vec3 N, vec3 V, vec3 L, float roughness) {
          * geometrySchlickGGX(max(dot(N, L), 0.0), roughness);
 }
 
+float rangeAttenuation(float distance, float range) {
+    if (range <= 0.0) return 1.0 / (distance * distance);
+    float ratio = distance / range;
+    float clamped = clamp(1.0 - ratio * ratio * ratio * ratio, 0.0, 1.0);
+    return (clamped * clamped) / (distance * distance + 0.0001);
+}
+
+float spotAttenuation(vec3 L, vec3 spotDir, float innerCone, float outerCone) {
+    float cosOuter = cos(outerCone);
+    float cosInner = cos(innerCone);
+    float theta = dot(normalize(-L), spotDir);
+    return clamp((theta - cosOuter) / max(cosInner - cosOuter, 0.0001), 0.0, 1.0);
+}
+
 void main() {
     vec3 N = normalize(Normal);
     vec3 V = normalize(viewPos - FragPos);
-    vec3 L = normalize(lightPos - FragPos);
-    vec3 H = normalize(V + L);
 
     vec3 baseColor = material.baseColor;
     if (hasBaseColorTexture) {
@@ -77,18 +103,43 @@ void main() {
     }
 
     vec3 F0 = mix(vec3(0.04), baseColor, metallic);
-    float NDF = distributionGGX(N, H, roughness);
-    float G = geometrySmith(N, V, L, roughness);
-    vec3 F = fresnelSchlick(max(dot(H, V), 0.0), F0);
+    vec3 Lo = vec3(0.0);
 
-    vec3 kD = (vec3(1.0) - F) * (1.0 - metallic);
-    float denom = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0) + 0.001;
-    vec3 specular = (NDF * G * F) / denom;
+    for (int i = 0; i < numLights && i < MAX_LIGHTS; i++) {
+        vec3 L;
+        float attenuation = 1.0;
 
-    float NdotL = max(dot(N, L), 0.0);
-    vec3 Lo = (kD * baseColor / PI + specular) * lightColor * NdotL;
+        if (lights[i].type == 0) {
+            // Directional
+            L = normalize(-lights[i].direction);
+        } else {
+            // Point or spot
+            vec3 toLight = lights[i].position - FragPos;
+            float dist = length(toLight);
+            L = normalize(toLight);
+            attenuation = rangeAttenuation(dist, lights[i].range);
 
-    vec3 color = vec3(0.03) * baseColor + Lo + emissive;
+            if (lights[i].type == 2) {
+                attenuation *= spotAttenuation(L, lights[i].direction, lights[i].innerConeAngle, lights[i].outerConeAngle);
+            }
+        }
+
+        vec3 H = normalize(V + L);
+        vec3 radiance = lights[i].color * lights[i].intensity * attenuation;
+
+        float NDF = distributionGGX(N, H, roughness);
+        float G = geometrySmith(N, V, L, roughness);
+        vec3 F = fresnelSchlick(max(dot(H, V), 0.0), F0);
+
+        vec3 kD = (vec3(1.0) - F) * (1.0 - metallic);
+        float denom = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0) + 0.001;
+        vec3 spec = (NDF * G * F) / denom;
+
+        float NdotL = max(dot(N, L), 0.0);
+        Lo += (kD * baseColor / PI + spec) * radiance * NdotL;
+    }
+
+    vec3 color = ambientColor * baseColor + Lo + emissive;
     color = color / (color + vec3(1.0));
     color = pow(color, vec3(1.0/2.2));
 

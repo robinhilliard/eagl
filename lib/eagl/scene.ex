@@ -95,12 +95,16 @@ defmodule EAGL.Scene do
   This function traverses the scene graph and renders each mesh with its
   accumulated transform matrix.
   """
+  @max_lights 8
+
   @spec render(t(), EAGL.Math.mat4(), EAGL.Math.mat4()) :: :ok
   def render(%__MODULE__{root_nodes: roots}, view_matrix, projection_matrix) do
     identity_matrix = mat4_identity()
 
+    lights = collect_lights(roots, identity_matrix)
+
     Enum.each(roots, fn root_node ->
-      render_node_recursive(root_node, identity_matrix, view_matrix, projection_matrix)
+      render_node_recursive(root_node, identity_matrix, view_matrix, projection_matrix, lights)
     end)
 
     :ok
@@ -703,7 +707,13 @@ defmodule EAGL.Scene do
     end
   end
 
-  defp render_node_recursive(%Node{} = node, parent_transform, view_matrix, projection_matrix) do
+  defp render_node_recursive(
+         %Node{} = node,
+         parent_transform,
+         view_matrix,
+         projection_matrix,
+         lights
+       ) do
     local_transform = Node.get_local_transform_matrix(node)
     world_transform = mat4_mul(parent_transform, local_transform)
 
@@ -712,18 +722,26 @@ defmodule EAGL.Scene do
         :ok
 
       mesh ->
-        render_mesh(mesh, node.material_uniforms, world_transform, view_matrix, projection_matrix)
+        render_mesh(
+          mesh,
+          node.material_uniforms,
+          world_transform,
+          view_matrix,
+          projection_matrix,
+          lights
+        )
     end
 
     Enum.each(Node.get_children(node), fn child ->
-      render_node_recursive(child, world_transform, view_matrix, projection_matrix)
+      render_node_recursive(child, world_transform, view_matrix, projection_matrix, lights)
     end)
   end
 
-  defp render_mesh(mesh, material_uniforms, model_matrix, view_matrix, projection_matrix) do
+  defp render_mesh(mesh, material_uniforms, model_matrix, view_matrix, projection_matrix, lights) do
     case mesh do
       %{vao: vao, vertex_count: count, program: program} ->
         :gl.useProgram(program)
+        apply_light_uniforms(program, lights)
         apply_material_uniforms(program, material_uniforms)
         EAGL.Shader.set_uniform(program, "model", model_matrix)
         EAGL.Shader.set_uniform(program, "view", view_matrix)
@@ -734,6 +752,7 @@ defmodule EAGL.Scene do
       %{vao: vao, index_count: count, program: program} ->
         index_type = Map.get(mesh, :index_type, @gl_unsigned_int)
         :gl.useProgram(program)
+        apply_light_uniforms(program, lights)
         apply_material_uniforms(program, material_uniforms)
         EAGL.Shader.set_uniform(program, "model", model_matrix)
         EAGL.Shader.set_uniform(program, "view", view_matrix)
@@ -751,6 +770,99 @@ defmodule EAGL.Scene do
   defp apply_material_uniforms(program, uniforms) when is_list(uniforms) do
     Enum.each(uniforms, fn {name, value} ->
       EAGL.Shader.set_uniform(program, to_string(name), value)
+    end)
+  end
+
+  @default_light %{
+    type: :point,
+    position: [{5.0, 5.0, 5.0}],
+    direction: [{0.0, -1.0, 0.0}],
+    color: [{1.0, 1.0, 1.0}],
+    intensity: 1.0,
+    range: 0.0,
+    inner_cone_angle: 0.0,
+    outer_cone_angle: 0.7854
+  }
+
+  defp collect_lights(roots, identity) do
+    lights =
+      Enum.flat_map(roots, fn root ->
+        collect_lights_recursive(root, identity)
+      end)
+
+    case lights do
+      [] -> [@default_light]
+      list -> Enum.take(list, @max_lights)
+    end
+  end
+
+  defp collect_lights_recursive(%Node{} = node, parent_transform) do
+    local_transform = Node.get_local_transform_matrix(node)
+    world_transform = mat4_mul(parent_transform, local_transform)
+
+    light_data =
+      case node.light do
+        nil ->
+          []
+
+        light ->
+          world_pos = mat4_transform_point(world_transform, vec3(0.0, 0.0, 0.0))
+          world_dir = mat4_transform_vector(world_transform, vec3(0.0, 0.0, -1.0))
+          [{dx, dy, dz}] = world_dir
+          len = :math.sqrt(dx * dx + dy * dy + dz * dz)
+
+          norm_dir =
+            if len > 0.0001, do: [{dx / len, dy / len, dz / len}], else: [{0.0, -1.0, 0.0}]
+
+          {cr, cg, cb} = Map.get(light, :color, {1.0, 1.0, 1.0})
+
+          [
+            %{
+              type: Map.get(light, :type, :point),
+              position: world_pos,
+              direction: norm_dir,
+              color: [{cr * 1.0, cg * 1.0, cb * 1.0}],
+              intensity: (Map.get(light, :intensity, 1.0) || 1.0) * 1.0,
+              range: (Map.get(light, :range, 0.0) || 0.0) * 1.0,
+              inner_cone_angle: (Map.get(light, :inner_cone_angle, 0.0) || 0.0) * 1.0,
+              outer_cone_angle: (Map.get(light, :outer_cone_angle, 0.7854) || 0.7854) * 1.0
+            }
+          ]
+      end
+
+    child_lights =
+      Enum.flat_map(Node.get_children(node), fn child ->
+        collect_lights_recursive(child, world_transform)
+      end)
+
+    light_data ++ child_lights
+  end
+
+  defp apply_light_uniforms(program, lights) do
+    EAGL.Shader.set_uniform(program, "numLights", length(lights))
+    EAGL.Shader.set_uniform(program, "ambientColor", vec3(0.03, 0.03, 0.03))
+
+    lights
+    |> Enum.with_index()
+    |> Enum.each(fn {light, i} ->
+      prefix = "lights[#{i}]"
+
+      type_int =
+        case light.type do
+          :directional -> 0
+          :point -> 1
+          :spot -> 2
+          _ -> 1
+        end
+
+      EAGL.Shader.set_uniform(program, "#{prefix}.type", type_int)
+      EAGL.Shader.set_uniform(program, "#{prefix}.position", light.position)
+      EAGL.Shader.set_uniform(program, "#{prefix}.direction", light.direction)
+      EAGL.Shader.set_uniform(program, "#{prefix}.color", light.color)
+      EAGL.Shader.set_uniform(program, "#{prefix}.intensity", light.intensity)
+      EAGL.Shader.set_uniform(program, "#{prefix}.range", light.range)
+      EAGL.Shader.set_uniform(program, "#{prefix}.innerConeAngle", light.inner_cone_angle)
+      EAGL.Shader.set_uniform(program, "#{prefix}.outerConeAngle", light.outer_cone_angle)
     end)
   end
 end
