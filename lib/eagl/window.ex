@@ -1046,7 +1046,21 @@ defmodule EAGL.Window do
         :gl.viewport(0, 0, safe_w, safe_h)
         Process.put(:eagl_last_viewport, {trunc(safe_w), trunc(safe_h)})
 
-        timing = %{delta_time: time_delta, elapsed_time: tick_time - start_time}
+        tick_alpha =
+          case Process.get(:eagl_last_ecs_tick) do
+            {last_ecs_time, ecs_interval} when ecs_interval > 0 ->
+              alpha = (tick_time - last_ecs_time) / ecs_interval
+              min(max(alpha, 0.0), 1.0)
+
+            _ ->
+              1.0
+          end
+
+        timing = %{
+          delta_time: time_delta,
+          elapsed_time: tick_time - start_time,
+          tick_alpha: tick_alpha
+        }
 
         rendered_state =
           if function_exported?(callback_module, :render, 4) do

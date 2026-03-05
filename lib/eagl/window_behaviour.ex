@@ -52,7 +52,13 @@ defmodule EAGL.WindowBehaviour do
   @doc """
   Optional. Called when the window needs to be rendered, with frame timing.
   If implemented, this is called instead of `render/3` when timing is available (tick loop).
-  `timing` contains `delta_time` (seconds since last frame) and `elapsed_time` (seconds since start).
+
+  `timing` contains:
+  - `delta_time` - seconds since last frame
+  - `elapsed_time` - seconds since start
+  - `tick_alpha` - interpolation factor (0.0-1.0) between the last two ECSx ticks.
+    Set via `Process.put(:eagl_last_ecs_tick, {timestamp, interval})` when a game
+    tick occurs. Defaults to 1.0 when no ECSx tick data is available.
   """
   @callback render(width :: float(), height :: float(), state :: any(), timing :: map()) ::
               :ok | {:ok, any()}
