@@ -2,15 +2,14 @@ defmodule EAGL.OrbitCamera do
   @moduledoc """
   Orbit camera for inspecting 3D scenes.
 
-  Unlike the first-person LearnOpenGL Camera (in `examples/learnopengl/camera.ex`),
-  OrbitCamera provides a conventional turntable-style view:
-
   - **Left-drag**: orbit around the target point
   - **Scroll**: zoom in/out (moves closer/further from target)
   - **Middle-drag**: pan the target point
 
-  The camera position is computed from spherical coordinates relative to the
-  target, making it natural for inspecting models from all angles.
+  Orientation is stored as a quaternion for numerical stability.
+  Rotation axes are derived from the look_at construction so they
+  match what the renderer displays on screen. Azimuth and elevation
+  are kept in sync for backward compatibility.
 
   ## Quick Start
 
@@ -59,6 +58,7 @@ defmodule EAGL.OrbitCamera do
             distance: 5.0,
             azimuth: @default_azimuth,
             elevation: @default_elevation,
+            orientation: nil,
             camera: nil,
             sensitivity: @default_sensitivity,
             zoom_speed: @default_zoom_speed,
@@ -72,6 +72,7 @@ defmodule EAGL.OrbitCamera do
           distance: float(),
           azimuth: float(),
           elevation: float(),
+          orientation: EAGL.Math.quat(),
           camera: Camera.t(),
           sensitivity: float(),
           zoom_speed: float(),
@@ -106,6 +107,8 @@ defmodule EAGL.OrbitCamera do
     near = Keyword.get(opts, :near, 0.1)
     far = Keyword.get(opts, :far, 1000.0)
 
+    orientation = azimuth_elevation_to_quat(azimuth, elevation)
+
     camera =
       Camera.new(
         type: :perspective,
@@ -121,6 +124,7 @@ defmodule EAGL.OrbitCamera do
       distance: distance,
       azimuth: azimuth,
       elevation: elevation,
+      orientation: orientation,
       camera: camera,
       sensitivity: Keyword.get(opts, :sensitivity, @default_sensitivity),
       zoom_speed: Keyword.get(opts, :zoom_speed, @default_zoom_speed),
@@ -187,7 +191,8 @@ defmodule EAGL.OrbitCamera do
   """
   @spec get_position(t()) :: EAGL.Math.vec3()
   def get_position(%__MODULE__{} = cam) do
-    spherical_to_vec3(cam.distance, cam.azimuth, cam.elevation, cam.target)
+    offset = quat_rotate_vec3(cam.orientation, vec3(0.0, 0.0, cam.distance))
+    vec_add(cam.target, offset)
   end
 
   @doc """
@@ -210,16 +215,48 @@ defmodule EAGL.OrbitCamera do
 
   @doc """
   Process a mouse drag to orbit the camera.
+
+  Rotation axes are derived from the look_at construction (matching
+  what the renderer displays), so horizontal drag always orbits
+  around screen-up and vertical drag around screen-right.
+  The quaternion provides a stable fallback near the poles where
+  the look_at cross product degenerates.
   """
   @spec orbit(t(), float(), float()) :: t()
   def orbit(%__MODULE__{} = cam, dx, dy) do
-    new_azimuth = cam.azimuth - dx * cam.sensitivity
-    new_elevation = cam.elevation + dy * cam.sensitivity
-
+    world_up = vec3(0.0, 1.0, 0.0)
     max_elev = :math.pi() / 2.0 - 0.01
-    new_elevation = max(-max_elev, min(max_elev, new_elevation))
 
-    %{cam | azimuth: new_azimuth, elevation: new_elevation}
+    offset = quat_rotate_vec3(cam.orientation, vec3(0.0, 0.0, cam.distance))
+    forward = normalize(vec_scale(offset, -1.0))
+
+    right_cross = cross(forward, world_up)
+
+    {right, view_up} =
+      if vec_length(right_cross) < 0.001 do
+        r = quat_rotate_vec3(cam.orientation, vec3(1.0, 0.0, 0.0))
+        {r, normalize(cross(r, forward))}
+      else
+        r = normalize(right_cross)
+        {r, normalize(cross(r, forward))}
+      end
+
+    h_q = quat_from_axis_angle(view_up, -dx * cam.sensitivity)
+    v_q = quat_from_axis_angle(right, -dy * cam.sensitivity)
+
+    new_orientation = quat_normalize(quat_mul(h_q, quat_mul(v_q, cam.orientation)))
+
+    new_offset = quat_rotate_vec3(new_orientation, vec3(0.0, 0.0, cam.distance))
+    {_r, _az, new_elev} = vec3_to_spherical(new_offset)
+
+    new_orientation =
+      if abs(new_elev) > max_elev do
+        quat_normalize(quat_mul(h_q, cam.orientation))
+      else
+        new_orientation
+      end
+
+    sync_spherical(cam, new_orientation)
   end
 
   @doc """
@@ -241,20 +278,15 @@ defmodule EAGL.OrbitCamera do
   """
   @spec pan(t(), float(), float()) :: t()
   def pan(%__MODULE__{} = cam, dx, dy) do
+    [{rx, ry, rz}] = quat_rotate_vec3(cam.orientation, vec3(1.0, 0.0, 0.0))
+    [{ux, uy, uz}] = quat_rotate_vec3(cam.orientation, vec3(0.0, 1.0, 0.0))
     [{tx, ty, tz}] = cam.target
-
-    right_x = :math.cos(cam.azimuth)
-    right_z = -:math.sin(cam.azimuth)
-
-    up_x = -:math.sin(cam.elevation) * :math.sin(cam.azimuth)
-    up_y = :math.cos(cam.elevation)
-    up_z = -:math.sin(cam.elevation) * :math.cos(cam.azimuth)
 
     scale = cam.pan_speed * cam.distance
 
-    new_tx = tx - dx * right_x * scale + dy * up_x * scale
-    new_ty = ty + dy * up_y * scale
-    new_tz = tz - dx * right_z * scale + dy * up_z * scale
+    new_tx = tx - dx * rx * scale + dy * ux * scale
+    new_ty = ty - dx * ry * scale + dy * uy * scale
+    new_tz = tz - dx * rz * scale + dy * uz * scale
 
     %{cam | target: vec3(new_tx, new_ty, new_tz)}
   end
@@ -383,4 +415,16 @@ defmodule EAGL.OrbitCamera do
   defp to_tuple3([{x, y, z}]), do: {x, y, z}
   defp to_tuple3({x, y, z}), do: {x, y, z}
   defp to_tuple3([x, y, z]), do: {x, y, z}
+
+  defp azimuth_elevation_to_quat(azimuth, elevation) do
+    q_elev = quat_from_axis_angle(vec3(1.0, 0.0, 0.0), -elevation)
+    q_azim = quat_from_axis_angle(vec3(0.0, 1.0, 0.0), azimuth)
+    quat_normalize(quat_mul(q_azim, q_elev))
+  end
+
+  defp sync_spherical(cam, orientation) do
+    offset = quat_rotate_vec3(orientation, vec3(0.0, 0.0, cam.distance))
+    {_r, azimuth, elevation} = vec3_to_spherical(offset)
+    %{cam | orientation: orientation, azimuth: azimuth, elevation: elevation}
+  end
 end
