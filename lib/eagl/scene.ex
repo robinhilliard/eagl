@@ -56,6 +56,7 @@ defmodule EAGL.Scene do
   alias EAGL.Node
   alias EAGL.Camera
   alias EAGL.OrbitCamera
+  alias EAGL.OrthoCamera
   import Bitwise
   import EAGL.Math
   use EAGL.Const
@@ -108,6 +109,72 @@ defmodule EAGL.Scene do
     end)
 
     :ok
+  end
+
+  @doc """
+  Find a node by name and return it with its world transform matrix.
+
+  Walks the scene graph depth-first. Returns `{:ok, node, world_matrix}` or `nil`.
+  """
+  @spec find_node_with_transform(t(), String.t() | atom()) ::
+          {:ok, Node.t(), EAGL.Math.mat4()} | nil
+  def find_node_with_transform(%__MODULE__{root_nodes: roots}, name) do
+    find_node_recursive(roots, name, mat4_identity())
+  end
+
+  defp find_node_recursive([], _name, _parent_transform), do: nil
+
+  defp find_node_recursive([node | rest], name, parent_transform) do
+    local = Node.get_local_transform_matrix(node)
+    world = mat4_mul(parent_transform, local)
+
+    node_name = node.name
+
+    if node_name == name or (is_atom(name) and node_name == Atom.to_string(name)) do
+      {:ok, node, world}
+    else
+      case find_node_recursive(Node.get_children(node), name, world) do
+        {:ok, _, _} = found -> found
+        nil -> find_node_recursive(rest, name, parent_transform)
+      end
+    end
+  end
+
+  @doc """
+  Compute the world-space AABB for a node given its world transform matrix.
+
+  Returns `{min_point, max_point}` as `{x, y, z}` tuples, or `nil` if the node has no mesh bounds.
+  """
+  @spec node_world_aabb(Node.t(), EAGL.Math.mat4()) ::
+          {{float(), float(), float()}, {float(), float(), float()}} | nil
+  def node_world_aabb(node, world_matrix) do
+    case Node.get_mesh(node) do
+      %{bounds: {{min_x, min_y, min_z}, {max_x, max_y, max_z}}} ->
+        corners = [
+          [{min_x, min_y, min_z}],
+          [{max_x, min_y, min_z}],
+          [{min_x, max_y, min_z}],
+          [{max_x, max_y, min_z}],
+          [{min_x, min_y, max_z}],
+          [{max_x, min_y, max_z}],
+          [{min_x, max_y, max_z}],
+          [{max_x, max_y, max_z}]
+        ]
+
+        transformed =
+          Enum.map(corners, fn v -> mat4_transform_point(world_matrix, v) end)
+          |> Enum.map(fn [{x, y, z}] -> {x, y, z} end)
+
+        [{fx, fy, fz} | rest] = transformed
+
+        Enum.reduce(rest, {{fx, fy, fz}, {fx, fy, fz}}, fn {x, y, z},
+                                                           {{ax, ay, az}, {bx, by, bz}} ->
+          {{min(x, ax), min(y, ay), min(z, az)}, {max(x, bx), max(y, by), max(z, bz)}}
+        end)
+
+      _ ->
+        nil
+    end
   end
 
   @doc """
@@ -376,18 +443,18 @@ defmodule EAGL.Scene do
   ## Example
 
       case Scene.pick(scene, orbit, {0, 0, 1024, 768}, mouse_x, mouse_y) do
-        {:ok, node} -> IO.puts("Picked: \#{Node.get_id(node)}")
+        {:ok, node, world_matrix} -> IO.puts("Picked: \#{Node.get_id(node)}")
         nil -> :ok
       end
   """
   @spec pick(
           t(),
-          Camera.t() | OrbitCamera.t(),
+          Camera.t() | OrbitCamera.t() | OrthoCamera.t(),
           {number(), number(), number(), number()},
           number(),
           number()
         ) ::
-          {:ok, Node.t()} | nil
+          {:ok, Node.t(), EAGL.Math.mat4()} | nil
   def pick(%__MODULE__{root_nodes: roots}, camera, viewport, screen_x, screen_y) do
     {_vp_x, _vp_y, vp_w, vp_h} = viewport
 
@@ -416,7 +483,7 @@ defmodule EAGL.Scene do
 
           idx when is_integer(idx) and idx >= 0 ->
             case Enum.at(nodes_with_meshes, idx) do
-              {node, _world} -> {:ok, node}
+              {node, world} -> {:ok, node, world}
               _ -> nil
             end
         end
@@ -426,12 +493,16 @@ defmodule EAGL.Scene do
 
   defp get_view_matrix(%Camera{} = cam), do: Camera.get_view_matrix(cam)
   defp get_view_matrix(%OrbitCamera{} = orbit), do: OrbitCamera.get_view_matrix(orbit)
+  defp get_view_matrix(%OrthoCamera{} = ortho), do: OrthoCamera.get_view_matrix(ortho)
 
   defp get_projection_matrix(%Camera{} = cam, aspect),
     do: Camera.get_projection_matrix(cam, aspect)
 
   defp get_projection_matrix(%OrbitCamera{} = orbit, aspect),
     do: OrbitCamera.get_projection_matrix(orbit, aspect)
+
+  defp get_projection_matrix(%OrthoCamera{} = ortho, aspect),
+    do: OrthoCamera.get_projection_matrix(ortho, aspect)
 
   defp collect_nodes_with_meshes(nodes, parent_transform) do
     Enum.flat_map(nodes, fn node ->

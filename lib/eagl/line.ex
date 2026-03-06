@@ -102,4 +102,51 @@ defmodule EAGL.Line do
       :ok
     end
   end
+
+  @doc """
+  Draw a wireframe axis-aligned bounding box.
+
+  `min_pt` and `max_pt` are `{x, y, z}` tuples defining opposite corners.
+  Renders the 12 edges of the box.
+  """
+  @spec draw_aabb(
+          {number(), number(), number()},
+          {number(), number(), number()},
+          EAGL.Math.mat4(),
+          EAGL.Math.mat4(),
+          EAGL.Math.vec3()
+        ) :: :ok
+  def draw_aabb(
+        {x0, y0, z0},
+        {x1, y1, z1},
+        view_matrix,
+        projection_matrix,
+        color \\ vec3(1.0, 1.0, 0.0)
+      ) do
+    v000 = vec3(x0, y0, z0)
+    v100 = vec3(x1, y0, z0)
+    v010 = vec3(x0, y1, z0)
+    v110 = vec3(x1, y1, z0)
+    v001 = vec3(x0, y0, z1)
+    v101 = vec3(x1, y0, z1)
+    v011 = vec3(x0, y1, z1)
+    v111 = vec3(x1, y1, z1)
+
+    edges = [
+      {v000, v100},
+      {v010, v110},
+      {v001, v101},
+      {v011, v111},
+      {v000, v010},
+      {v100, v110},
+      {v001, v011},
+      {v101, v111},
+      {v000, v001},
+      {v100, v101},
+      {v010, v011},
+      {v110, v111}
+    ]
+
+    draw_lines(edges, view_matrix, projection_matrix, color)
+  end
 end
