@@ -242,9 +242,17 @@ defmodule EAGL.Window do
       :wxGLCanvas.connect(gl_canvas, :middle_down)
       :wxGLCanvas.connect(gl_canvas, :middle_up)
 
-      # Create a sizer and add the canvas to it
-      sizer = :wxBoxSizer.new(@wx_vertical)
-      :wxSizer.add(sizer, gl_canvas, proportion: 1, flag: @wx_expand)
+      # Create layout: delegate to callback module if setup_layout/2 is implemented,
+      # otherwise use a simple vertical sizer with the canvas filling the frame.
+      sizer =
+        if function_exported?(callback_module, :setup_layout, 2) do
+          callback_module.setup_layout(frame, gl_canvas)
+        else
+          s = :wxBoxSizer.new(@wx_vertical)
+          :wxSizer.add(s, gl_canvas, proportion: 1, flag: @wx_expand)
+          s
+        end
+
       :wxFrame.setSizer(frame, sizer)
 
       # Ensure exact client size when explicitly requested (e.g. for tests)
@@ -710,6 +718,12 @@ defmodule EAGL.Window do
 
       {:_wxe_error_, _, _, _} ->
         drain_pending_events(state, callback_module, frame, gl_canvas, gl_context, enter_to_exit)
+
+      {:wx, _, _, _, event_data} ->
+        new_state =
+          dispatch_event(callback_module, {:wx_event, event_data}, state, frame, gl_canvas, gl_context)
+
+        drain_pending_events(new_state, callback_module, frame, gl_canvas, gl_context, enter_to_exit)
     after
       0 -> state
     end
@@ -1094,20 +1108,23 @@ defmodule EAGL.Window do
         )
 
       other ->
-        case other do
-          :tick -> :ok
-          {:wx, _, _, _, {:wxShow, :show, _}} -> :ok
-          {:wx, _, _, _, {:wxMouse, _, _, _, _, _, _, _, _, _, _, _, _, _}} -> :ok
-          {:_wxe_error_, _, _, _} -> :ok
-          _ -> IO.puts("DEBUG: Unhandled event: #{inspect(other)}")
-        end
+        new_state =
+          case other do
+            {:wx, _, _, _, {:wxShow, :show, _}} -> state
+            {:wx, _, _, _, {:wxMouse, _, _, _, _, _, _, _, _, _, _, _, _, _}} -> state
+            {:_wxe_error_, _, _, _} -> state
+            :tick -> state
+            {:wx, _, _, _, event_data} ->
+              dispatch_event(callback_module, {:wx_event, event_data}, state, frame, gl_canvas, gl_context)
+            _ -> state
+          end
 
         main_loop(
           frame,
           gl_canvas,
           gl_context,
           callback_module,
-          state,
+          new_state,
           enter_to_exit,
           timeout,
           last_tick_time,

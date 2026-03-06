@@ -83,8 +83,24 @@ defmodule EAGL.WindowBehaviour do
   - `{:middle_down, x, y}` - Middle mouse button press
   - `{:middle_up, x, y}` - Middle mouse button release
   - `{:mouse_wheel, x, y, wheel_rotation, wheel_delta}` - Scroll wheel
+  - `{:wx_event, event_data}` - Raw wx event not handled by EAGL (e.g. wxTreeCtrl selections)
   """
   @callback handle_event(event :: any(), state :: any()) :: {:ok, any()}
 
-  @optional_callbacks [handle_event: 2, render: 4]
+  @doc """
+  Optional. Called during window creation to set up the frame layout.
+
+  Receives the wxFrame and wxGLCanvas. Must return a wxSizer that has been
+  populated with the gl_canvas (and any additional panels). The sizer will
+  be set on the frame via `:wxFrame.setSizer/2`.
+
+  If not implemented, a default vertical sizer is created with the GL canvas
+  filling the entire frame.
+  """
+  @callback setup_layout(
+              frame :: :wxFrame.wxFrame(),
+              gl_canvas :: :wxGLCanvas.wxGLCanvas()
+            ) :: :wxSizer.wxSizer()
+
+  @optional_callbacks [handle_event: 2, render: 4, setup_layout: 2]
 end
