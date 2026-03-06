@@ -659,11 +659,11 @@ defmodule EAGL.Window do
         )
 
       {:wx, _, _, _,
-       {:wxMouse, :mousewheel, _x, _y, _, _, _, _, _, _, _, wheel_rotation, _wheel_delta, _}} ->
+       {:wxMouse, :mousewheel, x, y, _, _, _, _, _, _, _, wheel_rotation, wheel_delta, _}} ->
         new_state =
           dispatch_event(
             callback_module,
-            {:mouse_wheel, 0, 0, wheel_rotation, 0},
+            {:mouse_wheel, x, y, wheel_rotation, wheel_delta},
             state,
             frame,
             gl_canvas,
