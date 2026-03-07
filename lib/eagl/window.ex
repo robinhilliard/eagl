@@ -468,9 +468,24 @@ defmodule EAGL.Window do
                       IO.puts("Warning: Error during cleanup: #{inspect(e)}")
                   end
 
-                  :wxGLContext.destroy(gl_context)
-                  :wxFrame.destroy(frame)
-                  :application.stop(:wx)
+                  try do
+                    :wxGLContext.destroy(gl_context)
+                  rescue
+                    _ -> :ok
+                  end
+
+                  try do
+                    :wxFrame.destroy(frame)
+                  rescue
+                    _ -> :ok
+                  end
+
+                  try do
+                    :application.stop(:wx)
+                  rescue
+                    _ -> :ok
+                  end
+
                   :ok
 
                 {:error, reason} ->
@@ -520,6 +535,7 @@ defmodule EAGL.Window do
           any()
         ) :: no_return()
   defp cleanup_and_exit(frame, gl_canvas, gl_context, callback_module, state) do
+    IO.puts("Shutting down…")
     # Try to ensure OpenGL context is current before cleanup, but don't fail if it's already invalid
     try do
       :wxGLCanvas.setCurrent(gl_canvas, gl_context)
@@ -568,62 +584,6 @@ defmodule EAGL.Window do
     throw(:exit_main_loop)
   end
 
-  # Private helper to handle window cleanup for close event (returns :ok)
-  @spec cleanup_and_close(
-          :wxFrame.wxFrame(),
-          :wxGLCanvas.wxGLCanvas(),
-          :wxGLContext.wxGLContext(),
-          module(),
-          any()
-        ) :: :ok
-  defp cleanup_and_close(frame, gl_canvas, gl_context, callback_module, state) do
-    # Try to ensure OpenGL context is current before cleanup, but don't fail if it's already invalid
-    try do
-      :wxGLCanvas.setCurrent(gl_canvas, gl_context)
-      # Only try to unbind shader program if context is still valid
-      try do
-        # Unbind shader program
-        :gl.useProgram(0)
-      rescue
-        e in [ErlangError] ->
-          case e.original do
-            {:error, :no_gl_context, _} ->
-              # OpenGL context is already destroyed, that's OK during shutdown
-              :ok
-
-            _ ->
-              # Re-raise other errors
-              reraise e, __STACKTRACE__
-          end
-      end
-    rescue
-      _e ->
-        # wxGLCanvas context might already be destroyed during shutdown, that's OK
-        :ok
-    end
-
-    try do
-      callback_module.cleanup(state)
-    rescue
-      e in [ErlangError] ->
-        case e.original do
-          {:error, :no_gl_context, _} ->
-            # OpenGL context is already destroyed, that's OK during shutdown
-            # This happens when cleanup functions try to delete OpenGL resources
-            :ok
-
-          _ ->
-            IO.puts("Warning: Error during cleanup: #{inspect(e)}")
-        end
-
-      e ->
-        IO.puts("Warning: Error during cleanup: #{inspect(e)}")
-    end
-
-    :wxGLContext.destroy(gl_context)
-    :wxFrame.destroy(frame)
-    :ok
-  end
 
   # Drain all pending wx input events from the mailbox without blocking.
   # Applies each event to state via the callback module's handle_event.
@@ -710,7 +670,7 @@ defmodule EAGL.Window do
         )
 
       {:wx, _, _, _, {:wxClose, :close_window}} ->
-        cleanup_and_close(frame, gl_canvas, gl_context, callback_module, state)
+        cleanup_and_exit(frame, gl_canvas, gl_context, callback_module, state)
 
       {:wx, _, _, _, {:wxSize, :size, _, _}} ->
         :wxWindow.layout(frame)
@@ -813,33 +773,13 @@ defmodule EAGL.Window do
         )
 
       {:wx, _, _, _, {:wxKey, :char_hook, _, _, key_code, _, _, _, _, _, _, _}} ->
-        # Handle ENTER key if enter_to_exit is enabled
-        # Check for both main ENTER (13/WXK_RETURN) and numeric keypad ENTER (370/WXK_NUMPAD_ENTER)
         if enter_to_exit and (key_code == 13 or key_code == 370) do
           cleanup_and_exit(frame, gl_canvas, gl_context, callback_module, state)
         end
 
-        # Handle keyboard events
         new_state =
-          if function_exported?(callback_module, :handle_event, 2) do
-            try do
-              case callback_module.handle_event({:key, key_code}, state) do
-                {:ok, updated_state} -> updated_state
-                _ -> state
-              end
-            rescue
-              # Handle FunctionClauseError when key handler is not defined
-              _e in [FunctionClauseError] ->
-                state
-            catch
-              :close_window ->
-                cleanup_and_exit(frame, gl_canvas, gl_context, callback_module, state)
-            end
-          else
-            state
-          end
+          dispatch_event(callback_module, {:key, key_code}, state, frame, gl_canvas, gl_context)
 
-        # Trigger a repaint after handling the event
         :wxWindow.refresh(gl_canvas)
 
         main_loop(
@@ -854,25 +794,16 @@ defmodule EAGL.Window do
           start_time
         )
 
-      # Handle mouse motion events for camera look around
       {:wx, _, _, _, {:wxMouse, :motion, x, y, _, _, _, _, _, _, _, _, _, _}} ->
         new_state =
-          if function_exported?(callback_module, :handle_event, 2) do
-            try do
-              case callback_module.handle_event({:mouse_motion, x, y}, state) do
-                {:ok, updated_state} -> updated_state
-                _ -> state
-              end
-            rescue
-              _e in [FunctionClauseError] ->
-                state
-            catch
-              :close_window ->
-                cleanup_and_exit(frame, gl_canvas, gl_context, callback_module, state)
-            end
-          else
-            state
-          end
+          dispatch_event(
+            callback_module,
+            {:mouse_motion, x, y},
+            state,
+            frame,
+            gl_canvas,
+            gl_context
+          )
 
         main_loop(
           frame,
@@ -886,32 +817,18 @@ defmodule EAGL.Window do
           start_time
         )
 
-      # Handle scroll wheel events for camera zoom
       {:wx, _, _, _,
        {:wxMouse, :mousewheel, x, y, _, _, _, _, _, _, _, wheel_rotation, wheel_delta, _}} ->
         new_state =
-          if function_exported?(callback_module, :handle_event, 2) do
-            try do
-              case callback_module.handle_event(
-                     {:mouse_wheel, x, y, wheel_rotation, wheel_delta},
-                     state
-                   ) do
-                {:ok, updated_state} -> updated_state
-                _ -> state
-              end
-            rescue
-              # Handle FunctionClauseError when mouse wheel handler is not defined
-              _e in [FunctionClauseError] ->
-                state
-            catch
-              :close_window ->
-                cleanup_and_exit(frame, gl_canvas, gl_context, callback_module, state)
-            end
-          else
-            state
-          end
+          dispatch_event(
+            callback_module,
+            {:mouse_wheel, x, y, wheel_rotation, wheel_delta},
+            state,
+            frame,
+            gl_canvas,
+            gl_context
+          )
 
-        # Trigger a repaint after handling the event
         :wxWindow.refresh(gl_canvas)
 
         main_loop(
@@ -926,7 +843,6 @@ defmodule EAGL.Window do
           start_time
         )
 
-      # Handle mouse button events for click-to-drag camera control
       {:wx, _, _, _, {:wxMouse, button_event, x, y, _, _, _, _, _, _, _, _, _, _}}
       when button_event in [:left_down, :left_up, :middle_down, :middle_up] ->
         event_name =
@@ -938,21 +854,14 @@ defmodule EAGL.Window do
           end
 
         new_state =
-          if function_exported?(callback_module, :handle_event, 2) do
-            try do
-              case callback_module.handle_event({event_name, x, y}, state) do
-                {:ok, updated_state} -> updated_state
-                _ -> state
-              end
-            rescue
-              _e in [FunctionClauseError] -> state
-            catch
-              :close_window ->
-                cleanup_and_exit(frame, gl_canvas, gl_context, callback_module, state)
-            end
-          else
-            state
-          end
+          dispatch_event(
+            callback_module,
+            {event_name, x, y},
+            state,
+            frame,
+            gl_canvas,
+            gl_context
+          )
 
         main_loop(
           frame,
@@ -967,7 +876,7 @@ defmodule EAGL.Window do
         )
 
       {:wx, _, _, _, {:wxClose, :close_window}} ->
-        cleanup_and_close(frame, gl_canvas, gl_context, callback_module, state)
+        cleanup_and_exit(frame, gl_canvas, gl_context, callback_module, state)
 
       {:wx, _, _, _, {:wxPaint, :paint}} ->
         if timeout != nil do
@@ -1032,23 +941,15 @@ defmodule EAGL.Window do
             enter_to_exit
           )
 
-        # Call tick handler
         ticked_state =
-          if function_exported?(callback_module, :handle_event, 2) do
-            try do
-              case callback_module.handle_event({:tick, time_delta}, drained_state) do
-                {:ok, updated_state} -> updated_state
-                _ -> drained_state
-              end
-            rescue
-              _e in [FunctionClauseError] -> drained_state
-            catch
-              :close_window ->
-                cleanup_and_exit(frame, gl_canvas, gl_context, callback_module, drained_state)
-            end
-          else
-            drained_state
-          end
+          dispatch_event(
+            callback_module,
+            {:tick, time_delta},
+            drained_state,
+            frame,
+            gl_canvas,
+            gl_context
+          )
 
         # Render directly instead of sending a paint message
         render_start = :erlang.monotonic_time(:millisecond)
