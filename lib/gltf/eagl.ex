@@ -245,11 +245,13 @@ defmodule GLTF.EAGL do
       nil ->
         # Bind default texture so sampler has valid target (avoids "texture unloadable" on macOS)
         default = EAGL.Texture.get_default_texture()
+
         if default do
           :gl.activeTexture(tex_unit)
           :gl.bindTexture(@gl_texture_2d, default)
           set_uniform(program, sampler_name, unit_idx)
         end
+
         set_uniform(program, has_name, false)
 
       tex_id ->

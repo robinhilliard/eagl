@@ -549,6 +549,7 @@ defmodule EAGL.Window do
         ) :: no_return()
   defp cleanup_and_exit(frame, gl_canvas, gl_context, callback_module, state) do
     IO.puts("Shutting down…")
+
     # Try to ensure OpenGL context is current before cleanup, but don't fail if it's already invalid
     try do
       :wxGLCanvas.setCurrent(gl_canvas, gl_context)
@@ -597,7 +598,6 @@ defmodule EAGL.Window do
     throw(:exit_main_loop)
   end
 
-
   # Drain all pending wx input events from the mailbox without blocking.
   # Applies each event to state via the callback module's handle_event.
   defp drain_pending_events(state, callback_module, frame, gl_canvas, gl_context, enter_to_exit) do
@@ -621,6 +621,7 @@ defmodule EAGL.Window do
 
       {:wx, _, obj, _, {:wxMouse, :motion, x, y, _, _, _, _, _, _, _, _, _, _}} ->
         {sx, sy} = if obj == gl_canvas, do: scale_mouse_for_retina(x, y, gl_canvas), else: {x, y}
+
         new_state =
           dispatch_event(
             callback_module,
@@ -643,6 +644,7 @@ defmodule EAGL.Window do
       {:wx, _, obj, _,
        {:wxMouse, :mousewheel, x, y, _, _, _, _, _, _, _, wheel_rotation, wheel_delta, _}} ->
         {sx, sy} = if obj == gl_canvas, do: scale_mouse_for_retina(x, y, gl_canvas), else: {x, y}
+
         new_state =
           dispatch_event(
             callback_module,
@@ -665,6 +667,7 @@ defmodule EAGL.Window do
       {:wx, _, obj, _, {:wxMouse, button_event, x, y, _, _, _, _, _, _, _, _, _, _}}
       when button_event in [:left_down, :left_up, :middle_down, :middle_up] ->
         {sx, sy} = if obj == gl_canvas, do: scale_mouse_for_retina(x, y, gl_canvas), else: {x, y}
+
         event_name =
           case button_event do
             :left_down -> :mouse_down
@@ -674,7 +677,14 @@ defmodule EAGL.Window do
           end
 
         new_state =
-          dispatch_event(callback_module, {event_name, sx, sy}, state, frame, gl_canvas, gl_context)
+          dispatch_event(
+            callback_module,
+            {event_name, sx, sy},
+            state,
+            frame,
+            gl_canvas,
+            gl_context
+          )
 
         drain_pending_events(
           new_state,
@@ -697,9 +707,23 @@ defmodule EAGL.Window do
 
       {:wx, _, _, _, event_data} ->
         new_state =
-          dispatch_event(callback_module, {:wx_event, event_data}, state, frame, gl_canvas, gl_context)
+          dispatch_event(
+            callback_module,
+            {:wx_event, event_data},
+            state,
+            frame,
+            gl_canvas,
+            gl_context
+          )
 
-        drain_pending_events(new_state, callback_module, frame, gl_canvas, gl_context, enter_to_exit)
+        drain_pending_events(
+          new_state,
+          callback_module,
+          frame,
+          gl_canvas,
+          gl_context,
+          enter_to_exit
+        )
     after
       0 -> state
     end
@@ -812,6 +836,7 @@ defmodule EAGL.Window do
 
       {:wx, _, obj, _, {:wxMouse, :motion, x, y, _, _, _, _, _, _, _, _, _, _}} ->
         {sx, sy} = if obj == gl_canvas, do: scale_mouse_for_retina(x, y, gl_canvas), else: {x, y}
+
         new_state =
           dispatch_event(
             callback_module,
@@ -837,6 +862,7 @@ defmodule EAGL.Window do
       {:wx, _, obj, _,
        {:wxMouse, :mousewheel, x, y, _, _, _, _, _, _, _, wheel_rotation, wheel_delta, _}} ->
         {sx, sy} = if obj == gl_canvas, do: scale_mouse_for_retina(x, y, gl_canvas), else: {x, y}
+
         new_state =
           dispatch_event(
             callback_module,
@@ -864,6 +890,7 @@ defmodule EAGL.Window do
       {:wx, _, obj, _, {:wxMouse, button_event, x, y, _, _, _, _, _, _, _, _, _, _}}
       when button_event in [:left_down, :left_up, :middle_down, :middle_up] ->
         {sx, sy} = if obj == gl_canvas, do: scale_mouse_for_retina(x, y, gl_canvas), else: {x, y}
+
         event_name =
           case button_event do
             :left_down -> :mouse_down
@@ -1030,13 +1057,30 @@ defmodule EAGL.Window do
       other ->
         new_state =
           case other do
-            {:wx, _, _, _, {:wxShow, :show, _}} -> state
-            {:wx, _, _, _, {:wxMouse, _, _, _, _, _, _, _, _, _, _, _, _, _}} -> state
-            {:_wxe_error_, _, _, _} -> state
-            :tick -> state
+            {:wx, _, _, _, {:wxShow, :show, _}} ->
+              state
+
+            {:wx, _, _, _, {:wxMouse, _, _, _, _, _, _, _, _, _, _, _, _, _}} ->
+              state
+
+            {:_wxe_error_, _, _, _} ->
+              state
+
+            :tick ->
+              state
+
             {:wx, _, _, _, event_data} ->
-              dispatch_event(callback_module, {:wx_event, event_data}, state, frame, gl_canvas, gl_context)
-            _ -> state
+              dispatch_event(
+                callback_module,
+                {:wx_event, event_data},
+                state,
+                frame,
+                gl_canvas,
+                gl_context
+              )
+
+            _ ->
+              state
           end
 
         main_loop(

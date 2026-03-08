@@ -224,22 +224,9 @@ defmodule EAGL.OrbitCamera do
   """
   @spec orbit(t(), float(), float()) :: t()
   def orbit(%__MODULE__{} = cam, dx, dy) do
-    world_up = vec3(0.0, 1.0, 0.0)
     max_elev = :math.pi() / 2.0 - 0.01
 
-    offset = quat_rotate_vec3(cam.orientation, vec3(0.0, 0.0, cam.distance))
-    forward = normalize(vec_scale(offset, -1.0))
-
-    right_cross = cross(forward, world_up)
-
-    {right, view_up} =
-      if vec_length(right_cross) < 0.001 do
-        r = quat_rotate_vec3(cam.orientation, vec3(1.0, 0.0, 0.0))
-        {r, normalize(cross(r, forward))}
-      else
-        r = normalize(right_cross)
-        {r, normalize(cross(r, forward))}
-      end
+    {right, view_up} = view_right_up(cam)
 
     h_q = quat_from_axis_angle(view_up, -dx * cam.sensitivity)
     v_q = quat_from_axis_angle(right, -dy * cam.sensitivity)
@@ -273,13 +260,15 @@ defmodule EAGL.OrbitCamera do
   @doc """
   Pan the camera target perpendicular to the view direction.
 
-  Shifts the target point right/up relative to the camera's orientation,
-  scaled by distance so pan speed feels consistent at any zoom level.
+  Shifts the target point right/up in the current view plane, derived from
+  cross products with world-up (matching the orbit function's axes).
+  Scaled by distance so pan speed feels consistent at any zoom level.
   """
   @spec pan(t(), float(), float()) :: t()
   def pan(%__MODULE__{} = cam, dx, dy) do
-    [{rx, ry, rz}] = quat_rotate_vec3(cam.orientation, vec3(1.0, 0.0, 0.0))
-    [{ux, uy, uz}] = quat_rotate_vec3(cam.orientation, vec3(0.0, 1.0, 0.0))
+    {right, up} = view_right_up(cam)
+    [{rx, ry, rz}] = right
+    [{ux, uy, uz}] = up
     [{tx, ty, tz}] = cam.target
 
     scale = cam.pan_speed * cam.distance
@@ -426,5 +415,20 @@ defmodule EAGL.OrbitCamera do
     offset = quat_rotate_vec3(orientation, vec3(0.0, 0.0, cam.distance))
     {_r, azimuth, elevation} = vec3_to_spherical(offset)
     %{cam | orientation: orientation, azimuth: azimuth, elevation: elevation}
+  end
+
+  defp view_right_up(%__MODULE__{} = cam) do
+    offset = quat_rotate_vec3(cam.orientation, vec3(0.0, 0.0, cam.distance))
+    forward = normalize(vec_scale(offset, -1.0))
+    world_up = vec3(0.0, 1.0, 0.0)
+    right_cross = cross(forward, world_up)
+
+    if vec_length(right_cross) < 0.001 do
+      r = quat_rotate_vec3(cam.orientation, vec3(1.0, 0.0, 0.0))
+      {r, normalize(cross(r, forward))}
+    else
+      r = normalize(right_cross)
+      {r, normalize(cross(r, forward))}
+    end
   end
 end
