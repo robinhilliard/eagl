@@ -88,7 +88,7 @@ defmodule EAGL.Node do
           rotation: EAGL.Math.quat() | nil,
           scale: EAGL.Math.vec3() | nil,
           matrix: list(float()) | nil,
-          children: [t()],
+          children: [t()] | nil,
           parent: t() | nil,
           mesh: map() | nil,
           camera: EAGL.Camera.t() | nil,

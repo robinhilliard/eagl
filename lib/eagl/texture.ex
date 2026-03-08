@@ -368,6 +368,50 @@ defmodule EAGL.Texture do
   end
 
   @doc """
+  Returns a 1x1 white texture for use as a default when a material has no texture.
+  Cached per process to avoid creating multiple default textures.
+  Binds this when a sampler would otherwise have nothing bound (avoids "texture unloadable" warnings on macOS).
+  """
+  @spec get_default_texture() :: texture_id() | nil
+  def get_default_texture do
+    case Process.get(:eagl_default_texture) do
+      nil ->
+        case create_white_texture() do
+          {:ok, tex_id} ->
+            Process.put(:eagl_default_texture, tex_id)
+            tex_id
+
+          _ ->
+            nil
+        end
+
+      tex_id ->
+        tex_id
+    end
+  end
+
+  defp create_white_texture do
+    try do
+      {:ok, texture_id} = create_texture()
+      :gl.bindTexture(@gl_texture_2d, texture_id)
+
+      set_texture_parameters(
+        wrap_s: @gl_repeat,
+        wrap_t: @gl_repeat,
+        min_filter: @gl_linear,
+        mag_filter: @gl_linear
+      )
+
+      # 1x1 white pixel (RGB)
+      load_texture_data(1, 1, <<255, 255, 255>>, format: @gl_rgb)
+
+      {:ok, texture_id}
+    rescue
+      e -> {:error, "Failed to create white texture: #{inspect(e)}"}
+    end
+  end
+
+  @doc """
   Creates a simple checkerboard texture for testing purposes.
   Returns a tuple of {texture_id, width, height}.
 

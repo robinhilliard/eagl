@@ -634,7 +634,7 @@ end
 
 #### All Platforms
 
-EAGL uses Erlang's built-in `wx` module for windowing, which is included with standard Erlang/OTP installations. No additional GUI libraries need to be installed.
+EAGL uses Erlang's built-in `wx` module for windowing, which is included with standard Erlang/OTP installations. On Linux and Windows, no additional GUI libraries need to be installed. On macOS, see [Installing Erlang and Elixir on macOS](#installing-erlang-and-elixir-on-macos) for setup options.
 
 #### Linux
 
@@ -663,6 +663,49 @@ For the smoothest experience, use native Linux, macOS, or Windows. WSL2 is fine 
 OpenGL is included with macOS. No additional setup required.
 
 **Important**: EAGL automatically detects macOS and enables forward compatibility for OpenGL 3.0+ contexts, which is required by Apple's OpenGL implementation. This matches the behaviour of the `#ifdef __APPLE__` code commonly found in OpenGL tutorials.
+
+##### Installing Erlang and Elixir on macOS
+
+EAGL uses Erlang's `wx` module for windowing. On macOS, asdf-installed Erlang links against wxWidgets at build time. When Homebrew upgrades wxWidgets (e.g. from 3.2 to 3.3), the old `.so` files reference dylibs that no longer exist, and wx fails to load. This is the most common setup issue on macOS.
+
+**Option A: Homebrew (recommended)**
+
+Homebrew's Erlang is built with wx correctly configured:
+
+```bash
+brew install erlang elixir
+```
+
+If you use asdf for version management, you can still use Homebrew's Erlang and Elixir by setting system versions in your project's `.tool-versions`:
+
+```
+erlang system
+elixir system
+```
+
+This tells asdf to use the system (Homebrew) installation when you `cd` into the project.
+
+**Option B: asdf with custom wxWidgets**
+
+To use asdf-managed Erlang versions, you must build wxWidgets from source with `--enable-compat30`:
+
+```bash
+git clone https://github.com/wxWidgets/wxWidgets.git
+cd wxWidgets
+git checkout v3.2.4
+git submodule update --init --recursive
+mkdir build && cd build
+../configure --enable-compat30 --prefix=/opt/homebrew
+make -j$(sysctl -n hw.ncpu)
+make install
+```
+
+Then install Erlang via asdf:
+
+```bash
+export KERL_CONFIGURE_OPTIONS="--with-wx --with-wx-config=/opt/homebrew/bin/wx-config"
+asdf install erlang 26.2.1
+```
 
 ##### Version Sensitivity for OpenGL NIFs
 
@@ -701,10 +744,9 @@ echo "erlang 26.2.1" > .tool-versions
 echo "elixir 1.15.7-otp-26" >> .tool-versions
 ```
 
-**Recommended version combinations:**
+**Recommended approach:** Use Homebrew Erlang (Option A above). The `.tool-versions` files in EAGL, Lunity, and lunity-pong are all set to `erlang system` / `elixir system`, so asdf will use Homebrew's installation automatically.
 
-- **Erlang/OTP 26.2.1** + **Elixir 1.15.7-otp-26**
-- **Erlang/OTP 25.3** + **Elixir 1.14.5-otp-25**
+**ElixirLS / Cursor**: If ElixirLS fails the "elixir check" when opening from the dock, launch Cursor from the terminal so it inherits your PATH: `cursor .`
 
 ##### Retina Display Support
 

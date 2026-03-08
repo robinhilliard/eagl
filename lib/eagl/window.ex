@@ -74,6 +74,19 @@ defmodule EAGL.Window do
   # 60 FPS
   @tick_interval trunc(1000 / 60)
 
+  # Scale mouse coordinates from logical to physical for Retina displays.
+  # wx reports logical coords; OpenGL viewport uses physical pixels.
+  defp scale_mouse_for_retina(x, y, canvas) do
+    scale =
+      try do
+        :wxWindow.getContentScaleFactor(canvas)
+      rescue
+        _ -> 1.0
+      end
+
+    {x * scale, y * scale}
+  end
+
   # Private helper to get the physical framebuffer size for OpenGL viewport
   # On retina displays, logical size ≠ physical size, and OpenGL viewport needs physical size
   defp get_framebuffer_size(canvas) do
@@ -606,11 +619,12 @@ defmodule EAGL.Window do
           enter_to_exit
         )
 
-      {:wx, _, _, _, {:wxMouse, :motion, x, y, _, _, _, _, _, _, _, _, _, _}} ->
+      {:wx, _, obj, _, {:wxMouse, :motion, x, y, _, _, _, _, _, _, _, _, _, _}} ->
+        {sx, sy} = if obj == gl_canvas, do: scale_mouse_for_retina(x, y, gl_canvas), else: {x, y}
         new_state =
           dispatch_event(
             callback_module,
-            {:mouse_motion, x, y},
+            {:mouse_motion, sx, sy},
             state,
             frame,
             gl_canvas,
@@ -626,12 +640,13 @@ defmodule EAGL.Window do
           enter_to_exit
         )
 
-      {:wx, _, _, _,
+      {:wx, _, obj, _,
        {:wxMouse, :mousewheel, x, y, _, _, _, _, _, _, _, wheel_rotation, wheel_delta, _}} ->
+        {sx, sy} = if obj == gl_canvas, do: scale_mouse_for_retina(x, y, gl_canvas), else: {x, y}
         new_state =
           dispatch_event(
             callback_module,
-            {:mouse_wheel, x, y, wheel_rotation, wheel_delta},
+            {:mouse_wheel, sx, sy, wheel_rotation, wheel_delta},
             state,
             frame,
             gl_canvas,
@@ -647,8 +662,9 @@ defmodule EAGL.Window do
           enter_to_exit
         )
 
-      {:wx, _, _, _, {:wxMouse, button_event, x, y, _, _, _, _, _, _, _, _, _, _}}
+      {:wx, _, obj, _, {:wxMouse, button_event, x, y, _, _, _, _, _, _, _, _, _, _}}
       when button_event in [:left_down, :left_up, :middle_down, :middle_up] ->
+        {sx, sy} = if obj == gl_canvas, do: scale_mouse_for_retina(x, y, gl_canvas), else: {x, y}
         event_name =
           case button_event do
             :left_down -> :mouse_down
@@ -658,7 +674,7 @@ defmodule EAGL.Window do
           end
 
         new_state =
-          dispatch_event(callback_module, {event_name, x, y}, state, frame, gl_canvas, gl_context)
+          dispatch_event(callback_module, {event_name, sx, sy}, state, frame, gl_canvas, gl_context)
 
         drain_pending_events(
           new_state,
@@ -794,11 +810,12 @@ defmodule EAGL.Window do
           start_time
         )
 
-      {:wx, _, _, _, {:wxMouse, :motion, x, y, _, _, _, _, _, _, _, _, _, _}} ->
+      {:wx, _, obj, _, {:wxMouse, :motion, x, y, _, _, _, _, _, _, _, _, _, _}} ->
+        {sx, sy} = if obj == gl_canvas, do: scale_mouse_for_retina(x, y, gl_canvas), else: {x, y}
         new_state =
           dispatch_event(
             callback_module,
-            {:mouse_motion, x, y},
+            {:mouse_motion, sx, sy},
             state,
             frame,
             gl_canvas,
@@ -817,12 +834,13 @@ defmodule EAGL.Window do
           start_time
         )
 
-      {:wx, _, _, _,
+      {:wx, _, obj, _,
        {:wxMouse, :mousewheel, x, y, _, _, _, _, _, _, _, wheel_rotation, wheel_delta, _}} ->
+        {sx, sy} = if obj == gl_canvas, do: scale_mouse_for_retina(x, y, gl_canvas), else: {x, y}
         new_state =
           dispatch_event(
             callback_module,
-            {:mouse_wheel, x, y, wheel_rotation, wheel_delta},
+            {:mouse_wheel, sx, sy, wheel_rotation, wheel_delta},
             state,
             frame,
             gl_canvas,
@@ -843,8 +861,9 @@ defmodule EAGL.Window do
           start_time
         )
 
-      {:wx, _, _, _, {:wxMouse, button_event, x, y, _, _, _, _, _, _, _, _, _, _}}
+      {:wx, _, obj, _, {:wxMouse, button_event, x, y, _, _, _, _, _, _, _, _, _, _}}
       when button_event in [:left_down, :left_up, :middle_down, :middle_up] ->
+        {sx, sy} = if obj == gl_canvas, do: scale_mouse_for_retina(x, y, gl_canvas), else: {x, y}
         event_name =
           case button_event do
             :left_down -> :mouse_down
@@ -856,7 +875,7 @@ defmodule EAGL.Window do
         new_state =
           dispatch_event(
             callback_module,
-            {event_name, x, y},
+            {event_name, sx, sy},
             state,
             frame,
             gl_canvas,
