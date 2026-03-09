@@ -240,20 +240,20 @@ defmodule EAGL.Window do
       :wxGLCanvas.connect(gl_canvas, :paint)
       :wxFrame.connect(frame, :char_hook)
       :wxGLCanvas.connect(gl_canvas, :char_hook)
+      :wxFrame.connect(frame, :key_up)
+      :wxGLCanvas.connect(gl_canvas, :key_up)
 
-      # Mouse event handlers for camera control
-      :wxFrame.connect(frame, :motion)
-      :wxFrame.connect(frame, :mousewheel)
-      :wxFrame.connect(frame, :left_down)
-      :wxFrame.connect(frame, :left_up)
-      :wxFrame.connect(frame, :middle_down)
-      :wxFrame.connect(frame, :middle_up)
-      :wxGLCanvas.connect(gl_canvas, :motion)
-      :wxGLCanvas.connect(gl_canvas, :mousewheel)
-      :wxGLCanvas.connect(gl_canvas, :left_down)
-      :wxGLCanvas.connect(gl_canvas, :left_up)
-      :wxGLCanvas.connect(gl_canvas, :middle_down)
-      :wxGLCanvas.connect(gl_canvas, :middle_up)
+      # Mouse event handlers
+      for target <- [frame, gl_canvas] do
+        :wxEvtHandler.connect(target, :motion)
+        :wxEvtHandler.connect(target, :mousewheel)
+        :wxEvtHandler.connect(target, :left_down)
+        :wxEvtHandler.connect(target, :left_up)
+        :wxEvtHandler.connect(target, :middle_down)
+        :wxEvtHandler.connect(target, :middle_up)
+        :wxEvtHandler.connect(target, :right_down)
+        :wxEvtHandler.connect(target, :right_up)
+      end
 
       # Create layout: delegate to callback module if setup_layout/2 is implemented,
       # otherwise use a simple vertical sizer with the canvas filling the frame.
@@ -331,6 +331,8 @@ defmodule EAGL.Window do
       # Enable keyboard events (frame and canvas; canvas gets focus when clicked)
       :wxEvtHandler.connect(frame, :char_hook, [])
       :wxEvtHandler.connect(gl_canvas, :char_hook, [])
+      :wxEvtHandler.connect(frame, :key_up, [])
+      :wxEvtHandler.connect(gl_canvas, :key_up, [])
 
       # Make context current after proper timing and context creation
       # Add error handling for setCurrent following Wings3D pattern
@@ -619,6 +621,26 @@ defmodule EAGL.Window do
           enter_to_exit
         )
 
+      {:wx, _, _, _, {:wxKey, :key_up, _, _, key_code, _, _, _, _, _, _, _}} ->
+        new_state =
+          dispatch_event(
+            callback_module,
+            {:key_up, key_code},
+            state,
+            frame,
+            gl_canvas,
+            gl_context
+          )
+
+        drain_pending_events(
+          new_state,
+          callback_module,
+          frame,
+          gl_canvas,
+          gl_context,
+          enter_to_exit
+        )
+
       {:wx, _, obj, _, {:wxMouse, :motion, x, y, _, _, _, _, _, _, _, _, _, _}} ->
         {sx, sy} = if obj == gl_canvas, do: scale_mouse_for_retina(x, y, gl_canvas), else: {x, y}
 
@@ -665,7 +687,14 @@ defmodule EAGL.Window do
         )
 
       {:wx, _, obj, _, {:wxMouse, button_event, x, y, _, _, _, _, _, _, _, _, _, _}}
-      when button_event in [:left_down, :left_up, :middle_down, :middle_up] ->
+      when button_event in [
+             :left_down,
+             :left_up,
+             :middle_down,
+             :middle_up,
+             :right_down,
+             :right_up
+           ] ->
         {sx, sy} = if obj == gl_canvas, do: scale_mouse_for_retina(x, y, gl_canvas), else: {x, y}
 
         event_name =
@@ -674,6 +703,8 @@ defmodule EAGL.Window do
             :left_up -> :mouse_up
             :middle_down -> :middle_down
             :middle_up -> :middle_up
+            :right_down -> :right_down
+            :right_up -> :right_up
           end
 
         new_state =
@@ -834,6 +865,29 @@ defmodule EAGL.Window do
           start_time
         )
 
+      {:wx, _, _, _, {:wxKey, :key_up, _, _, key_code, _, _, _, _, _, _, _}} ->
+        new_state =
+          dispatch_event(
+            callback_module,
+            {:key_up, key_code},
+            state,
+            frame,
+            gl_canvas,
+            gl_context
+          )
+
+        main_loop(
+          frame,
+          gl_canvas,
+          gl_context,
+          callback_module,
+          new_state,
+          enter_to_exit,
+          timeout,
+          last_tick_time,
+          start_time
+        )
+
       {:wx, _, obj, _, {:wxMouse, :motion, x, y, _, _, _, _, _, _, _, _, _, _}} ->
         {sx, sy} = if obj == gl_canvas, do: scale_mouse_for_retina(x, y, gl_canvas), else: {x, y}
 
@@ -888,7 +942,14 @@ defmodule EAGL.Window do
         )
 
       {:wx, _, obj, _, {:wxMouse, button_event, x, y, _, _, _, _, _, _, _, _, _, _}}
-      when button_event in [:left_down, :left_up, :middle_down, :middle_up] ->
+      when button_event in [
+             :left_down,
+             :left_up,
+             :middle_down,
+             :middle_up,
+             :right_down,
+             :right_up
+           ] ->
         {sx, sy} = if obj == gl_canvas, do: scale_mouse_for_retina(x, y, gl_canvas), else: {x, y}
 
         event_name =
@@ -897,6 +958,8 @@ defmodule EAGL.Window do
             :left_up -> :mouse_up
             :middle_down -> :middle_down
             :middle_up -> :middle_up
+            :right_down -> :right_down
+            :right_up -> :right_up
           end
 
         new_state =
