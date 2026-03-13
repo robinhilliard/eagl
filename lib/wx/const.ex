@@ -447,6 +447,13 @@ defmodule WX.Const do
       @wx_dialog_ex_metal 256
 
       # ============================================================================
+      # SPLITTER WINDOW STYLES
+      # ============================================================================
+
+      # wxSP_LIVE_UPDATE - resize child windows immediately during sash drag (no XOR preview line)
+      @wx_sp_live_update 128
+
+      # ============================================================================
       # COMMON CONSTANTS
       # ============================================================================
 

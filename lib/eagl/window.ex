@@ -710,7 +710,7 @@ defmodule EAGL.Window do
         new_state =
           dispatch_event(
             callback_module,
-            {event_name, sx, sy},
+            {event_name, sx, sy, obj},
             state,
             frame,
             gl_canvas,
@@ -729,12 +729,54 @@ defmodule EAGL.Window do
       {:wx, _, _, _, {:wxClose, :close_window}} ->
         cleanup_and_exit(frame, gl_canvas, gl_context, callback_module, state)
 
-      {:wx, _, _, _, {:wxSize, :size, _, _}} ->
+      {:wx, _, _, _, {:wxSize, :size, _, _} = size_event} ->
         :wxWindow.layout(frame)
-        drain_pending_events(state, callback_module, frame, gl_canvas, gl_context, enter_to_exit)
+        new_state =
+          dispatch_event(
+            callback_module,
+            {:wx_event, size_event},
+            state,
+            frame,
+            gl_canvas,
+            gl_context
+          )
+        drain_pending_events(new_state, callback_module, frame, gl_canvas, gl_context, enter_to_exit)
 
       {:_wxe_error_, _, _, _} ->
         drain_pending_events(state, callback_module, frame, gl_canvas, gl_context, enter_to_exit)
+
+      {:wx, _, obj, _, {:wxPaint, :paint}} when obj != gl_canvas ->
+        new_state =
+          dispatch_event(
+            callback_module,
+            {:paint_window, obj},
+            state,
+            frame,
+            gl_canvas,
+            gl_context
+          )
+        drain_pending_events(new_state, callback_module, frame, gl_canvas, gl_context, enter_to_exit)
+
+      {:wx, id, obj, ref, {:wxCommand, evt_type, _, _, _} = evt}
+      when evt_type in [:command_menu_selected, :command_button_clicked] ->
+        new_state =
+          dispatch_event(
+            callback_module,
+            {:wx_event, {:wx, id, obj, ref, evt}},
+            state,
+            frame,
+            gl_canvas,
+            gl_context
+          )
+
+        drain_pending_events(
+          new_state,
+          callback_module,
+          frame,
+          gl_canvas,
+          gl_context,
+          enter_to_exit
+        )
 
       {:wx, _, _, _, event_data} ->
         new_state =
@@ -965,7 +1007,7 @@ defmodule EAGL.Window do
         new_state =
           dispatch_event(
             callback_module,
-            {event_name, sx, sy},
+            {event_name, sx, sy, obj},
             state,
             frame,
             gl_canvas,
@@ -986,6 +1028,53 @@ defmodule EAGL.Window do
 
       {:wx, _, _, _, {:wxClose, :close_window}} ->
         cleanup_and_exit(frame, gl_canvas, gl_context, callback_module, state)
+
+      {:wx, id, obj, ref, {:wxCommand, evt_type, _, _, _} = evt}
+      when evt_type in [:command_menu_selected, :command_button_clicked] ->
+        new_state =
+          dispatch_event(
+            callback_module,
+            {:wx_event, {:wx, id, obj, ref, evt}},
+            state,
+            frame,
+            gl_canvas,
+            gl_context
+          )
+
+        main_loop(
+          frame,
+          gl_canvas,
+          gl_context,
+          callback_module,
+          new_state,
+          enter_to_exit,
+          timeout,
+          last_tick_time,
+          start_time
+        )
+
+      {:wx, _, obj, _, {:wxPaint, :paint}} when obj != gl_canvas ->
+        new_state =
+          dispatch_event(
+            callback_module,
+            {:paint_window, obj},
+            state,
+            frame,
+            gl_canvas,
+            gl_context
+          )
+
+        main_loop(
+          frame,
+          gl_canvas,
+          gl_context,
+          callback_module,
+          new_state,
+          enter_to_exit,
+          timeout,
+          last_tick_time,
+          start_time
+        )
 
       {:wx, _, _, _, {:wxPaint, :paint}} ->
         if timeout != nil do
@@ -1018,7 +1107,6 @@ defmodule EAGL.Window do
 
         :wxGLCanvas.swapBuffers(gl_canvas)
 
-        # Adaptive tick: schedule next tick based on how long this render took
         render_ms = :erlang.monotonic_time(:millisecond) - render_start
         next_tick = max(1, @tick_interval - render_ms)
         Process.send_after(self(), :tick, trunc(next_tick))
@@ -1143,7 +1231,14 @@ defmodule EAGL.Window do
               )
 
             _ ->
-              state
+              dispatch_event(
+                callback_module,
+                {:message, other},
+                state,
+                frame,
+                gl_canvas,
+                gl_context
+              )
           end
 
         main_loop(
