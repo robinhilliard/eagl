@@ -31,3 +31,5 @@ test/fixtures/samples/*.glb
 # IDE and editor files
 *.code-workspace
 .elixir_ls/
+examples/.DS_Store
+.DS_Store
