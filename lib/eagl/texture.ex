@@ -26,8 +26,8 @@ defmodule EAGL.Texture do
       # Manual texture creation and configuration
       {:ok, texture_id} = create_texture()
       :gl.bindTexture(@gl_texture_2d, texture_id)
-      set_texture_parameters(wrap_s: @gl_clamp_to_edge, min_filter: @gl_linear)
-      load_texture_data(width, height, pixel_data, format: @gl_rgb)
+      set_texture_parameters(wrap_s: :clamp_to_edge, min_filter: :linear)
+      load_texture_data(width, height, pixel_data, format: :rgb)
       :gl.generateMipmap(@gl_texture_2d)
       check("After generating mipmaps")
 
@@ -36,10 +36,12 @@ defmodule EAGL.Texture do
 
   ## Texture Parameters
 
-  Use OpenGL constants for texture parameters:
-  - **Wrapping**: `@gl_repeat`, `@gl_mirrored_repeat`, `@gl_clamp_to_edge`, `@gl_clamp_to_border`
-  - **Filtering**: `@gl_nearest`, `@gl_linear`, `@gl_nearest_mipmap_nearest`, `@gl_linear_mipmap_linear`, etc.
-  - **Format**: `@gl_rgb`, `@gl_rgba`, `@gl_red`, `@gl_rg`
+  Use atoms for helper options (`:repeat`, `:linear`, `:rgb`). Direct `:gl`
+  calls still use `@gl_*` constants. Integer GL constants are also accepted.
+
+  - **Wrapping**: `:repeat`, `:mirrored_repeat`, `:clamp_to_edge`, `:clamp_to_border`
+  - **Filtering**: `:nearest`, `:linear`, `:nearest_mipmap_nearest`, `:linear_mipmap_linear`, etc.
+  - **Format**: `:rgb`, `:rgba`, `:red`, `:rg`
 
   ## Philosophy
 
@@ -99,10 +101,12 @@ defmodule EAGL.Texture do
 
   ## Options
 
-  - `wrap_s`: Wrapping mode for S coordinate (default: @gl_repeat)
-  - `wrap_t`: Wrapping mode for T coordinate (default: @gl_repeat)
-  - `min_filter`: Minification filter (default: @gl_linear)
-  - `mag_filter`: Magnification filter (default: @gl_linear)
+  - `wrap_s`: Wrapping mode for S coordinate (default: `:repeat`)
+  - `wrap_t`: Wrapping mode for T coordinate (default: `:repeat`)
+  - `min_filter`: Minification filter (default: `:linear`)
+  - `mag_filter`: Magnification filter (default: `:linear`)
+
+  Atoms or GL integers are accepted.
 
   ## Examples
 
@@ -111,18 +115,18 @@ defmodule EAGL.Texture do
 
       # Custom parameters with type-safe options
       set_texture_parameters(
-        wrap_s: @gl_clamp_to_edge,
-        wrap_t: @gl_clamp_to_edge,
-        min_filter: @gl_nearest,
-        mag_filter: @gl_nearest
+        wrap_s: :clamp_to_edge,
+        wrap_t: :clamp_to_edge,
+        min_filter: :nearest,
+        mag_filter: :nearest
       )
   """
   @spec set_texture_parameters(keyword()) :: :ok
   def set_texture_parameters(opts \\ []) do
-    wrap_s = Keyword.get(opts, :wrap_s, @gl_repeat)
-    wrap_t = Keyword.get(opts, :wrap_t, @gl_repeat)
-    min_filter = Keyword.get(opts, :min_filter, @gl_linear)
-    mag_filter = Keyword.get(opts, :mag_filter, @gl_linear)
+    wrap_s = opts |> Keyword.get(:wrap_s, :repeat) |> wrap_to_gl()
+    wrap_t = opts |> Keyword.get(:wrap_t, :repeat) |> wrap_to_gl()
+    min_filter = opts |> Keyword.get(:min_filter, :linear) |> filter_to_gl()
+    mag_filter = opts |> Keyword.get(:mag_filter, :linear) |> filter_to_gl()
 
     # Set wrapping parameters
     :gl.texParameteri(@gl_texture_2d, @gl_texture_wrap_s, wrap_s)
@@ -147,28 +151,30 @@ defmodule EAGL.Texture do
 
   ## Options
 
-  - `internal_format`: Internal storage format (default: @gl_rgb)
-  - `format`: Pixel data format (default: @gl_rgb)
-  - `type`: Pixel data type (default: @gl_unsigned_byte)
+  - `internal_format`: Internal storage format (default: `:rgb`)
+  - `format`: Pixel data format (default: `:rgb`)
+  - `type`: Pixel data type (default: `:unsigned_byte`)
   - `level`: Mipmap level (default: 0)
+
+  Atoms or GL integers are accepted.
 
   ## Examples
 
       # RGB data
-      load_texture_data(256, 256, pixel_data, format: @gl_rgb)
+      load_texture_data(256, 256, pixel_data, format: :rgb)
 
       # RGBA data with alpha channel
       load_texture_data(256, 256, pixel_data,
-        internal_format: @gl_rgba,
-        format: @gl_rgba
+        internal_format: :rgba,
+        format: :rgba
       )
   """
   @spec load_texture_data(pos_integer(), pos_integer(), binary(), keyword()) :: :ok
   def load_texture_data(width, height, pixel_data, opts \\ []) do
     level = Keyword.get(opts, :level, 0)
-    internal_format = Keyword.get(opts, :internal_format, @gl_rgb)
-    format = Keyword.get(opts, :format, @gl_rgb)
-    type = Keyword.get(opts, :type, @gl_unsigned_byte)
+    internal_format = opts |> Keyword.get(:internal_format, :rgb) |> format_to_gl()
+    format = opts |> Keyword.get(:format, :rgb) |> format_to_gl()
+    type = opts |> Keyword.get(:type, :unsigned_byte) |> pixel_type_to_gl()
 
     :gl.texImage2D(
       @gl_texture_2d,
@@ -610,4 +616,36 @@ defmodule EAGL.Texture do
     ═══════════════════════════════════════════════════════════════
     """)
   end
+
+  defp wrap_to_gl(:repeat), do: @gl_repeat
+  defp wrap_to_gl(:mirrored_repeat), do: @gl_mirrored_repeat
+  defp wrap_to_gl(:clamp_to_edge), do: @gl_clamp_to_edge
+  defp wrap_to_gl(:clamp_to_border), do: @gl_clamp_to_border
+  defp wrap_to_gl(value) when is_integer(value), do: value
+
+  defp filter_to_gl(:nearest), do: @gl_nearest
+  defp filter_to_gl(:linear), do: @gl_linear
+  defp filter_to_gl(:nearest_mipmap_nearest), do: @gl_nearest_mipmap_nearest
+  defp filter_to_gl(:linear_mipmap_nearest), do: @gl_linear_mipmap_nearest
+  defp filter_to_gl(:nearest_mipmap_linear), do: @gl_nearest_mipmap_linear
+  defp filter_to_gl(:linear_mipmap_linear), do: @gl_linear_mipmap_linear
+  defp filter_to_gl(value) when is_integer(value), do: value
+
+  defp format_to_gl(:red), do: @gl_red
+  defp format_to_gl(:rg), do: @gl_rg
+  defp format_to_gl(:rgb), do: @gl_rgb
+  defp format_to_gl(:rgba), do: @gl_rgba
+  defp format_to_gl(:bgr), do: @gl_bgr
+  defp format_to_gl(:bgra), do: @gl_bgra
+  defp format_to_gl(:depth_component), do: @gl_depth_component
+  defp format_to_gl(value) when is_integer(value), do: value
+
+  defp pixel_type_to_gl(:unsigned_byte), do: @gl_unsigned_byte
+  defp pixel_type_to_gl(:byte), do: @gl_byte
+  defp pixel_type_to_gl(:unsigned_short), do: @gl_unsigned_short
+  defp pixel_type_to_gl(:short), do: @gl_short
+  defp pixel_type_to_gl(:unsigned_int), do: @gl_unsigned_int
+  defp pixel_type_to_gl(:int), do: @gl_int
+  defp pixel_type_to_gl(:float), do: @gl_float
+  defp pixel_type_to_gl(value) when is_integer(value), do: value
 end

@@ -206,13 +206,11 @@ defmodule EAGL.Examples.LearnOpenGL.Lighting.BasicLightingDiffuse do
 
     # Compile and link lighting shader (for the object cube with diffuse lighting)
     with {:ok, lighting_vertex_shader} <-
-           create_shader(
-             @gl_vertex_shader,
+           create_shader(:vertex,
              "learnopengl/2_lighting/2_1_basic_lighting_diffuse/lighting_vertex_shader.glsl"
            ),
          {:ok, lighting_fragment_shader} <-
-           create_shader(
-             @gl_fragment_shader,
+           create_shader(:fragment,
              "learnopengl/2_lighting/2_1_basic_lighting_diffuse/lighting_fragment_shader.glsl"
            ),
          {:ok, lighting_program} <-
@@ -221,14 +219,12 @@ defmodule EAGL.Examples.LearnOpenGL.Lighting.BasicLightingDiffuse do
 
       # Compile and link light cube shader (for the light source cube)
       {:ok, light_cube_vertex_shader} =
-        create_shader(
-          @gl_vertex_shader,
+        create_shader(:vertex,
           "learnopengl/2_lighting/2_1_basic_lighting_diffuse/light_cube_vertex_shader.glsl"
         )
 
       {:ok, light_cube_fragment_shader} =
-        create_shader(
-          @gl_fragment_shader,
+        create_shader(:fragment,
           "learnopengl/2_lighting/2_1_basic_lighting_diffuse/light_cube_fragment_shader.glsl"
         )
 

@@ -38,7 +38,7 @@ defmodule GLTF.EAGL do
       :gl.drawElements(@gl_triangles, vao_data.index_count, @gl_unsigned_int, 0)
   """
 
-  alias EAGL.{Camera, Scene, Node, Buffer}
+  alias EAGL.{Camera, Scene, Node, Buffer, Mesh}
   import EAGL.Math
   use EAGL.Const
 
@@ -62,8 +62,8 @@ defmodule GLTF.EAGL do
   def create_phong_shader do
     import EAGL.Shader
 
-    with {:ok, vs} <- create_shader(@gl_vertex_shader, "gltf/phong_vertex.glsl"),
-         {:ok, fs} <- create_shader(@gl_fragment_shader, "gltf/phong_fragment.glsl"),
+    with {:ok, vs} <- create_shader(:vertex, "gltf/phong_vertex.glsl"),
+         {:ok, fs} <- create_shader(:fragment, "gltf/phong_fragment.glsl"),
          {:ok, prog} <- create_attach_link([vs, fs]) do
       {:ok, prog}
     end
@@ -77,8 +77,8 @@ defmodule GLTF.EAGL do
   def create_flat_shader do
     import EAGL.Shader
 
-    with {:ok, vs} <- create_shader(@gl_vertex_shader, "gltf/phong_vertex.glsl"),
-         {:ok, fs} <- create_shader(@gl_fragment_shader, "gltf/flat_fragment.glsl"),
+    with {:ok, vs} <- create_shader(:vertex, "gltf/phong_vertex.glsl"),
+         {:ok, fs} <- create_shader(:fragment, "gltf/flat_fragment.glsl"),
          {:ok, prog} <- create_attach_link([vs, fs]) do
       {:ok, prog}
     end
@@ -105,8 +105,8 @@ defmodule GLTF.EAGL do
   def create_pbr_shader do
     import EAGL.Shader
 
-    with {:ok, vs} <- create_shader(@gl_vertex_shader, "gltf/pbr_vertex.glsl"),
-         {:ok, fs} <- create_shader(@gl_fragment_shader, "gltf/pbr_fragment.glsl"),
+    with {:ok, vs} <- create_shader(:vertex, "gltf/pbr_vertex.glsl"),
+         {:ok, fs} <- create_shader(:fragment, "gltf/pbr_fragment.glsl"),
          {:ok, prog} <- create_attach_link([vs, fs]) do
       {:ok, prog}
     end
@@ -498,7 +498,7 @@ defmodule GLTF.EAGL do
     updated_node =
       case Node.get_mesh(node) do
         nil -> node
-        mesh -> Node.set_mesh(node, Map.put(mesh, :program, program))
+        mesh -> Node.set_mesh(node, Mesh.with_program(mesh, program))
       end
 
     updated_children =
@@ -516,9 +516,10 @@ defmodule GLTF.EAGL do
   @doc """
   Convert a glTF mesh primitive to EAGL VAO/VBO structure.
 
-  Returns a map compatible with existing EAGL rendering code:
-  - For indexed primitives: `%{vao: vao, index_count: count, program: program}`
-  - For array primitives: `%{vao: vao, vertex_count: count, program: program}`
+  Returns an `EAGL.Mesh` (maps with the same keys are still accepted by Scene):
+  - For indexed primitives: `index_count` set
+  - For array primitives: `vertex_count` set
+  - `mode` taken from the glTF primitive (default `:triangles`)
   """
   @spec primitive_to_vao(
           GLTF.t(),
@@ -527,13 +528,13 @@ defmodule GLTF.EAGL do
           non_neg_integer(),
           keyword()
         ) ::
-          {:ok, map()} | {:error, String.t()}
+          {:ok, Mesh.t()} | {:error, String.t()}
   def primitive_to_vao(gltf, data_store, mesh_index, primitive_index, opts \\ []) do
     with {:ok, mesh} <- get_mesh(gltf, mesh_index),
          {:ok, primitive} <- get_primitive(mesh, primitive_index),
          {:ok, vertex_data} <- extract_vertex_data(gltf, data_store, primitive),
          {:ok, vao_data} <- create_vao_from_vertex_data(vertex_data, opts) do
-      {:ok, vao_data}
+      {:ok, %{vao_data | mode: primitive.mode || :triangles}}
     end
   end
 
@@ -946,7 +947,7 @@ defmodule GLTF.EAGL do
         nil ->
           {vao, vbo} = Buffer.create_vertex_array(vertices, attributes)
           vertex_count = div(length(vertices), total_attribute_size(attributes))
-          mesh = %{vao: vao, vbo: vbo, vertex_count: vertex_count}
+          mesh = Mesh.new(vao: vao, vbo: vbo, vertex_count: vertex_count)
           {:ok, maybe_add_bounds(mesh, base_bounds)}
 
         indices_data ->
@@ -956,13 +957,14 @@ defmodule GLTF.EAGL do
             {:ok, index_list} ->
               {vao, vbo, ebo} = Buffer.create_indexed_array(vertices, index_list, attributes)
 
-              mesh = %{
-                vao: vao,
-                vbo: vbo,
-                ebo: ebo,
-                index_count: length(index_list),
-                index_type: @gl_unsigned_int
-              }
+              mesh =
+                Mesh.new(
+                  vao: vao,
+                  vbo: vbo,
+                  ebo: ebo,
+                  index_count: length(index_list),
+                  index_type: :unsigned_int
+                )
 
               {:ok, maybe_add_bounds(mesh, base_bounds)}
 
@@ -974,6 +976,7 @@ defmodule GLTF.EAGL do
   end
 
   defp maybe_add_bounds(mesh, nil), do: mesh
+  defp maybe_add_bounds(%Mesh{} = mesh, bounds), do: %{mesh | bounds: bounds}
   defp maybe_add_bounds(mesh, bounds), do: Map.put(mesh, :bounds, bounds)
 
   defp create_mesh_lookup(gltf, data_store, opts) do

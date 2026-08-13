@@ -105,7 +105,7 @@ IO.puts("Learning objectives...")
 
 ## Common Conventions
 
-- Camera systems use standard FPS controls (WASD, mouse look, scroll zoom)
+- Library cameras are orbit/ortho (`EAGL.OrbitCamera`). FPS WASD lives in `examples/learnopengl/camera.ex`
 - Shader examples include both vertex and fragment shaders
 - Examples accept timeout options for automated testing
 - Resource cleanup is always handled properly

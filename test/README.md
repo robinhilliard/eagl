@@ -194,16 +194,7 @@ Benefits:
 
 ### Current Status
 
-**Updated Examples (supporting timeout):**
-- `ShadersExercise1` (3.4)
-- `HelloTriangle` (2.1)
-
-**Pending Examples:**
-- Most other LearnOpenGL examples need updating
-- Use the batch update script as a starting point
-- Manual verification recommended for each example
-
-This testing framework provides a foundation for comprehensive automated testing of EAGL examples without requiring manual interaction or complex mocking.
+All examples listed in `test/examples_test.exs` accept `timeout:` and are covered by the automated suite (Getting Started 1.1–7.3, lighting colours, teapot, and GLTF 01–05). Remaining LearnOpenGL camera/lighting examples still support `timeout:` when invoked directly.
 
 ## Current Test Coverage
 

@@ -40,7 +40,8 @@ defmodule EAGL.Node do
       {vao, vbo} = EAGL.Buffer.create_vertex_array(vertices, attributes)
       mesh = %{vao: vao, vertex_count: vertex_count, program: shader_program}
 
-      node = Node.new(mesh: mesh, position: vec3(0, 5, 0))
+      # Use in scene graph (maps are converted to EAGL.Mesh)
+      node = Node.new(mesh: mesh)
   """
 
   import EAGL.Math
@@ -90,7 +91,7 @@ defmodule EAGL.Node do
           matrix: list(float()) | nil,
           children: [t()] | nil,
           parent: t() | nil,
-          mesh: map() | nil,
+          mesh: EAGL.Mesh.t() | nil,
           camera: EAGL.Camera.t() | nil,
           name: String.t() | nil,
           properties: map() | nil,
@@ -111,7 +112,7 @@ defmodule EAGL.Node do
       matrix: nil,
       children: [],
       parent: nil,
-      mesh: Keyword.get(opts, :mesh),
+      mesh: opts |> Keyword.get(:mesh) |> EAGL.Mesh.from_map(),
       camera: Keyword.get(opts, :camera),
       name: Keyword.get(opts, :name),
       properties: Keyword.get(opts, :properties),
@@ -131,7 +132,7 @@ defmodule EAGL.Node do
       matrix: matrix,
       children: [],
       parent: nil,
-      mesh: Keyword.get(opts, :mesh),
+      mesh: opts |> Keyword.get(:mesh) |> EAGL.Mesh.from_map(),
       camera: Keyword.get(opts, :camera),
       name: Keyword.get(opts, :name),
       properties: Keyword.get(opts, :properties),
@@ -236,15 +237,15 @@ defmodule EAGL.Node do
   @doc """
   Get the mesh attached to this node.
   """
-  @spec get_mesh(t()) :: map() | nil
+  @spec get_mesh(t()) :: EAGL.Mesh.t() | nil
   def get_mesh(%__MODULE__{mesh: mesh}), do: mesh
 
   @doc """
-  Set the mesh for this node.
+  Set the mesh for this node. Maps are normalised to `EAGL.Mesh`.
   """
-  @spec set_mesh(t(), map()) :: t()
+  @spec set_mesh(t(), EAGL.Mesh.t() | map() | nil) :: t()
   def set_mesh(%__MODULE__{} = node, mesh) do
-    %{node | mesh: mesh}
+    %{node | mesh: EAGL.Mesh.from_map(mesh)}
   end
 
   @doc """

@@ -69,6 +69,7 @@ defmodule EAGL.Window do
   use EAGL.Const
   use WX.Const
   import Bitwise
+  require Logger
 
   @default_window_size {1024, 768}
   # 60 FPS
@@ -162,7 +163,7 @@ defmodule EAGL.Window do
     macos_attributes =
       case :os.type() do
         {:unix, :darwin} ->
-          IO.puts(
+          Logger.debug(
             "Detected macOS: Adding forward compatibility and requesting OpenGL 3.3 Core Profile"
           )
 
@@ -224,12 +225,12 @@ defmodule EAGL.Window do
 
       frame = :wxFrame.new(wx, -1, title, size: size)
 
-      IO.puts("Creating OpenGL canvas")
+      Logger.debug("Creating OpenGL canvas")
       depth_msg = if depth_testing, do: "24-bit depth buffer, ", else: ""
       attrs = gl_attributes(depth_testing)
-      IO.puts("Requested: RGBA mode, 8-bit RGB channels, #{depth_msg}double buffering")
+      Logger.debug("Requested: RGBA mode, 8-bit RGB channels, #{depth_msg}double buffering")
       gl_canvas = :wxGLCanvas.new(frame, attrs)
-      IO.puts("OpenGL canvas created successfully with requested attributes")
+      Logger.debug("OpenGL canvas created successfully with requested attributes")
 
       # Set background style following wings_gl pattern
       :wxGLCanvas.setBackgroundStyle(gl_canvas, @wx_bg_style_paint)
@@ -408,7 +409,7 @@ defmodule EAGL.Window do
                   :ok
 
                 error ->
-                  IO.puts("Warning: OpenGL error during initialization: #{error}")
+                  Logger.warning("OpenGL error during initialization: #{error}")
               end
 
               # Set up shaders using callback module
@@ -476,11 +477,11 @@ defmodule EAGL.Window do
                           :ok
 
                         _ ->
-                          IO.puts("Warning: Error during cleanup: #{inspect(e)}")
+                          Logger.warning("Error during cleanup: #{inspect(e)}")
                       end
 
                     e ->
-                      IO.puts("Warning: Error during cleanup: #{inspect(e)}")
+                      Logger.warning("Error during cleanup: #{inspect(e)}")
                   end
 
                   try do
@@ -520,7 +521,7 @@ defmodule EAGL.Window do
           end
 
         {:error, {:context_error, e}} ->
-          IO.puts("Error setting OpenGL context current: #{inspect(e)}")
+          Logger.error("Error setting OpenGL context current: #{inspect(e)}")
           # Cleanup and exit gracefully
           :wxGLContext.destroy(gl_context)
           :wxFrame.destroy(frame)
@@ -529,7 +530,7 @@ defmodule EAGL.Window do
       end
     rescue
       e ->
-        IO.puts("Error in window setup: #{inspect(e)}")
+        Logger.error("Error in window setup: #{inspect(e)}")
         # Ensure wx is stopped even on error
         try do
           :application.stop(:wx)
@@ -550,7 +551,7 @@ defmodule EAGL.Window do
           any()
         ) :: no_return()
   defp cleanup_and_exit(frame, gl_canvas, gl_context, callback_module, state) do
-    IO.puts("Shutting down…")
+    Logger.debug("Shutting down…")
 
     # Try to ensure OpenGL context is current before cleanup, but don't fail if it's already invalid
     try do
@@ -588,11 +589,11 @@ defmodule EAGL.Window do
             :ok
 
           _ ->
-            IO.puts("Warning: Error during cleanup: #{inspect(e)}")
+            Logger.warning("Error during cleanup: #{inspect(e)}")
         end
 
       e ->
-        IO.puts("Warning: Error during cleanup: #{inspect(e)}")
+        Logger.warning("Error during cleanup: #{inspect(e)}")
     end
 
     :wxGLContext.destroy(gl_context)
@@ -731,6 +732,7 @@ defmodule EAGL.Window do
 
       {:wx, _, _, _, {:wxSize, :size, _, _} = size_event} ->
         :wxWindow.layout(frame)
+
         new_state =
           dispatch_event(
             callback_module,
@@ -740,7 +742,15 @@ defmodule EAGL.Window do
             gl_canvas,
             gl_context
           )
-        drain_pending_events(new_state, callback_module, frame, gl_canvas, gl_context, enter_to_exit)
+
+        drain_pending_events(
+          new_state,
+          callback_module,
+          frame,
+          gl_canvas,
+          gl_context,
+          enter_to_exit
+        )
 
       {:_wxe_error_, _, _, _} ->
         drain_pending_events(state, callback_module, frame, gl_canvas, gl_context, enter_to_exit)
@@ -755,7 +765,15 @@ defmodule EAGL.Window do
             gl_canvas,
             gl_context
           )
-        drain_pending_events(new_state, callback_module, frame, gl_canvas, gl_context, enter_to_exit)
+
+        drain_pending_events(
+          new_state,
+          callback_module,
+          frame,
+          gl_canvas,
+          gl_context,
+          enter_to_exit
+        )
 
       {:wx, id, obj, ref, {:wxCommand, evt_type, _, _, _} = evt}
       when evt_type in [:command_menu_selected, :command_button_clicked] ->

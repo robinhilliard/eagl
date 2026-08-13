@@ -116,13 +116,11 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.TexturesExercise4 do
 
     # Compile and link shaders
     with {:ok, vertex_shader} <-
-           create_shader(
-             @gl_vertex_shader,
+           create_shader(:vertex,
              "learnopengl/1_getting_started/4_6_textures_exercise_4/vertex_shader.glsl"
            ),
          {:ok, fragment_shader} <-
-           create_shader(
-             @gl_fragment_shader,
+           create_shader(:fragment,
              "learnopengl/1_getting_started/4_6_textures_exercise_4/fragment_shader.glsl"
            ),
          {:ok, program} <- create_attach_link([vertex_shader, fragment_shader]) do
@@ -147,19 +145,19 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.TexturesExercise4 do
       :gl.bindTexture(@gl_texture_2d, texture2_id)
 
       set_texture_parameters(
-        wrap_s: @gl_repeat,
-        wrap_t: @gl_repeat,
-        min_filter: @gl_linear,
-        mag_filter: @gl_linear
+        wrap_s: :repeat,
+        wrap_t: :repeat,
+        min_filter: :linear,
+        mag_filter: :linear
       )
 
       # Create gradient pattern for second texture
       pattern_size = 128
 
       load_texture_data(pattern_size, pattern_size, create_gradient_pattern(pattern_size),
-        internal_format: @gl_rgb,
-        format: @gl_rgb,
-        type: @gl_unsigned_byte
+        internal_format: :rgb,
+        format: :rgb,
+        type: :unsigned_byte
       )
 
       :gl.generateMipmap(@gl_texture_2d)

@@ -143,13 +143,11 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.TexturesCombined do
 
     # Compile and link shaders
     with {:ok, vertex_shader} <-
-           create_shader(
-             @gl_vertex_shader,
+           create_shader(:vertex,
              "learnopengl/1_getting_started/4_2_textures_combined/vertex_shader.glsl"
            ),
          {:ok, fragment_shader} <-
-           create_shader(
-             @gl_fragment_shader,
+           create_shader(:fragment,
              "learnopengl/1_getting_started/4_2_textures_combined/fragment_shader.glsl"
            ),
          {:ok, program} <- create_attach_link([vertex_shader, fragment_shader]) do

@@ -6,6 +6,28 @@ defmodule EAGL.ShaderTest do
   import EAGL.Shader
   import EAGL.Math
 
+  describe "shader_type_to_gl/1" do
+    test "maps atoms to GL constants" do
+      assert {:ok, @gl_vertex_shader} = shader_type_to_gl(:vertex)
+      assert {:ok, @gl_fragment_shader} = shader_type_to_gl(:fragment)
+      assert {:ok, @gl_geometry_shader} = shader_type_to_gl(:geometry)
+    end
+
+    test "passes through integer GL constants" do
+      assert {:ok, @gl_vertex_shader} = shader_type_to_gl(@gl_vertex_shader)
+    end
+
+    test "rejects unknown types" do
+      assert {:error, message} = shader_type_to_gl(:not_a_shader)
+      assert message =~ "Unknown shader type"
+    end
+
+    test "create_shader rejects unknown types without reading a file" do
+      assert {:error, message} = create_shader(:not_a_shader, "nope.glsl")
+      assert message =~ "Unknown shader type"
+    end
+  end
+
   # OpenGL context attributes for test - ensure OpenGL 3.3 Core Profile on macOS
   defp gl_attributes do
     base_attributes = [
@@ -104,7 +126,7 @@ defmodule EAGL.ShaderTest do
         File.write!(test_shader_path, shader_content)
 
         try do
-          assert {:ok, shader_id} = create_shader(@gl_vertex_shader, "test_vertex.glsl")
+          assert {:ok, shader_id} = create_shader(:vertex, "test_vertex.glsl")
           assert is_integer(shader_id)
           assert shader_id > 0
 
@@ -136,7 +158,7 @@ defmodule EAGL.ShaderTest do
         File.write!(test_shader_path, shader_content)
 
         try do
-          assert {:ok, shader_id} = create_shader(@gl_fragment_shader, "test_fragment.glsl")
+          assert {:ok, shader_id} = create_shader(:fragment, "test_fragment.glsl")
           assert is_integer(shader_id)
           assert shader_id > 0
 
@@ -150,9 +172,36 @@ defmodule EAGL.ShaderTest do
       end
     end
 
+    test "create_shader accepts integer GL constants", %{gl_available: gl_available} do
+      if gl_available do
+        shader_content = """
+        #version 330 core
+        layout (location = 0) in vec3 aPos;
+        void main() {
+            gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);
+        }
+        """
+
+        priv_dir = :code.priv_dir(:eagl)
+        shader_dir = Path.join([priv_dir, "shaders"])
+        File.mkdir_p!(shader_dir)
+        test_shader_path = Path.join(shader_dir, "test_vertex_int.glsl")
+        File.write!(test_shader_path, shader_content)
+
+        try do
+          assert {:ok, shader_id} = create_shader(@gl_vertex_shader, "test_vertex_int.glsl")
+          cleanup_shader(shader_id)
+        after
+          File.rm(test_shader_path)
+        end
+      else
+        assert true
+      end
+    end
+
     test "create_shader with non-existent file", %{gl_available: gl_available} do
       if gl_available do
-        assert {:error, message} = create_shader(@gl_vertex_shader, "non_existent.glsl")
+        assert {:error, message} = create_shader(:vertex, "non_existent.glsl")
         assert String.contains?(message, "Failed to read shader file")
       else
         assert true
@@ -174,7 +223,7 @@ defmodule EAGL.ShaderTest do
         File.write!(test_shader_path, invalid_shader_content)
 
         try do
-          assert {:error, message} = create_shader(@gl_vertex_shader, "test_invalid.glsl")
+          assert {:error, message} = create_shader(:vertex, "test_invalid.glsl")
           assert String.contains?(message, "Shader compilation failed")
         after
           File.rm(test_shader_path)
@@ -216,8 +265,8 @@ defmodule EAGL.ShaderTest do
         File.write!(fragment_path, fragment_content)
 
         try do
-          {:ok, vertex_shader} = create_shader(@gl_vertex_shader, "test_link_vertex.glsl")
-          {:ok, fragment_shader} = create_shader(@gl_fragment_shader, "test_link_fragment.glsl")
+          {:ok, vertex_shader} = create_shader(:vertex, "test_link_vertex.glsl")
+          {:ok, fragment_shader} = create_shader(:fragment, "test_link_fragment.glsl")
 
           assert {:ok, program_id} = create_attach_link([vertex_shader, fragment_shader])
           assert is_integer(program_id)
@@ -267,10 +316,9 @@ defmodule EAGL.ShaderTest do
         File.write!(fragment_path, fragment_content)
 
         try do
-          {:ok, vertex_shader} = create_shader(@gl_vertex_shader, "test_uniform_vertex.glsl")
+          {:ok, vertex_shader} = create_shader(:vertex, "test_uniform_vertex.glsl")
 
-          {:ok, fragment_shader} =
-            create_shader(@gl_fragment_shader, "test_uniform_fragment.glsl")
+          {:ok, fragment_shader} = create_shader(:fragment, "test_uniform_fragment.glsl")
 
           {:ok, program} = create_attach_link([vertex_shader, fragment_shader])
 
@@ -322,10 +370,9 @@ defmodule EAGL.ShaderTest do
         File.write!(fragment_path, fragment_content)
 
         try do
-          {:ok, vertex_shader} = create_shader(@gl_vertex_shader, "test_charlist_vertex.glsl")
+          {:ok, vertex_shader} = create_shader(:vertex, "test_charlist_vertex.glsl")
 
-          {:ok, fragment_shader} =
-            create_shader(@gl_fragment_shader, "test_charlist_fragment.glsl")
+          {:ok, fragment_shader} = create_shader(:fragment, "test_charlist_fragment.glsl")
 
           {:ok, program} = create_attach_link([vertex_shader, fragment_shader])
 
@@ -376,8 +423,8 @@ defmodule EAGL.ShaderTest do
         File.write!(fragment_path, fragment_content)
 
         try do
-          {:ok, vertex_shader} = create_shader(@gl_vertex_shader, "test_vec2_vertex.glsl")
-          {:ok, fragment_shader} = create_shader(@gl_fragment_shader, "test_vec2_fragment.glsl")
+          {:ok, vertex_shader} = create_shader(:vertex, "test_vec2_vertex.glsl")
+          {:ok, fragment_shader} = create_shader(:fragment, "test_vec2_fragment.glsl")
           {:ok, program} = create_attach_link([vertex_shader, fragment_shader])
 
           :gl.useProgram(program)
@@ -425,8 +472,8 @@ defmodule EAGL.ShaderTest do
         File.write!(fragment_path, fragment_content)
 
         try do
-          {:ok, vertex_shader} = create_shader(@gl_vertex_shader, "test_vec4_vertex.glsl")
-          {:ok, fragment_shader} = create_shader(@gl_fragment_shader, "test_vec4_fragment.glsl")
+          {:ok, vertex_shader} = create_shader(:vertex, "test_vec4_vertex.glsl")
+          {:ok, fragment_shader} = create_shader(:fragment, "test_vec4_fragment.glsl")
           {:ok, program} = create_attach_link([vertex_shader, fragment_shader])
 
           :gl.useProgram(program)
@@ -474,8 +521,8 @@ defmodule EAGL.ShaderTest do
         File.write!(fragment_path, fragment_content)
 
         try do
-          {:ok, vertex_shader} = create_shader(@gl_vertex_shader, "test_int_vertex.glsl")
-          {:ok, fragment_shader} = create_shader(@gl_fragment_shader, "test_int_fragment.glsl")
+          {:ok, vertex_shader} = create_shader(:vertex, "test_int_vertex.glsl")
+          {:ok, fragment_shader} = create_shader(:fragment, "test_int_fragment.glsl")
           {:ok, program} = create_attach_link([vertex_shader, fragment_shader])
 
           :gl.useProgram(program)
@@ -522,8 +569,8 @@ defmodule EAGL.ShaderTest do
         File.write!(fragment_path, fragment_content)
 
         try do
-          {:ok, vertex_shader} = create_shader(@gl_vertex_shader, "test_bool_vertex.glsl")
-          {:ok, fragment_shader} = create_shader(@gl_fragment_shader, "test_bool_fragment.glsl")
+          {:ok, vertex_shader} = create_shader(:vertex, "test_bool_vertex.glsl")
+          {:ok, fragment_shader} = create_shader(:fragment, "test_bool_fragment.glsl")
           {:ok, program} = create_attach_link([vertex_shader, fragment_shader])
 
           :gl.useProgram(program)
@@ -576,8 +623,8 @@ defmodule EAGL.ShaderTest do
         File.write!(fragment_path, fragment_content)
 
         try do
-          {:ok, vertex_shader} = create_shader(@gl_vertex_shader, "test_cache_vertex.glsl")
-          {:ok, fragment_shader} = create_shader(@gl_fragment_shader, "test_cache_fragment.glsl")
+          {:ok, vertex_shader} = create_shader(:vertex, "test_cache_vertex.glsl")
+          {:ok, fragment_shader} = create_shader(:fragment, "test_cache_fragment.glsl")
           {:ok, program} = create_attach_link([vertex_shader, fragment_shader])
 
           :gl.useProgram(program)
@@ -642,8 +689,8 @@ defmodule EAGL.ShaderTest do
         File.write!(fragment_path, fragment_content)
 
         try do
-          {:ok, vertex_shader} = create_shader(@gl_vertex_shader, "test_vec3_vertex.glsl")
-          {:ok, fragment_shader} = create_shader(@gl_fragment_shader, "test_vec3_fragment.glsl")
+          {:ok, vertex_shader} = create_shader(:vertex, "test_vec3_vertex.glsl")
+          {:ok, fragment_shader} = create_shader(:fragment, "test_vec3_fragment.glsl")
           {:ok, program} = create_attach_link([vertex_shader, fragment_shader])
 
           :gl.useProgram(program)
@@ -692,8 +739,8 @@ defmodule EAGL.ShaderTest do
         File.write!(fragment_path, fragment_content)
 
         try do
-          {:ok, vertex_shader} = create_shader(@gl_vertex_shader, "test_float_vertex.glsl")
-          {:ok, fragment_shader} = create_shader(@gl_fragment_shader, "test_float_fragment.glsl")
+          {:ok, vertex_shader} = create_shader(:vertex, "test_float_vertex.glsl")
+          {:ok, fragment_shader} = create_shader(:fragment, "test_float_fragment.glsl")
           {:ok, program} = create_attach_link([vertex_shader, fragment_shader])
 
           :gl.useProgram(program)
@@ -744,8 +791,8 @@ defmodule EAGL.ShaderTest do
         File.write!(fragment_path, fragment_content)
 
         try do
-          {:ok, vertex_shader} = create_shader(@gl_vertex_shader, "test_multi_vertex.glsl")
-          {:ok, fragment_shader} = create_shader(@gl_fragment_shader, "test_multi_fragment.glsl")
+          {:ok, vertex_shader} = create_shader(:vertex, "test_multi_vertex.glsl")
+          {:ok, fragment_shader} = create_shader(:fragment, "test_multi_fragment.glsl")
           {:ok, program} = create_attach_link([vertex_shader, fragment_shader])
 
           :gl.useProgram(program)
@@ -789,7 +836,7 @@ defmodule EAGL.ShaderTest do
         File.write!(test_shader_path, vertex_content)
 
         try do
-          {:ok, shader_id} = create_shader(@gl_vertex_shader, "test_cleanup_vertex.glsl")
+          {:ok, shader_id} = create_shader(:vertex, "test_cleanup_vertex.glsl")
           assert :ok = cleanup_shader(shader_id)
         after
           File.rm(test_shader_path)
@@ -855,10 +902,9 @@ defmodule EAGL.ShaderTest do
         File.write!(fragment_path, fragment_content)
 
         try do
-          {:ok, vertex_shader} = create_shader(@gl_vertex_shader, "test_uniform_vertex.glsl")
+          {:ok, vertex_shader} = create_shader(:vertex, "test_uniform_vertex.glsl")
 
-          {:ok, fragment_shader} =
-            create_shader(@gl_fragment_shader, "test_uniform_fragment.glsl")
+          {:ok, fragment_shader} = create_shader(:fragment, "test_uniform_fragment.glsl")
 
           {:ok, program} = create_attach_link([vertex_shader, fragment_shader])
 
@@ -932,8 +978,8 @@ defmodule EAGL.ShaderTest do
         File.write!(fragment_path, fragment_content)
 
         try do
-          {:ok, vs} = create_shader(@gl_vertex_shader, "test_batch_vertex.glsl")
-          {:ok, fs} = create_shader(@gl_fragment_shader, "test_batch_fragment.glsl")
+          {:ok, vs} = create_shader(:vertex, "test_batch_vertex.glsl")
+          {:ok, fs} = create_shader(:fragment, "test_batch_fragment.glsl")
           {:ok, program} = create_attach_link([vs, fs])
 
           :gl.useProgram(program)
@@ -986,8 +1032,8 @@ defmodule EAGL.ShaderTest do
         File.write!(fragment_path, fragment_content)
 
         try do
-          {:ok, vs} = create_shader(@gl_vertex_shader, "test_location_vertex.glsl")
-          {:ok, fs} = create_shader(@gl_fragment_shader, "test_location_fragment.glsl")
+          {:ok, vs} = create_shader(:vertex, "test_location_vertex.glsl")
+          {:ok, fs} = create_shader(:fragment, "test_location_fragment.glsl")
           {:ok, program} = create_attach_link([vs, fs])
 
           # Test valid uniform location
@@ -1047,8 +1093,8 @@ defmodule EAGL.ShaderTest do
         File.write!(fragment_path, fragment_content)
 
         try do
-          {:ok, vs} = create_shader(@gl_vertex_shader, "test_cache_vertex.glsl")
-          {:ok, fs} = create_shader(@gl_fragment_shader, "test_cache_fragment.glsl")
+          {:ok, vs} = create_shader(:vertex, "test_cache_vertex.glsl")
+          {:ok, fs} = create_shader(:fragment, "test_cache_fragment.glsl")
           {:ok, program} = create_attach_link([vs, fs])
 
           # Test caching uniform locations

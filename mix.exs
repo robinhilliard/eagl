@@ -1,7 +1,7 @@
 defmodule EAGL.MixProject do
   use Mix.Project
 
-  @version "0.13.0"
+  @version "0.14.0"
   @source_url "https://github.com/robinhilliard/eagl"
 
   def project do
@@ -93,6 +93,7 @@ defmodule EAGL.MixProject do
         "priv/models",
         "priv/shaders",
         "priv/scripts",
+        "guides",
         "mix.exs",
         "README.md",
         "LICENSE"
@@ -126,47 +127,72 @@ defmodule EAGL.MixProject do
       assets: %{"priv/images" => "assets"},
       extras: [
         "README.md",
+        "guides/learnopengl.md",
+        "guides/gltf.md",
         "LICENSE"
+      ],
+      groups_for_extras: [
+        Guides: ["guides/learnopengl.md", "guides/gltf.md"]
       ],
       groups_for_modules: [
         Core: [
           EAGL.Math,
+          EAGL.Math.Bounds,
+          EAGL.Const,
+          EAGL.Error
+        ],
+        "GL helpers": [
           EAGL.Shader,
           EAGL.Buffer,
           EAGL.Texture,
-          EAGL.Error,
-          EAGL.Window
+          EAGL.Window,
+          EAGL.WindowBehaviour,
+          EAGL.Line
+        ],
+        Scene: [
+          EAGL.Mesh,
+          EAGL.Node,
+          EAGL.Scene,
+          EAGL.Camera,
+          EAGL.OrbitCamera,
+          EAGL.OrthoCamera,
+          EAGL.Spatial,
+          EAGL.Animation,
+          EAGL.Animation.Timeline,
+          EAGL.Animation.Channel,
+          EAGL.Animation.Sampler,
+          EAGL.Animator
         ],
         "Model Loading": [
           EAGL.Model,
           EAGL.ObjLoader
         ],
-        Constants: [
-          EAGL.Const
+        glTF: [
+          GLTF,
+          GLTF.Asset,
+          GLTF.Accessor,
+          GLTF.Animation,
+          GLTF.Buffer,
+          GLTF.BufferView,
+          GLTF.Binary,
+          GLTF.Camera,
+          GLTF.DataStore,
+          GLTF.GLBLoader,
+          GLTF.Image,
+          GLTF.Material,
+          GLTF.Mesh,
+          GLTF.Node,
+          GLTF.Sampler,
+          GLTF.Scene,
+          GLTF.Skin,
+          GLTF.Texture,
+          GLTF.TextureInfo
         ],
-        Camera: [
-          EAGL.Camera,
-          EAGL.OrbitCamera
+        Bridge: [
+          GLTF.EAGL
         ],
-        Examples: [
-          EAGL.Examples.Math,
-          EAGL.Examples.Teapot
-        ],
-        "LearnOpenGL Examples": [
-          EAGL.Examples.LearnOpenGL.GettingStarted.HelloWindow,
-          EAGL.Examples.LearnOpenGL.GettingStarted.HelloWindowClear,
-          EAGL.Examples.LearnOpenGL.GettingStarted.HelloTriangle,
-          EAGL.Examples.LearnOpenGL.GettingStarted.HelloTriangleIndexed,
-          EAGL.Examples.LearnOpenGL.GettingStarted.HelloTriangleExercise1,
-          EAGL.Examples.LearnOpenGL.GettingStarted.HelloTriangleExercise2,
-          EAGL.Examples.LearnOpenGL.GettingStarted.HelloTriangleExercise3,
-          EAGL.Examples.LearnOpenGL.GettingStarted.ShadersUniform,
-          EAGL.Examples.LearnOpenGL.GettingStarted.ShadersInterpolation,
-          EAGL.Examples.LearnOpenGL.GettingStarted.ShadersClass,
-          EAGL.Examples.LearnOpenGL.GettingStarted.ShadersExercise1,
-          EAGL.Examples.LearnOpenGL.GettingStarted.ShadersExercise2,
-          EAGL.Examples.LearnOpenGL.GettingStarted.ShadersExercise3,
-          EAGL.Examples.LearnOpenGL.GettingStarted.Textures
+        Windowing: [
+          WX.Const
         ]
       ],
       groups_for_docs: [

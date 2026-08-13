@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.14.0] - 2026-08-13
+
+### Added
+- Helper APIs accept atoms as well as GL integers: `create_shader(:vertex, …)`, buffer `usage: :static_draw`, texture wrap/filter/format/type atoms.
+- `EAGL.Mesh` struct for scene drawables. Maps with the same keys still work via `Mesh.from_map/1`.
+- Primitive `mode` on meshes; `Scene.render` and pick honour glTF primitive modes instead of hardcoding triangles.
+- Hex extras: `guides/learnopengl.md`, `guides/gltf.md`.
+
+### Changed
+- Named library layers (Core, GL helpers, Scene, glTF parser, Bridge) in Hexdocs module groups.
+- `GLTF.Accessor`, `GLTF.Sampler`, and `GLTF.BufferView` no longer `use EAGL.Const`; they store glTF spec integers.
+- `EAGL.Window` setup chatter uses `Logger` instead of `IO.puts`. Example timeout still prints `EAGL_TIMEOUT:` for tests.
+- Non-goal wording: no general wx UI kit; `EAGL.Window` is the GL canvas. Direct `:gl` is still the draw API.
+- FPS camera stays in `examples/learnopengl/camera.ex`. Library cameras are orbit/ortho.
+- README slimmed; LearnOpenGL menu and glTF parser details moved to guides.
+- LearnOpenGL examples use helper atoms; `:gl` calls still use `@gl_*`.
+
+### Fixed
+- Documented shader atom API now matches the implementation (regression from 0.4.0).
+
 ## [0.13.0] - 2026-03-02
 
 ### Fixed

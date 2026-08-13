@@ -33,8 +33,8 @@ defmodule EAGL.Line do
   defp get_program do
     case Process.get(:eagl_line_program) do
       nil ->
-        {:ok, vs} = EAGL.Shader.create_shader(@gl_vertex_shader, "line_vertex.glsl")
-        {:ok, fs} = EAGL.Shader.create_shader(@gl_fragment_shader, "line_fragment.glsl")
+        {:ok, vs} = EAGL.Shader.create_shader(:vertex, "line_vertex.glsl")
+        {:ok, fs} = EAGL.Shader.create_shader(:fragment, "line_fragment.glsl")
         {:ok, program} = EAGL.Shader.create_attach_link([vs, fs])
         Process.put(:eagl_line_program, program)
         program

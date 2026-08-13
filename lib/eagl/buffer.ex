@@ -211,7 +211,7 @@ defmodule EAGL.Buffer do
     # Bind and fill VBO
     :gl.bindBuffer(@gl_array_buffer, vbo)
     vertex_data = vertices_to_binary(vertices)
-    usage = Keyword.get(opts, :usage, @gl_static_draw)
+    usage = opts |> Keyword.get(:usage, :static_draw) |> usage_to_gl()
     :gl.bufferData(@gl_array_buffer, byte_size(vertex_data), vertex_data, usage)
 
     # Configure vertex attributes
@@ -258,7 +258,7 @@ defmodule EAGL.Buffer do
     # Bind and fill VBO with vertex data
     :gl.bindBuffer(@gl_array_buffer, vbo)
     vertex_data = vertices_to_binary(vertices)
-    usage = Keyword.get(opts, :usage, @gl_static_draw)
+    usage = opts |> Keyword.get(:usage, :static_draw) |> usage_to_gl()
     :gl.bufferData(@gl_array_buffer, byte_size(vertex_data), vertex_data, usage)
 
     # Bind and fill EBO with index data
@@ -492,4 +492,15 @@ defmodule EAGL.Buffer do
     :gl.vertexAttribPointer(location, size, gl_type, gl_normalized, stride, offset)
     :gl.enableVertexAttribArray(location)
   end
+
+  defp usage_to_gl(:static_draw), do: @gl_static_draw
+  defp usage_to_gl(:dynamic_draw), do: @gl_dynamic_draw
+  defp usage_to_gl(:stream_draw), do: @gl_stream_draw
+  defp usage_to_gl(:static_read), do: @gl_static_read
+  defp usage_to_gl(:dynamic_read), do: @gl_dynamic_read
+  defp usage_to_gl(:stream_read), do: @gl_stream_read
+  defp usage_to_gl(:static_copy), do: @gl_static_copy
+  defp usage_to_gl(:dynamic_copy), do: @gl_dynamic_copy
+  defp usage_to_gl(:stream_copy), do: @gl_stream_copy
+  defp usage_to_gl(usage) when is_integer(usage), do: usage
 end

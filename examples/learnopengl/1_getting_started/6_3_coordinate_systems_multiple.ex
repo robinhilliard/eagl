@@ -163,13 +163,11 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.CoordinateSystemsMultiple do
 
     # Compile and link shaders
     with {:ok, vertex_shader} <-
-           create_shader(
-             @gl_vertex_shader,
+           create_shader(:vertex,
              "learnopengl/1_getting_started/6_3_coordinate_systems_multiple/vertex_shader.glsl"
            ),
          {:ok, fragment_shader} <-
-           create_shader(
-             @gl_fragment_shader,
+           create_shader(:fragment,
              "learnopengl/1_getting_started/6_3_coordinate_systems_multiple/fragment_shader.glsl"
            ),
          {:ok, program} <- create_attach_link([vertex_shader, fragment_shader]) do
