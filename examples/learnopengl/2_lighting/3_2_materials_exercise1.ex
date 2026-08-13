@@ -233,13 +233,11 @@ defmodule EAGL.Examples.LearnOpenGL.Lighting.MaterialsExercise1 do
 
     # Compile and link lighting shader (reusing the 3.1 materials shaders)
     with {:ok, lighting_vertex_shader} <-
-           create_shader(
-             @gl_vertex_shader,
+           create_shader(:vertex,
              "learnopengl/2_lighting/3_2_materials_exercise1/lighting_vertex_shader.glsl"
            ),
          {:ok, lighting_fragment_shader} <-
-           create_shader(
-             @gl_fragment_shader,
+           create_shader(:fragment,
              "learnopengl/2_lighting/3_2_materials_exercise1/lighting_fragment_shader.glsl"
            ),
          {:ok, lighting_program} <-
@@ -248,14 +246,12 @@ defmodule EAGL.Examples.LearnOpenGL.Lighting.MaterialsExercise1 do
 
       # Compile and link light cube shader
       {:ok, light_cube_vertex_shader} =
-        create_shader(
-          @gl_vertex_shader,
+        create_shader(:vertex,
           "learnopengl/2_lighting/3_2_materials_exercise1/light_cube_vertex_shader.glsl"
         )
 
       {:ok, light_cube_fragment_shader} =
-        create_shader(
-          @gl_fragment_shader,
+        create_shader(:fragment,
           "learnopengl/2_lighting/3_2_materials_exercise1/light_cube_fragment_shader.glsl"
         )
 

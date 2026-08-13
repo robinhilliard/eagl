@@ -47,36 +47,31 @@ defmodule GLTF.EAGLBridgeTest do
     test "parses UNSIGNED_SHORT (16-bit) indices" do
       binary = <<0::little-unsigned-16, 1::little-unsigned-16, 2::little-unsigned-16>>
 
-      assert {:ok, [0, 1, 2]} =
-               GLTF.EAGL.binary_to_index_list(binary, @gl_unsigned_short)
+      assert {:ok, [0, 1, 2]} = GLTF.EAGL.binary_to_index_list(binary, @gl_unsigned_short)
     end
 
     test "parses UNSIGNED_INT (32-bit) indices" do
       binary = <<0::little-unsigned-32, 1::little-unsigned-32, 2::little-unsigned-32>>
 
-      assert {:ok, [0, 1, 2]} =
-               GLTF.EAGL.binary_to_index_list(binary, @gl_unsigned_int)
+      assert {:ok, [0, 1, 2]} = GLTF.EAGL.binary_to_index_list(binary, @gl_unsigned_int)
     end
 
     test "parses UNSIGNED_BYTE (8-bit) indices" do
       binary = <<0, 1, 2, 255>>
 
-      assert {:ok, [0, 1, 2, 255]} =
-               GLTF.EAGL.binary_to_index_list(binary, @gl_unsigned_byte)
+      assert {:ok, [0, 1, 2, 255]} = GLTF.EAGL.binary_to_index_list(binary, @gl_unsigned_byte)
     end
 
     test "handles large UNSIGNED_SHORT values" do
       binary = <<65535::little-unsigned-16>>
 
-      assert {:ok, [65535]} =
-               GLTF.EAGL.binary_to_index_list(binary, @gl_unsigned_short)
+      assert {:ok, [65535]} = GLTF.EAGL.binary_to_index_list(binary, @gl_unsigned_short)
     end
 
     test "handles large UNSIGNED_INT values" do
       binary = <<100_000::little-unsigned-32>>
 
-      assert {:ok, [100_000]} =
-               GLTF.EAGL.binary_to_index_list(binary, @gl_unsigned_int)
+      assert {:ok, [100_000]} = GLTF.EAGL.binary_to_index_list(binary, @gl_unsigned_int)
     end
 
     test "returns error for unsupported component type" do
@@ -162,8 +157,7 @@ defmodule GLTF.EAGLBridgeTest do
     test "extracts index data correctly", %{gltf: gltf, data_store: data_store} do
       assert {:ok, binary_data} = GLTF.get_accessor_data(gltf, data_store, 1)
 
-      assert {:ok, indices} =
-               GLTF.EAGL.binary_to_index_list(binary_data, @gl_unsigned_short)
+      assert {:ok, indices} = GLTF.EAGL.binary_to_index_list(binary_data, @gl_unsigned_short)
 
       assert indices == [0, 1, 2]
     end

@@ -2,11 +2,9 @@ defmodule GLTF.BufferView do
   @moduledoc """
   BufferView defines a view into a buffer's data, specifying the range and optional stride.
 
-  Stores OpenGL constants directly rather than mapping to atoms,
-  following EAGL's philosophy of thin wrapping.
+  Target values are glTF spec integers (ARRAY_BUFFER / ELEMENT_ARRAY_BUFFER)
+  stored without depending on `EAGL.Const`.
   """
-
-  use EAGL.Const
 
   defstruct [
     :buffer,
@@ -18,6 +16,9 @@ defmodule GLTF.BufferView do
     :extensions,
     :extras
   ]
+
+  @array_buffer 34962
+  @element_array_buffer 34963
 
   @type t :: %__MODULE__{
           buffer: non_neg_integer(),
@@ -73,8 +74,8 @@ defmodule GLTF.BufferView do
 
   # Parse target constants - return OpenGL constants directly
   defp parse_target(nil), do: nil
-  defp parse_target(@gl_array_buffer), do: @gl_array_buffer
-  defp parse_target(@gl_element_array_buffer), do: @gl_element_array_buffer
+  defp parse_target(@array_buffer), do: @array_buffer
+  defp parse_target(@element_array_buffer), do: @element_array_buffer
   defp parse_target(_), do: nil
 
   @doc """
@@ -100,13 +101,13 @@ defmodule GLTF.BufferView do
     byte_stride
   end
 
-  def effective_byte_stride(%__MODULE__{target: @gl_array_buffer}) do
+  def effective_byte_stride(%__MODULE__{target: @array_buffer}) do
     # For vertex attributes, stride is usually tightly packed
     # This should be calculated based on the accessor that uses this buffer view
     nil
   end
 
-  def effective_byte_stride(%__MODULE__{target: @gl_element_array_buffer}) do
+  def effective_byte_stride(%__MODULE__{target: @element_array_buffer}) do
     # Element array buffers are always tightly packed
     nil
   end

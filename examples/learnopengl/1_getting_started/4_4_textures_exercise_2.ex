@@ -128,13 +128,11 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.TexturesExercise2 do
 
     # Compile and link shaders
     with {:ok, vertex_shader} <-
-           create_shader(
-             @gl_vertex_shader,
+           create_shader(:vertex,
              "learnopengl/1_getting_started/4_4_textures_exercise_2/vertex_shader.glsl"
            ),
          {:ok, fragment_shader} <-
-           create_shader(
-             @gl_fragment_shader,
+           create_shader(:fragment,
              "learnopengl/1_getting_started/4_4_textures_exercise_2/fragment_shader.glsl"
            ),
          {:ok, program} <- create_attach_link([vertex_shader, fragment_shader]) do
@@ -159,13 +157,13 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.TexturesExercise2 do
 
       set_texture_parameters(
         # Enable texture repetition on S axis
-        wrap_s: @gl_repeat,
+        wrap_s: :repeat,
         # Enable texture repetition on T axis
-        wrap_t: @gl_repeat,
+        wrap_t: :repeat,
         # Smooth filtering for better visual quality
-        min_filter: @gl_linear,
+        min_filter: :linear,
         # Smooth filtering for better visual quality
-        mag_filter: @gl_linear
+        mag_filter: :linear
       )
 
       # Generate mipmaps

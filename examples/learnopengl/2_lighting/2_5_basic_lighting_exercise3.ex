@@ -262,13 +262,11 @@ defmodule EAGL.Examples.LearnOpenGL.Lighting.BasicLightingExercise3 do
 
     # Compile and link lighting shader (Gouraud shading version)
     with {:ok, lighting_vertex_shader} <-
-           create_shader(
-             @gl_vertex_shader,
+           create_shader(:vertex,
              "learnopengl/2_lighting/2_5_basic_lighting_exercise3/lighting_vertex_shader.glsl"
            ),
          {:ok, lighting_fragment_shader} <-
-           create_shader(
-             @gl_fragment_shader,
+           create_shader(:fragment,
              "learnopengl/2_lighting/2_5_basic_lighting_exercise3/lighting_fragment_shader.glsl"
            ),
          {:ok, lighting_program} <-
@@ -279,14 +277,12 @@ defmodule EAGL.Examples.LearnOpenGL.Lighting.BasicLightingExercise3 do
 
       # Compile and link light cube shader
       {:ok, light_cube_vertex_shader} =
-        create_shader(
-          @gl_vertex_shader,
+        create_shader(:vertex,
           "learnopengl/2_lighting/2_5_basic_lighting_exercise3/light_cube_vertex_shader.glsl"
         )
 
       {:ok, light_cube_fragment_shader} =
-        create_shader(
-          @gl_fragment_shader,
+        create_shader(:fragment,
           "learnopengl/2_lighting/2_5_basic_lighting_exercise3/light_cube_fragment_shader.glsl"
         )
 

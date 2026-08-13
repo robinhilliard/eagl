@@ -2,11 +2,10 @@ defmodule GLTF.Accessor do
   @moduledoc """
   Accessor defines how to access binary data from a buffer view.
 
-  Uses OpenGL constants directly for component types while keeping
-  accessor types as atoms since they are glTF spec strings.
+  Component types are glTF spec integers (which match OpenGL constants) stored
+  without depending on `EAGL.Const`. Accessor types are atoms because they are
+  glTF spec strings.
   """
-
-  use EAGL.Const
 
   defstruct [
     :buffer_view,
@@ -23,9 +22,15 @@ defmodule GLTF.Accessor do
     :extras
   ]
 
-  # OpenGL constants for component types
+  # glTF / OpenGL component types
+  @byte 5120
+  @unsigned_byte 5121
+  @short 5122
+  @unsigned_short 5123
+  @unsigned_int 5125
+  @float 5126
+
   @type component_type :: 5120 | 5121 | 5122 | 5123 | 5125 | 5126
-  # GL_BYTE | GL_UNSIGNED_BYTE | GL_SHORT | GL_UNSIGNED_SHORT | GL_UNSIGNED_INT | GL_FLOAT
 
   # glTF spec accessor types (not OpenGL constants)
   @type accessor_type ::
@@ -49,12 +54,12 @@ defmodule GLTF.Accessor do
   @doc """
   Get the byte size of a component type.
   """
-  def component_size(@gl_byte), do: 1
-  def component_size(@gl_unsigned_byte), do: 1
-  def component_size(@gl_short), do: 2
-  def component_size(@gl_unsigned_short), do: 2
-  def component_size(@gl_unsigned_int), do: 4
-  def component_size(@gl_float), do: 4
+  def component_size(@byte), do: 1
+  def component_size(@unsigned_byte), do: 1
+  def component_size(@short), do: 2
+  def component_size(@unsigned_short), do: 2
+  def component_size(@unsigned_int), do: 4
+  def component_size(@float), do: 4
 
   @doc """
   Get the number of components for an accessor type.
@@ -133,12 +138,12 @@ defmodule GLTF.Accessor do
   end
 
   # Parse component type constants - return OpenGL constants directly
-  defp parse_component_type(@gl_byte), do: @gl_byte
-  defp parse_component_type(@gl_unsigned_byte), do: @gl_unsigned_byte
-  defp parse_component_type(@gl_short), do: @gl_short
-  defp parse_component_type(@gl_unsigned_short), do: @gl_unsigned_short
-  defp parse_component_type(@gl_unsigned_int), do: @gl_unsigned_int
-  defp parse_component_type(@gl_float), do: @gl_float
+  defp parse_component_type(@byte), do: @byte
+  defp parse_component_type(@unsigned_byte), do: @unsigned_byte
+  defp parse_component_type(@short), do: @short
+  defp parse_component_type(@unsigned_short), do: @unsigned_short
+  defp parse_component_type(@unsigned_int), do: @unsigned_int
+  defp parse_component_type(@float), do: @float
   defp parse_component_type(_), do: nil
 
   # Parse type strings (keep as atoms since they're glTF spec strings)
@@ -185,7 +190,7 @@ defmodule GLTF.Accessor do
   @doc """
   Check if this accessor uses floating-point components.
   """
-  def float_components?(%__MODULE__{component_type: @gl_float}), do: true
+  def float_components?(%__MODULE__{component_type: @float}), do: true
   def float_components?(_), do: false
 
   @doc """

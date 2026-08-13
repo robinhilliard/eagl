@@ -18,72 +18,26 @@ Most examples of working with OpenGL are written in C++ or C# (Unity). The purpo
 The following are non-goals:
 
 - Focussing on 2D GPU graphics (see [Scenic](https://github.com/ScenicFramework/scenic) for that)
-- Wrapping of the Erlang wx library
+- A general-purpose wx widget kit (`EAGL.Window` is the GL canvas lifecycle only; `setup_layout/2` is the escape hatch into wx)
 - A Shader DSL
 - A UI layout/component library
 - 3D mesh modelling (leave that to Wings 3D, Blender etc)
+- Wrapping every `:gl` call — helpers cover ceremony; drawing stays `:gl`
 
 ## Quick Start
 
 ```elixir
 # Add to mix.exs
-{:eagl, "~> 0.13.0"}
+{:eagl, "~> 0.14.0"}
 ```
 
-EAGL includes several examples to demonstrate its capabilities. Use the unified examples runner:
-
-<p align="center">
-  <img src="assets/coordinate_system_example.png" width="100%" alt="Coordinate System"/> &nbsp;
-  <img src="assets/lighting_materials_example.png" width="100%" alt="Lighting Materials"/> &nbsp;
-  <img src="assets/gtlf_example_3.png" width="100%" alt="Duck Model"/> &nbsp;
-  <img src="assets/gtlf_example_5.png" width="100%" alt="Damaged Helmet"/>
-</p>
+EAGL includes several examples to demonstrate its capabilities. Clone the repository (examples are not in the Hex package) and run:
 
 ```
 mix examples
-════════════════════════════════════════════════════════════════
-                         EAGL Examples Menu
-════════════════════════════════════════════════════════════════
-
-0. Non-Learn OpenGL Examples:
-  01) Math Example - Comprehensive EAGL.Math functionality demo
-  02) Teapot Example - 3D teapot with Phong shading
-
-1. Learn OpenGL Getting Started Examples:
-
-  Hello Window:     111) 1.1 Window    112) 1.2 Clear Colors
-
-  Hello Triangle:   121) 2.1 Triangle  122) 2.2 Indexed    123) 2.3 Exercise1
-                    124) 2.4 Exercise2 125) 2.5 Exercise3
-
-  Shaders:          131) 3.1 Uniform   132) 3.2 Interpolation 133) 3.3 Class
-                    134) 3.4 Exercise1 135) 3.5 Exercise2     136) 3.6 Exercise3
-
-  Textures:         141) 4.1 Basic     142) 4.2 Combined      143) 4.3 Exercise1
-                    144) 4.4 Exercise2 145) 4.5 Exercise3     146) 4.6 Exercise4
-
-  Transformations:  151) 5.1 Basic     152) 5.2 Exercise1  153) 5.2 Exercise2
-
-  Coordinate Systems: 161) 6.1 Basic   162) 6.2 Depth     163) 6.3 Multiple
-                      164) 6.4 Exercise
-
-  Camera:           171) 7.1 Circle    172) 7.2 Keyboard+DT 173) 7.3 Mouse+Zoom
-                    174) 7.4 Camera Class 175) 7.5 Exercise1 (FPS) 176) 7.6 Exercise2 (Custom LookAt)
-
-2. Learn OpenGL Lighting Examples:
-
-  Colors:           211) 1.1 Colors
-  Basic Lighting:   212) 2.1 Diffuse   213) 2.2 Specular
-
-3. GLTF Examples:
-
-  311) Box              312) Box Textured    313) Duck
-  314) Box Animated     315) Damaged Helmet
-
-════════════════════════════════════════════════════════════════
-Enter code (01-02, 111-176, 211-218, 311-315), 'q' to quit, 'r' to refresh:
->
 ```
+
+The full menu and LearnOpenGL notes are in [guides/learnopengl.md](guides/learnopengl.md). glTF loading is in [guides/gltf.md](guides/gltf.md).
 
 
 
@@ -249,10 +203,10 @@ import EAGL.Error
 
       # Set texture parameters with type-safe keyword options
       set_texture_parameters(
-        wrap_s: @gl_repeat,
-        wrap_t: @gl_repeat,
-        min_filter: @gl_linear_mipmap_linear,
-        mag_filter: @gl_linear
+        wrap_s: :repeat,
+        wrap_t: :repeat,
+        min_filter: :linear_mipmap_linear,
+        mag_filter: :linear
       )
 
 # Load pixel data with format handling
@@ -307,115 +261,7 @@ glTF data structures into EAGL scene graphs with proper VAO/VBO creation.
 EAGL.Scene.render(scene, view_matrix, projection_matrix)
 ```
 
-See `examples/gltf/` for progressive examples from a simple box to a PBR-textured helmet.
-
-### GLTF 2.0 Library
-
-EAGL includes a comprehensive GLTF 2.0 library for representing complex 3D models and scenes. The library provides complete support for all GLTF 2.0 properties and follows the official specification.
-
-#### GLTF Features
-
-- **Complete Property Support**: All GLTF 2.0 properties from section 5 of the specification
-- **Type Safety**: Elixir structs with proper type specifications for all properties
-- **Extensions Support**: Built-in extensions mechanism with validation
-- **PBR Materials**: Full physically-based rendering material support
-- **Animations**: Keyframe animations with multiple interpolation modes
-- **Skinning**: Vertex skinning with joint hierarchies
-- **Multiple Cameras**: Perspective and orthographic camera types
-- **Texture Management**: Complete texture pipeline with samplers and filtering
-- **Buffer Views**: Efficient binary data management with accessors
-- **Scene Graphs**: Hierarchical node structures with transformations
-- **Validation**: Built-in validation functions for document integrity
-
-#### Basic Usage
-
-```elixir
-# Create a basic GLTF document
-gltf = GLTF.new("2.0", generator: "EAGL", copyright: "2024")
-
-# Create a perspective camera
-camera = GLTF.Camera.perspective(
-  :math.pi() / 4,  # 45 degree field of view
-  0.1,             # near plane
-  aspect_ratio: 16.0 / 9.0,
-  zfar: 100.0
-)
-
-# Create a scene with nodes
-scene = GLTF.Scene.with_nodes([0, 1], name: "Main Scene")
-
-# Create a material with PBR properties
-pbr = GLTF.Material.PbrMetallicRoughness.new(
-  base_color_factor: [0.8, 0.2, 0.2, 1.0],  # Red material
-  metallic_factor: 0.0,
-  roughness_factor: 0.5
-)
-material = GLTF.Material.new(pbr_metallic_roughness: pbr)
-
-# Create nodes with transformations
-camera_node = GLTF.Node.with_trs(
-  [0.0, 2.0, 5.0],           # translation
-  [0.0, 0.0, 0.0, 1.0],      # rotation (quaternion)
-  [1.0, 1.0, 1.0],           # scale
-  camera: 0
-)
-
-mesh_node = GLTF.Node.new(
-  mesh: 0,
-  material: 0
-)
-
-# Assemble the complete document
-gltf = %{gltf |
-  cameras: [camera],
-  materials: [material],
-  nodes: [camera_node, mesh_node],
-  scenes: [scene],
-  scene: 0
-}
-
-# Validate the document
-case GLTF.validate(gltf) do
-  :ok -> IO.puts("Valid GLTF document!")
-  {:error, reason} -> IO.puts("Validation error: #{inspect(reason)}")
-end
-```
-
-#### GLTF Properties Reference
-
-The library implements all GLTF 2.0 properties as Elixir modules:
-
-**Core Document Structure:** `GLTF`, `GLTF.Asset`, `GLTF.Extension`, `GLTF.Extras`
-
-**Scene and Hierarchy:** `GLTF.Scene`, `GLTF.Node`, `GLTF.Camera`, `GLTF.Camera.Perspective`, `GLTF.Camera.Orthographic`
-
-**Geometry and Meshes:** `GLTF.Mesh`, `GLTF.Mesh.Primitive`, `GLTF.Accessor`, `GLTF.Accessor.Sparse`, `GLTF.Buffer`, `GLTF.BufferView`
-
-**Materials and Textures:** `GLTF.Material`, `GLTF.Material.PbrMetallicRoughness`, `GLTF.Material.NormalTextureInfo`, `GLTF.Material.OcclusionTextureInfo`, `GLTF.Texture`, `GLTF.TextureInfo`, `GLTF.Image`, `GLTF.Sampler`
-
-**Animation and Skinning:** `GLTF.Animation`, `GLTF.Animation.Channel`, `GLTF.Animation.Sampler`, `GLTF.Skin`
-
-#### Design Principles
-
-- **Specification Compliance**: Strict adherence to GLTF 2.0 specification
-- **Elixir Idiomatic**: Uses Elixir conventions and patterns
-- **Type Safety**: Comprehensive type specifications and validation
-- **Extensibility**: Support for GLTF extensions mechanism
-- **Performance**: Efficient structures for runtime use
-
-#### GLTF Roadmap
-
-- **GLB Support**: Binary GLTF container format loading and parsing
-- **Integration**: GLTF.EAGL bridge module for scene graph and VAO creation
-- **Validation**: Structure validation with index and extension checking
-- **JSON Serialization**: Import/export to GLTF JSON format (non-binary)
-- **Extensions**: Built-in support for common GLTF extensions
-- **Multi-primitive meshes**: Support meshes with more than one primitive
-- **Buffer view stride**: Support strided buffer views for interleaved data
-
-#### GLB Loading HTTP Client Issue
-
-On some macOS systems, Erlang's built-in `:httpc` HTTP client has a bug where `http_util.timestamp/0` fails during HTTPS requests, causing GLB web loading to fail. Add the `:req` dependency and use `http_client: :req` when loading from URLs. See [Troubleshooting: GLB Loading HTTP Client](#glb-loading-http-client-issue) for details.
+See `examples/gltf/` for progressive examples from a simple box to a PBR-textured helmet, and [guides/gltf.md](guides/gltf.md) for the parser, bridge, and current limits (skinning is parsed, not drawn).
 
 ### Buffer Management
 
@@ -804,11 +650,11 @@ lib/
 │   ├── animation/          # Animation sub-modules (sampler, channel, timeline)
 │   ├── animator.ex         # Animation playback controller (GenServer)
 │   ├── buffer.ex           # VAO/VBO helper functions
-│   ├── camera.ex           # First-person camera (LearnOpenGL style)
+│   ├── camera.ex           # Geometric camera (view/projection)
 │   ├── const.ex            # OpenGL constants
 │   ├── error.ex            # Error checking and reporting
 │   ├── math.ex             # GLM-style math library
-│   ├── camera.ex           # Geometric camera (view/projection)
+│   ├── mesh.ex             # Drawable VAO/index handle for Scene
 │   ├── model.ex            # 3D model management
 │   ├── node.ex             # Scene graph node with TRS transforms
 │   ├── obj_loader.ex       # Wavefront OBJ parser
@@ -907,24 +753,17 @@ priv/
 
 ## Roadmap
 
-The current focus is to:
+Getting Started is complete. Next:
 
-- **In Progress**: Complete the "Getting Started" LearnOpenGL examples series
-  - ✅ Hello Window (1.1-1.2): 2 examples
-  - ✅ Hello Triangle (2.1-2.5): 5 examples  
-  - ✅ Shaders (3.1-3.6): 6 examples
-  - ✅ Textures (4.1-4.6): 6 examples
-  - ✅ Transformations (5.1-5.2): 3 examples
-  - ✅ Coordinate Systems (6.1-6.4): 4 examples
-  - ✅ Camera (7.1-7.6): 6 examples completed
-- Continue with "Lighting" chapter examples
-- Load glTF 2.0 models via GLTF.EAGL bridge (GLB format, PBR materials, scene graphs)
+- Continue the LearnOpenGL Lighting chapter
+- Multi-primitive glTF meshes
+- GPU skinning (structs exist; not drawn yet)
 
 And in future:
 
-- Be able to apply post-processing effects
-- More extensive camera/lighting/material helpers
-- Access to a physics engine
+- Post-processing effects
+- More camera/lighting/material helpers
+- Physics engine integration
 - Built-in GPU profiling tools
 
 ## Troubleshooting
@@ -1073,7 +912,7 @@ EAGL focuses on **meaningful abstractions** rather than thin wrappers around Ope
 #### ✅ **Provide Value**
 
 - **Error handling**: `{:ok, result}` tuples and comprehensive error checking
-- **Type safety**: Compile-time validation and clear parameter names (`wrap_s: @gl_repeat`)
+- **Type safety**: Compile-time validation and clear parameter names (`wrap_s: :repeat`)
 - **Sensible defaults**: Reduce boilerplate with common parameter combinations
 - **Complex operations**: Multi-step procedures like shader compilation and linking
 - **Data transformations**: Converting Elixir structures to OpenGL formats

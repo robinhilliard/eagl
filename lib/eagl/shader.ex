@@ -52,7 +52,9 @@ defmodule EAGL.Shader do
 
   @type shader_id :: non_neg_integer()
   @type program_id :: non_neg_integer()
-  @type shader_type :: non_neg_integer()
+  @type shader_type_name ::
+          :vertex | :fragment | :geometry | :tess_control | :tess_evaluation | :compute
+  @type shader_type :: shader_type_name() | non_neg_integer()
 
   @type uniform_value ::
           vec2()
@@ -71,24 +73,34 @@ defmodule EAGL.Shader do
   @doc """
   Creates and compiles a shader from a file.
 
+  Helpers accept atoms (`:vertex`, `:fragment`, …). Direct `:gl` calls still use
+  `@gl_*` constants. Integer GL constants are also accepted for compatibility.
+
   ## Parameters
 
-  - `shader_type`: OpenGL shader type constant (e.g., @gl_vertex_shader, @gl_fragment_shader)
+  - `shader_type`: `:vertex`, `:fragment`, `:geometry`, `:tess_control`,
+    `:tess_evaluation`, `:compute`, or a GL constant such as `@gl_vertex_shader`
   - `file_path`: Path to the shader file (relative to priv/shaders/ or absolute)
 
   ## Examples
 
-      {:ok, vertex_shader} = create_shader(@gl_vertex_shader, "vertex.glsl")
-      {:ok, fragment_shader} = create_shader(@gl_fragment_shader, "fragment.glsl")
+      {:ok, vertex_shader} = create_shader(:vertex, "vertex.glsl")
+      {:ok, fragment_shader} = create_shader(:fragment, "fragment.glsl")
   """
   @spec create_shader(shader_type(), String.t()) :: {:ok, shader_id()} | {:error, String.t()}
   def create_shader(shader_type, file_path) do
-    case read_shader_file(file_path) do
-      {:ok, source} ->
-        compile_shader_source(shader_type, source, file_path)
+    case shader_type_to_gl(shader_type) do
+      {:error, _} = err ->
+        err
 
-      {:error, reason} ->
-        {:error, "Failed to read shader file '#{file_path}': #{reason}"}
+      {:ok, gl_type} ->
+        case read_shader_file(file_path) do
+          {:ok, source} ->
+            compile_shader_source(gl_type, source, file_path)
+
+          {:error, reason} ->
+            {:error, "Failed to read shader file '#{file_path}': #{reason}"}
+        end
     end
   end
 
@@ -97,20 +109,36 @@ defmodule EAGL.Shader do
 
   ## Parameters
 
-  - `shader_type`: OpenGL shader type constant (e.g., @gl_vertex_shader, @gl_fragment_shader)
+  - `shader_type`: `:vertex`, `:fragment`, or a GL constant such as `@gl_vertex_shader`
   - `source`: GLSL source code as string or charlist
   - `name`: Optional name for error reporting (defaults to "inline shader")
 
   ## Examples
 
-      vertex_source = "#version 330 core\nlayout (location = 0) in vec3 aPos;\nvoid main() { gl_Position = vec4(aPos, 1.0); }"
-      {:ok, shader_id} = create_shader_from_source(@gl_vertex_shader, vertex_source, "my_vertex")
+      vertex_source = "#version 330 core\\nlayout (location = 0) in vec3 aPos;\\nvoid main() { gl_Position = vec4(aPos, 1.0); }"
+      {:ok, shader_id} = create_shader_from_source(:vertex, vertex_source, "my_vertex")
   """
   @spec create_shader_from_source(shader_type(), String.t() | charlist(), String.t()) ::
           {:ok, shader_id()} | {:error, String.t()}
   def create_shader_from_source(shader_type, source, name \\ "inline shader") do
-    compile_shader_source(shader_type, source, name)
+    case shader_type_to_gl(shader_type) do
+      {:ok, gl_type} -> compile_shader_source(gl_type, source, name)
+      {:error, _} = err -> err
+    end
   end
+
+  @doc false
+  @spec shader_type_to_gl(shader_type()) :: {:ok, non_neg_integer()} | {:error, String.t()}
+  def shader_type_to_gl(:vertex), do: {:ok, @gl_vertex_shader}
+  def shader_type_to_gl(:fragment), do: {:ok, @gl_fragment_shader}
+  def shader_type_to_gl(:geometry), do: {:ok, @gl_geometry_shader}
+  def shader_type_to_gl(:tess_control), do: {:ok, @gl_tess_control_shader}
+  def shader_type_to_gl(:tess_evaluation), do: {:ok, @gl_tess_evaluation_shader}
+  def shader_type_to_gl(:compute), do: {:ok, @gl_compute_shader}
+  def shader_type_to_gl(type) when is_integer(type), do: {:ok, type}
+
+  def shader_type_to_gl(other),
+    do: {:error, "Unknown shader type: #{inspect(other)}"}
 
   # ============================================================================
   # PRIVATE HELPER FUNCTIONS

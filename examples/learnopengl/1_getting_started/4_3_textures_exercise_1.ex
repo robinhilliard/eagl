@@ -124,13 +124,11 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.TexturesExercise1 do
 
     # Compile and link shaders (same as basic texture example)
     with {:ok, vertex_shader} <-
-           create_shader(
-             @gl_vertex_shader,
+           create_shader(:vertex,
              "learnopengl/1_getting_started/4_3_textures_exercise_1/vertex_shader.glsl"
            ),
          {:ok, fragment_shader} <-
-           create_shader(
-             @gl_fragment_shader,
+           create_shader(:fragment,
              "learnopengl/1_getting_started/4_3_textures_exercise_1/fragment_shader.glsl"
            ),
          {:ok, program} <- create_attach_link([vertex_shader, fragment_shader]) do
@@ -156,13 +154,13 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.TexturesExercise1 do
       # Set texture parameters - use GL_NEAREST to see individual pixels clearly
       set_texture_parameters(
         # Prevent wrapping artifacts
-        wrap_s: @gl_clamp_to_edge,
+        wrap_s: :clamp_to_edge,
         # Prevent wrapping artifacts
-        wrap_t: @gl_clamp_to_edge,
+        wrap_t: :clamp_to_edge,
         # Show pixels clearly
-        min_filter: @gl_nearest,
+        min_filter: :nearest,
         # Show pixels clearly
-        mag_filter: @gl_nearest
+        mag_filter: :nearest
       )
 
       # Generate mipmaps

@@ -141,14 +141,12 @@ defmodule EAGL.Examples.LearnOpenGL.GettingStarted.CameraClass do
 
     # Compile shaders
     {:ok, vertex} =
-      create_shader(
-        @gl_vertex_shader,
+      create_shader(:vertex,
         "learnopengl/1_getting_started/7_4_camera_class/vertex_shader.glsl"
       )
 
     {:ok, fragment} =
-      create_shader(
-        @gl_fragment_shader,
+      create_shader(:fragment,
         "learnopengl/1_getting_started/7_4_camera_class/fragment_shader.glsl"
       )
 

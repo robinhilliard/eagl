@@ -54,6 +54,7 @@ defmodule EAGL.Scene do
   """
 
   alias EAGL.Node
+  alias EAGL.Mesh
   alias EAGL.Camera
   alias EAGL.OrbitCamera
   alias EAGL.OrthoCamera
@@ -566,8 +567,8 @@ defmodule EAGL.Scene do
   defp get_pick_display_resources do
     case Process.get(:eagl_pick_display) do
       nil ->
-        {:ok, vs} = EAGL.Shader.create_shader(@gl_vertex_shader, "pick_debug_vertex.glsl")
-        {:ok, fs} = EAGL.Shader.create_shader(@gl_fragment_shader, "pick_debug_fragment.glsl")
+        {:ok, vs} = EAGL.Shader.create_shader(:vertex, "pick_debug_vertex.glsl")
+        {:ok, fs} = EAGL.Shader.create_shader(:fragment, "pick_debug_fragment.glsl")
         {:ok, prog} = EAGL.Shader.create_attach_link([vs, fs])
 
         # Fullscreen quad: pos (x,y) + texcoord (u,v)
@@ -659,8 +660,8 @@ defmodule EAGL.Scene do
   defp get_pick_program do
     case Process.get(:eagl_pick_program) do
       nil ->
-        {:ok, vs} = EAGL.Shader.create_shader(@gl_vertex_shader, "pick_vertex.glsl")
-        {:ok, fs} = EAGL.Shader.create_shader(@gl_fragment_shader, "pick_fragment.glsl")
+        {:ok, vs} = EAGL.Shader.create_shader(:vertex, "pick_vertex.glsl")
+        {:ok, fs} = EAGL.Shader.create_shader(:fragment, "pick_fragment.glsl")
         {:ok, program} = EAGL.Shader.create_attach_link([vs, fs])
         Process.put(:eagl_pick_program, program)
         program
@@ -717,25 +718,15 @@ defmodule EAGL.Scene do
   end
 
   defp render_mesh_pick(mesh, model_matrix, view_matrix, projection_matrix, program, node_id) do
-    case mesh do
-      %{vao: vao, vertex_count: count} ->
+    case Mesh.from_map(mesh) do
+      %Mesh{vao: vao} = mesh when not is_nil(vao) ->
         :gl.useProgram(program)
         EAGL.Shader.set_uniform(program, "model", model_matrix)
         EAGL.Shader.set_uniform(program, "view", view_matrix)
         EAGL.Shader.set_uniform(program, "projection", projection_matrix)
         EAGL.Shader.set_uniform(program, "nodeId", node_id + 1.0)
         :gl.bindVertexArray(vao)
-        :gl.drawArrays(@gl_triangles, 0, count)
-
-      %{vao: vao, index_count: count} ->
-        index_type = Map.get(mesh, :index_type, @gl_unsigned_int)
-        :gl.useProgram(program)
-        EAGL.Shader.set_uniform(program, "model", model_matrix)
-        EAGL.Shader.set_uniform(program, "view", view_matrix)
-        EAGL.Shader.set_uniform(program, "projection", projection_matrix)
-        EAGL.Shader.set_uniform(program, "nodeId", node_id + 1.0)
-        :gl.bindVertexArray(vao)
-        :gl.drawElements(@gl_triangles, count, index_type, 0)
+        draw_mesh(mesh)
 
       _ ->
         :ok
@@ -809,8 +800,8 @@ defmodule EAGL.Scene do
   end
 
   defp render_mesh(mesh, material_uniforms, model_matrix, view_matrix, projection_matrix, lights) do
-    case mesh do
-      %{vao: vao, vertex_count: count, program: program} ->
+    case Mesh.from_map(mesh) do
+      %Mesh{vao: vao, program: program} = mesh when not is_nil(vao) and not is_nil(program) ->
         :gl.useProgram(program)
         apply_light_uniforms(program, lights)
         apply_material_uniforms(program, material_uniforms)
@@ -818,21 +809,21 @@ defmodule EAGL.Scene do
         EAGL.Shader.set_uniform(program, "view", view_matrix)
         EAGL.Shader.set_uniform(program, "projection", projection_matrix)
         :gl.bindVertexArray(vao)
-        :gl.drawArrays(@gl_triangles, 0, count)
-
-      %{vao: vao, index_count: count, program: program} ->
-        index_type = Map.get(mesh, :index_type, @gl_unsigned_int)
-        :gl.useProgram(program)
-        apply_light_uniforms(program, lights)
-        apply_material_uniforms(program, material_uniforms)
-        EAGL.Shader.set_uniform(program, "model", model_matrix)
-        EAGL.Shader.set_uniform(program, "view", view_matrix)
-        EAGL.Shader.set_uniform(program, "projection", projection_matrix)
-        :gl.bindVertexArray(vao)
-        :gl.drawElements(@gl_triangles, count, index_type, 0)
+        draw_mesh(mesh)
 
       _ ->
         :ok
+    end
+  end
+
+  defp draw_mesh(%Mesh{} = mesh) do
+    mode = Mesh.gl_mode(mesh)
+
+    if Mesh.indexed?(mesh) do
+      :gl.drawElements(mode, mesh.index_count, Mesh.gl_index_type(mesh), 0)
+    else
+      count = mesh.vertex_count || 0
+      :gl.drawArrays(mode, 0, count)
     end
   end
 
